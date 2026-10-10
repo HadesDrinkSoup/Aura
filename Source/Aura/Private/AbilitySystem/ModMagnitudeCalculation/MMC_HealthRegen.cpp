@@ -4,11 +4,6 @@
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "Interface/CombatInterface.h"
 
-// Vigor * VigorCoefficient + CharacterLevel * LevelCoefficient
-static constexpr float BaseHealthRegen = 1.f;
-static constexpr float VigorCoefficient = 0.12f;
-static constexpr float LevelCoefficient = 0.05f;
-
 UMMC_HealthRegen::UMMC_HealthRegen()
 {
 	VigorDefinition.AttributeToCapture = UAuraAttributeSet::GetVigorAttribute();
@@ -20,6 +15,11 @@ UMMC_HealthRegen::UMMC_HealthRegen()
 
 float UMMC_HealthRegen::CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const
 {
+	// Vigor * VigorCoefficient + CharacterLevel * LevelCoefficient
+	static constexpr float BaseHealthRegen = 1.f;
+	static constexpr float VigorCoefficient = 0.12f;
+	static constexpr float LevelCoefficient = 0.05f;
+
 	const FGameplayTagContainer* SourceTags = Spec.CapturedSourceTags.GetAggregatedTags();
 	const FGameplayTagContainer* TargetTags = Spec.CapturedTargetTags.GetAggregatedTags();
 

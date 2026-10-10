@@ -4,11 +4,6 @@
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "Interface/CombatInterface.h"
 
-// Intelligence * IntelligenceCoefficient + CharacterLevel * LevelCoefficient
-static constexpr float BaseManaRegen = 2.f;
-static constexpr float IntelligenceCoefficient = 0.15f;
-static constexpr float LevelCoefficient = 0.05f;
-
 UMMC_ManaRegen::UMMC_ManaRegen()
 {
 	IntelligenceDefinition.AttributeToCapture = UAuraAttributeSet::GetIntelligenceAttribute();
@@ -20,6 +15,11 @@ UMMC_ManaRegen::UMMC_ManaRegen()
 
 float UMMC_ManaRegen::CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const
 {
+	// Intelligence * IntelligenceCoefficient + CharacterLevel * LevelCoefficient
+	static constexpr float BaseManaRegen = 2.f;
+	static constexpr float IntelligenceCoefficient = 0.15f;
+	static constexpr float LevelCoefficient = 0.05f;
+
 	const FGameplayTagContainer* SourceTags = Spec.CapturedSourceTags.GetAggregatedTags();
 	const FGameplayTagContainer* TargetTags = Spec.CapturedTargetTags.GetAggregatedTags();
 

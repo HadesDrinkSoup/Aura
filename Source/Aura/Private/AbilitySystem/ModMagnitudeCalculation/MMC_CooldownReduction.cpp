@@ -4,9 +4,6 @@
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "Interface/CombatInterface.h"
 
-// Intelligence * IntelligenceCoefficient
-static constexpr float IntelligenceCoefficient = 0.2f;
-
 UMMC_CooldownReduction::UMMC_CooldownReduction()
 {
 	IntelligenceDefinition.AttributeToCapture = UAuraAttributeSet::GetIntelligenceAttribute();
@@ -18,6 +15,9 @@ UMMC_CooldownReduction::UMMC_CooldownReduction()
 
 float UMMC_CooldownReduction::CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const
 {
+	// Intelligence * IntelligenceCoefficient
+	static constexpr float IntelligenceCoefficient = 0.2f;
+
 	const FGameplayTagContainer* SourceTags = Spec.CapturedSourceTags.GetAggregatedTags();
 	const FGameplayTagContainer* TargetTags = Spec.CapturedTargetTags.GetAggregatedTags();
 

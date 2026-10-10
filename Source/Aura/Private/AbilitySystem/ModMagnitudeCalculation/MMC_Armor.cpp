@@ -4,12 +4,6 @@
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "Interface/CombatInterface.h"
 
-// Vigor * VigorCoefficient + Strength * StrengthCoefficient + CharacterLevel * LevelCoefficient
-static constexpr float BaseArmor = 1.f;
-static constexpr float VigorCoefficient = 1.f;
-static constexpr float StrengthCoefficient = 0.3f;
-static constexpr float LevelCoefficient = 0.2f;
-
 UMMC_Armor::UMMC_Armor()
 {
 	VigorDefinition.AttributeToCapture = UAuraAttributeSet::GetVigorAttribute();
@@ -26,6 +20,12 @@ UMMC_Armor::UMMC_Armor()
 
 float UMMC_Armor::CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const
 {
+	// Vigor * VigorCoefficient + Strength * StrengthCoefficient + CharacterLevel * LevelCoefficient
+	static constexpr float BaseArmor = 1.f;
+	static constexpr float VigorCoefficient = 1.f;
+	static constexpr float StrengthCoefficient = 0.3f;
+	static constexpr float LevelCoefficient = 0.2f;
+
 	const FGameplayTagContainer* SourceTags = Spec.CapturedSourceTags.GetAggregatedTags();
 	const FGameplayTagContainer* TargetTags = Spec.CapturedTargetTags.GetAggregatedTags();
 

@@ -4,11 +4,6 @@
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "Interface/CombatInterface.h"
 
-// BaseHitChance + Agility * AgilityCoefficient + CharacterLevel * LevelCoefficient
-static constexpr float BaseHitChance = 80.f;
-static constexpr float AgilityCoefficient = 0.1f;
-static constexpr float LevelCoefficient = 0.05f;
-
 UMMC_HitChance::UMMC_HitChance()
 {
 	AgilityDefinition.AttributeToCapture = UAuraAttributeSet::GetAgilityAttribute();
@@ -20,6 +15,11 @@ UMMC_HitChance::UMMC_HitChance()
 
 float UMMC_HitChance::CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const
 {
+	// BaseHitChance + Agility * AgilityCoefficient + CharacterLevel * LevelCoefficient
+	static constexpr float BaseHitChance = 80.f;
+	static constexpr float AgilityCoefficient = 0.1f;
+	static constexpr float LevelCoefficient = 0.05f;
+
 	const FGameplayTagContainer* SourceTags = Spec.CapturedSourceTags.GetAggregatedTags();
 	const FGameplayTagContainer* TargetTags = Spec.CapturedTargetTags.GetAggregatedTags();
 

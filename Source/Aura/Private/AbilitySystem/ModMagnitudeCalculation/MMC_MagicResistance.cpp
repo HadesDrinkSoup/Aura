@@ -4,12 +4,6 @@
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "Interface/CombatInterface.h"
 
-// Vigor * VigorCoefficient + Intelligence * IntelligenceCoefficient + CharacterLevel * LevelCoefficient
-static constexpr float BaseMagicResistance = 1.f;
-static constexpr float VigorCoefficient = 0.8f;
-static constexpr float IntelligenceCoefficient = 0.2f;
-static constexpr float LevelCoefficient = 0.2f;
-
 UMMC_MagicResistance::UMMC_MagicResistance()
 {
 	VigorDefinition.AttributeToCapture = UAuraAttributeSet::GetVigorAttribute();
@@ -26,6 +20,12 @@ UMMC_MagicResistance::UMMC_MagicResistance()
 
 float UMMC_MagicResistance::CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const
 {
+	// Vigor * VigorCoefficient + Intelligence * IntelligenceCoefficient + CharacterLevel * LevelCoefficient
+	static constexpr float BaseMagicResistance = 1.f;
+	static constexpr float VigorCoefficient = 0.8f;
+	static constexpr float IntelligenceCoefficient = 0.2f;
+	static constexpr float LevelCoefficient = 0.2f;
+
 	const FGameplayTagContainer* SourceTags = Spec.CapturedSourceTags.GetAggregatedTags();
 	const FGameplayTagContainer* TargetTags = Spec.CapturedTargetTags.GetAggregatedTags();
 

@@ -4,10 +4,6 @@
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "Interface/CombatInterface.h"
 
-// Agility * AgilityCoefficient + Intelligence * IntelligenceCoefficient
-static constexpr float AgilityCoefficient = 0.15f;
-static constexpr float IntelligenceCoefficient = 0.1f;
-
 UMMC_CriticalChance::UMMC_CriticalChance()
 {
 	AgilityDefinition.AttributeToCapture = UAuraAttributeSet::GetAgilityAttribute();
@@ -24,6 +20,10 @@ UMMC_CriticalChance::UMMC_CriticalChance()
 
 float UMMC_CriticalChance::CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const
 {
+	// Agility * AgilityCoefficient + Intelligence * IntelligenceCoefficient
+	static constexpr float AgilityCoefficient = 0.15f;
+	static constexpr float IntelligenceCoefficient = 0.1f;
+
 	const FGameplayTagContainer* SourceTags = Spec.CapturedSourceTags.GetAggregatedTags();
 	const FGameplayTagContainer* TargetTags = Spec.CapturedTargetTags.GetAggregatedTags();
 

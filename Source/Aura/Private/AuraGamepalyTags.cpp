@@ -116,7 +116,7 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 	// 来源：Agility(主) + 等级
 	GameplayTags.Attributes_Derived_AttackSpeed = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Attributes.Derived.AttackSpeed"),
-		FString(TEXT("攻击速度，普攻频率加成，直接提升每秒普攻次数和DPS。。来源：Agility + 等级")));
+		FString(TEXT("攻击速度，普攻频率加成，直接提升每秒普攻次数和DPS。来源：Agility + 等级")));
 
 	// 冷却缩减：减少技能冷却时间的百分比。技能冷却 = 原始CD × (1 - 冷却缩减%)。技能流玩法的质变属性
 	// 来源：Intelligence
@@ -128,13 +128,13 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 	// 来源：Vigor(主) + 等级
 	GameplayTags.Attributes_Derived_HealthRegen = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Attributes.Derived.HealthRegen"),
-		FString(TEXT("生命恢复，每秒自动回复的生命值。提供脱战续航，减少对治疗的依赖。来源：Vigor + 等级")));
+		FString(TEXT("生命恢复，每秒自动恢复的生命值。提供脱战续航，减少对治疗的依赖。来源：Vigor + 等级")));
 
 	// 法力恢复：每秒自动恢复的法力值。减少对蓝瓶的依赖，让法师在持久战中不会空蓝
 	// 来源：Intelligence(主) + 等级
 	GameplayTags.Attributes_Derived_ManaRegen = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Attributes.Derived.ManaRegen"),
-		FString(TEXT("法力恢复，每秒自动回复的法力值。在持久战中维持法力循环。来源：Intelligence + 等级")));
+		FString(TEXT("法力恢复，每秒自动恢复的法力值。在持久战中维持法力循环。来源：Intelligence + 等级")));
 
 	// 移动速度：角色在地图上的移动快慢。决定走位、风筝、追击、逃跑的效率。通用战术属性
 	// 来源：Agility

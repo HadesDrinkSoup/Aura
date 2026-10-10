@@ -4,12 +4,6 @@
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "Interface/CombatInterface.h"
 
-//BaseMana + Vigor * VigorCoefficient + Intelligence * IntelligenceCoefficient + CharacterLevel * LevelCoefficient;
-static constexpr float BaseMana = 45.f;
-static constexpr float VigorCoefficient = 2.f;
-static constexpr float IntelligenceCoefficient = 8.f;
-static constexpr float LevelCoefficient = 5.f;
-
 UMMC_MaxMana::UMMC_MaxMana()
 {
 	VigorDefinition.AttributeToCapture = UAuraAttributeSet::GetVigorAttribute();
@@ -26,6 +20,12 @@ UMMC_MaxMana::UMMC_MaxMana()
 
 float UMMC_MaxMana::CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const
 {
+	//BaseMana + Vigor * VigorCoefficient + Intelligence * IntelligenceCoefficient + CharacterLevel * LevelCoefficient;
+	static constexpr float BaseMana = 45.f;
+	static constexpr float VigorCoefficient = 2.f;
+	static constexpr float IntelligenceCoefficient = 8.f;
+	static constexpr float LevelCoefficient = 5.f;
+
 	const FGameplayTagContainer* SourceTags = Spec.CapturedSourceTags.GetAggregatedTags();
 	const FGameplayTagContainer* TargetTags = Spec.CapturedTargetTags.GetAggregatedTags();
 	

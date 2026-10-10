@@ -5,12 +5,6 @@
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "Interface/CombatInterface.h"
 
-//BaseHealth + Vigor * VigorCoefficient + Strength * StrengthCoefficient + CharacterLevel * LevelCoefficient;
-static constexpr float BaseHealth = 90.f;
-static constexpr float VigorCoefficient = 10.f;
-static constexpr float StrengthCoefficient = 5.f;
-static constexpr float LevelCoefficient = 10.f;
-
 // 计算最大生命值的自定义 Magnitude Calculation
 UMMC_MaxHealth::UMMC_MaxHealth()
 {
@@ -33,6 +27,12 @@ UMMC_MaxHealth::UMMC_MaxHealth()
 // 实际计算基础数值（被系统调用）
 float UMMC_MaxHealth::CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const
 {
+	//BaseHealth + Vigor * VigorCoefficient + Strength * StrengthCoefficient + CharacterLevel * LevelCoefficient;
+	static constexpr float BaseHealth = 90.f;
+	static constexpr float VigorCoefficient = 10.f;
+	static constexpr float StrengthCoefficient = 5.f;
+	static constexpr float LevelCoefficient = 10.f;
+
 	// 获取来源与目标的标签（用于按标签计算修正）
 	const FGameplayTagContainer* SourceTags = Spec.CapturedSourceTags.GetAggregatedTags();
 	const FGameplayTagContainer* TargetTags = Spec.CapturedTargetTags.GetAggregatedTags();

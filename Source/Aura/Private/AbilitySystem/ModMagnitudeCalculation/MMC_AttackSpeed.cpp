@@ -4,11 +4,6 @@
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "Interface/CombatInterface.h"
 
-// BaseAttackSpeed + Agility * AgilityCoefficient + CharacterLevel * LevelCoefficient
-static constexpr float BaseAttackSpeed = 100.f;
-static constexpr float AgilityCoefficient = 0.3f;
-static constexpr float LevelCoefficient = 0.1f;
-
 UMMC_AttackSpeed::UMMC_AttackSpeed()
 {
 	AgilityDefinition.AttributeToCapture = UAuraAttributeSet::GetAgilityAttribute();
@@ -20,6 +15,11 @@ UMMC_AttackSpeed::UMMC_AttackSpeed()
 
 float UMMC_AttackSpeed::CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const
 {
+	// BaseAttackSpeed + Agility * AgilityCoefficient + CharacterLevel * LevelCoefficient
+	static constexpr float BaseAttackSpeed = 100.f;
+	static constexpr float AgilityCoefficient = 0.3f;
+	static constexpr float LevelCoefficient = 0.1f;
+
 	const FGameplayTagContainer* SourceTags = Spec.CapturedSourceTags.GetAggregatedTags();
 	const FGameplayTagContainer* TargetTags = Spec.CapturedTargetTags.GetAggregatedTags();
 

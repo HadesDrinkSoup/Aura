@@ -5,6 +5,7 @@
 #include "GameplayTagContainer.h"
 
 /**
+ * 单例全局访问
  * Aura GameplayTags 集中管理结构体
  * 用于统一注册和访问项目所有 GameplayTag，避免硬编码字符串
  */
@@ -35,9 +36,9 @@ struct FAuraGameplayTags
 	FGameplayTag Attributes_Derived_DodgeChance;       // 闪避几率 — 受 Agility 影响，决定角色闪避攻击的概率
 	FGameplayTag Attributes_Derived_AttackSpeed;       // 攻击速度 — 受 Agility + 等级 影响，决定角色攻击频率
 	FGameplayTag Attributes_Derived_CooldownReduction; // 冷却缩减 — 受 Intelligence 影响，降低技能冷却时间
+	FGameplayTag Attributes_Derived_MoveSpeed;         // 移动速度 — 受 Agility 影响，决定角色移动速度
 	FGameplayTag Attributes_Derived_HealthRegen;       // 生命恢复 — 受 Vigor + 等级 影响，决定每秒自动恢复的生命值
 	FGameplayTag Attributes_Derived_ManaRegen;         // 法力恢复 — 受 Intelligence + 等级 影响，决定每秒自动恢复的法力值
-	FGameplayTag Attributes_Derived_MoveSpeed;         // 移动速度 — 受 Agility 影响，决定角色移动速度
 
 private:
 	static FAuraGameplayTags GameplayTags;

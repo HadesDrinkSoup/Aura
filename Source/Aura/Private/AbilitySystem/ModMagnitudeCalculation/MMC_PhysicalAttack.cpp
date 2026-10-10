@@ -4,12 +4,6 @@
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "Interface/CombatInterface.h"
 
-// BasePhysicalAttack + Strength * StrengthCoefficient + Agility * AgilityCoefficient + CharacterLevel * LevelCoefficient
-static constexpr float BasePhysicalAttack = 5.f;
-static constexpr float StrengthCoefficient = 2.5f;
-static constexpr float AgilityCoefficient = 0.5f;
-static constexpr float LevelCoefficient = 1.f;
-
 UMMC_PhysicalAttack::UMMC_PhysicalAttack()
 {
 	StrengthDefinition.AttributeToCapture = UAuraAttributeSet::GetStrengthAttribute();
@@ -26,6 +20,12 @@ UMMC_PhysicalAttack::UMMC_PhysicalAttack()
 
 float UMMC_PhysicalAttack::CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const
 {
+	// BasePhysicalAttack + Strength * StrengthCoefficient + Agility * AgilityCoefficient + CharacterLevel * LevelCoefficient
+	static constexpr float BasePhysicalAttack = 5.f;
+	static constexpr float StrengthCoefficient = 2.5f;
+	static constexpr float AgilityCoefficient = 0.5f;
+	static constexpr float LevelCoefficient = 1.f;
+
 	const FGameplayTagContainer* SourceTags = Spec.CapturedSourceTags.GetAggregatedTags();
 	const FGameplayTagContainer* TargetTags = Spec.CapturedTargetTags.GetAggregatedTags();
 

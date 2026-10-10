@@ -4,11 +4,6 @@
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "Interface/CombatInterface.h"
 
-// BaseMagicalAttack + Intelligence * IntelligenceCoefficient + CharacterLevel * LevelCoefficient
-static constexpr float BaseMagicalAttack = 5.f;
-static constexpr float IntelligenceCoefficient = 2.5f;
-static constexpr float LevelCoefficient = 1.f;
-
 UMMC_MagicalAttack::UMMC_MagicalAttack()
 {
 	IntelligenceDefinition.AttributeToCapture = UAuraAttributeSet::GetIntelligenceAttribute();
@@ -20,6 +15,11 @@ UMMC_MagicalAttack::UMMC_MagicalAttack()
 
 float UMMC_MagicalAttack::CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const
 {
+	// BaseMagicalAttack + Intelligence * IntelligenceCoefficient + CharacterLevel * LevelCoefficient
+	static constexpr float BaseMagicalAttack = 5.f;
+	static constexpr float IntelligenceCoefficient = 2.5f;
+	static constexpr float LevelCoefficient = 1.f;
+
 	const FGameplayTagContainer* SourceTags = Spec.CapturedSourceTags.GetAggregatedTags();
 	const FGameplayTagContainer* TargetTags = Spec.CapturedTargetTags.GetAggregatedTags();
 

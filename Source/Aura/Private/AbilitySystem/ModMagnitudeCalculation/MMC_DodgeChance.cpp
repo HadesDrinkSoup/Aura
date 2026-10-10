@@ -4,9 +4,6 @@
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "Interface/CombatInterface.h"
 
-// Agility * AgilityCoefficient
-static constexpr float AgilityCoefficient = 0.1f;
-
 UMMC_DodgeChance::UMMC_DodgeChance()
 {
 	AgilityDefinition.AttributeToCapture = UAuraAttributeSet::GetAgilityAttribute();
@@ -18,6 +15,9 @@ UMMC_DodgeChance::UMMC_DodgeChance()
 
 float UMMC_DodgeChance::CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const
 {
+	// Agility * AgilityCoefficient
+	static constexpr float AgilityCoefficient = 0.1f;
+
 	const FGameplayTagContainer* SourceTags = Spec.CapturedSourceTags.GetAggregatedTags();
 	const FGameplayTagContainer* TargetTags = Spec.CapturedTargetTags.GetAggregatedTags();
 

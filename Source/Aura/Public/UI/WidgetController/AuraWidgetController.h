@@ -71,6 +71,7 @@ public:
 	 * 确保 Widget 首次显示时就展示正确的数据（而非默认值 0）。
 	 * 子类必须重写以广播各自的初始属性。
 	 */
+	UFUNCTION(BlueprintCallable)
 	virtual void BroadCastInitialValues();
 	virtual void BindCallbacksToDependencies();
 	
