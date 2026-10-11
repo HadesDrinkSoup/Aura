@@ -21,6 +21,7 @@
 #include "GameFramework/Pawn.h"
 #include "Input/AuraEnhancedInputComponent.h"
 #include "Interface/EnemyInterface.h"
+#include "Player/AuraPlayerState.h"
 
 // -----------------------------------------------------------------------------
 // 构造 & 初始化
@@ -164,25 +165,41 @@ void AAuraPlayerController::CursorTrace()
 
 // -----------------------------------------------------------------------------
 // 能力输入回调
-// 由 BindAbilityActions 在 SetupInputComponent 中绑定，
-// 分别对应输入动作的 Started / Completed / Triggered 阶段。
-// 当前仅打印对应 GameplayTag 用于调试，后续将在此触发 GAS 能力。
+// 由 BindAbilityActions 在 SetupInputComponent 中绑定，分别对应输入动作的
+// Started / Completed / Triggered 阶段。这里只负责「输入事件 → ASC」的转发，
+// 真正的能力激活 / 触发逻辑在 UAuraAbilitySystemComponent 中处理。
 // -----------------------------------------------------------------------------
 
-void AAuraPlayerController::AbilityInputTagPressed(FGameplayTag InputTag)
+void AAuraPlayerController::AbilityInputTagPressed(const FGameplayTag InputTag)
 {
-	// 按下（Started）—— 绿色提示
-	GEngine->AddOnScreenDebugMessage(1, 5, FColor::Green, InputTag.ToString());
+	// 按下（Started）→ 转发给 ASC，处理能力的「按下」事件
+	GetASC()->AbilityInputTagPressed(InputTag);
 }
 
-void AAuraPlayerController::AbilityInputTagReleased(FGameplayTag InputTag)
+void AAuraPlayerController::AbilityInputTagReleased(const FGameplayTag InputTag)
 {
-	// 松开（Completed）—— 蓝色提示
-	GEngine->AddOnScreenDebugMessage(2, 5, FColor::Blue, InputTag.ToString());
+	if (GetASC() == nullptr) return;
+	// 松开（Completed）→ 转发给 ASC，处理能力的「松开」事件（如蓄力技能施放）
+	GetASC()->AbilityInputTagReleased(InputTag);
 }
 
-void AAuraPlayerController::AbilityInputTagHeld(FGameplayTag InputTag)
+void AAuraPlayerController::AbilityInputTagHeld(const FGameplayTag InputTag)
 {
-	// 按住（Triggered）—— 红色提示
-	GEngine->AddOnScreenDebugMessage(3, 5, FColor::Red, InputTag.ToString());
+	if (GetASC() == nullptr) return;
+	// 按住（Triggered，每帧触发）→ 转发给 ASC，负责激活尚未激活的能力
+	GetASC()->AbilityInputTagHeld(InputTag);
+}
+
+UAuraAbilitySystemComponent* AAuraPlayerController::GetASC()
+{
+	// 懒加载缓存：首次调用时借道 PlayerState 获取 ASC，之后直接返回缓存指针
+	if (AuraAbilitySystemComponent == nullptr)
+	{
+		// ASC 由 AAuraPlayerState 持有（见其构造函数），PlayerController 仅缓存引用
+		if (const AAuraPlayerState* AuraPlayerState = GetPlayerState<AAuraPlayerState>())
+		{
+			AuraAbilitySystemComponent = AuraPlayerState->GetAbilitySystemComponent();
+		}
+	}
+	return AuraAbilitySystemComponent;
 }

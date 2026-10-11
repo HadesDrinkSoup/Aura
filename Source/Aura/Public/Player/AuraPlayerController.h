@@ -15,6 +15,7 @@
 #include "GameFramework/PlayerController.h"
 #include "AuraPlayerController.generated.h"
 
+class UAuraAbilitySystemComponent;
 struct FGameplayTag;
 class UAuraInputConfig;
 class IEnemyInterface;
@@ -67,6 +68,8 @@ private:
 	void AbilityInputTagReleased(FGameplayTag InputTag);  // 松开（Completed）
 	void AbilityInputTagHeld(FGameplayTag InputTag);      // 按住（Triggered）
 	
+	UAuraAbilitySystemComponent* GetASC();
+	
 protected:
 	/** Enhanced Input 映射上下文（含 MoveAction 等输入操作） */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
@@ -79,6 +82,9 @@ protected:
 	/** 输入配置数据资产：定义「输入动作 ↔ GameplayTag」映射，供 BindAbilityActions 批量绑定能力输入 */
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UAuraInputConfig> AuraInputConfig;
+	
+	UPROPERTY()
+	TObjectPtr<UAuraAbilitySystemComponent> AuraAbilitySystemComponent;
 
 private:
 	

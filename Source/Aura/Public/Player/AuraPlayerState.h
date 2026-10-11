@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
+#include "AbilitySystemInterface.h"
 #include "GameFramework/PlayerState.h"
 #include "AuraPlayerState.generated.h"
 
@@ -21,7 +22,7 @@ class UAbilitySystemComponent;
  * 实现 IAbilitySystemInterface 后，GAS 框架能通过该接口自动获取 ASC
  */
 UCLASS()
-class AURA_API AAuraPlayerState : public APlayerState
+class AURA_API AAuraPlayerState : public APlayerState, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 public:
@@ -30,7 +31,7 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	
 	// 获取 ASC
-	UAuraAbilitySystemComponent* GetAbilitySystemComponent() const {return AuraAbilitySystemComponent;}
+	virtual UAuraAbilitySystemComponent* GetAbilitySystemComponent() const override {return AuraAbilitySystemComponent;}
 	// 获取属性集的便捷访问方法
 	UAuraAttributeSet* GetAttributeSet() const {return AuraAttributeSet;}
 	
