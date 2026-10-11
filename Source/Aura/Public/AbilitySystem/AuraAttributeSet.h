@@ -48,14 +48,14 @@ public:
 	UAuraAttributeSet();
 
 	/** 注册需要网络复制的属性列表 */
-	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
 	/** 在属性改变前进行钳制 */
 	virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
 	
-	virtual void PostGameplayEffectExecute(const struct FGameplayEffectModCallbackData& Data) override;
+	virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data) override;
 	
-	TMap<FGameplayTag, FAttributeDelegate> TagToAttributeMap;
+	TMap<FGameplayTag, FAttributeDelegate> TagsToAttributesMap;
 
 	// ============================================================================
 	//  Pool Attributes（池属性）

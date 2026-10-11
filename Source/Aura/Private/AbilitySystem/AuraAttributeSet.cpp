@@ -16,85 +16,85 @@ UAuraAttributeSet::UAuraAttributeSet()
 	
 	FAttributeDelegate HealthDelegate;
 	HealthDelegate.BindStatic(GetHealthAttribute);
-	TagToAttributeMap.Add(GameplayTags.Attributes_Pool_Health, HealthDelegate);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Pool_Health, HealthDelegate);
 	
 	FAttributeDelegate ManaDelegate;
 	ManaDelegate.BindStatic(GetManaAttribute);
-	TagToAttributeMap.Add(GameplayTags.Attributes_Pool_Mana, ManaDelegate);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Pool_Mana, ManaDelegate);
 	
 	/** 重要属性 */
 	FAttributeDelegate StrengthDelegate;
 	StrengthDelegate.BindStatic(GetStrengthAttribute);
-	TagToAttributeMap.Add(GameplayTags.Attributes_Primary_Strength, StrengthDelegate);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Primary_Strength, StrengthDelegate);
 	
 	FAttributeDelegate IntelligenceDelegate;
 	IntelligenceDelegate.BindStatic(GetIntelligenceAttribute);
-	TagToAttributeMap.Add(GameplayTags.Attributes_Primary_Intelligence, IntelligenceDelegate);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Primary_Intelligence, IntelligenceDelegate);
 	
 	FAttributeDelegate AgilityDelegate;
 	AgilityDelegate.BindStatic(GetAgilityAttribute);
-	TagToAttributeMap.Add(GameplayTags.Attributes_Primary_Agility, AgilityDelegate);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Primary_Agility, AgilityDelegate);
 
 	FAttributeDelegate VigorDelegate;
 	VigorDelegate.BindStatic(GetVigorAttribute);
-	TagToAttributeMap.Add(GameplayTags.Attributes_Primary_Vigor, VigorDelegate);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Primary_Vigor, VigorDelegate);
 	
 	/** 派生属性 */
 	FAttributeDelegate MaxHealthDelegate;
 	MaxHealthDelegate.BindStatic(GetMaxHealthAttribute);
-	TagToAttributeMap.Add(GameplayTags.Attributes_Derived_MaxHealth, MaxHealthDelegate);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_MaxHealth, MaxHealthDelegate);
 	
 	FAttributeDelegate MaxManaDelegate;
 	MaxManaDelegate.BindStatic(GetMaxManaAttribute);
-	TagToAttributeMap.Add(GameplayTags.Attributes_Derived_MaxMana, MaxManaDelegate);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_MaxMana, MaxManaDelegate);
 	
 	FAttributeDelegate PhysicalAttackDelegate;
 	PhysicalAttackDelegate.BindStatic(GetPhysicalAttackAttribute);
-	TagToAttributeMap.Add(GameplayTags.Attributes_Derived_PhysicalAttack, PhysicalAttackDelegate);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_PhysicalAttack, PhysicalAttackDelegate);
 	
 	FAttributeDelegate MagicalAttackDelegate;
 	MagicalAttackDelegate.BindStatic(GetMagicalAttackAttribute);
-	TagToAttributeMap.Add(GameplayTags.Attributes_Derived_MagicalAttack, MagicalAttackDelegate);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_MagicalAttack, MagicalAttackDelegate);
 	
 	FAttributeDelegate ArmorDelegate;
 	ArmorDelegate.BindStatic(GetArmorAttribute);
-	TagToAttributeMap.Add(GameplayTags.Attributes_Derived_Armor, ArmorDelegate);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_Armor, ArmorDelegate);
 	
 	FAttributeDelegate MagicResistanceDelegate;
 	MagicResistanceDelegate.BindStatic(GetMagicResistanceAttribute);
-	TagToAttributeMap.Add(GameplayTags.Attributes_Derived_MagicResistance, MagicResistanceDelegate);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_MagicResistance, MagicResistanceDelegate);
 	
 	FAttributeDelegate CriticalChanceDelegate;
 	CriticalChanceDelegate.BindStatic(GetCriticalChanceAttribute);
-	TagToAttributeMap.Add(GameplayTags.Attributes_Derived_CriticalChance, CriticalChanceDelegate);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_CriticalChance, CriticalChanceDelegate);
 	
 	FAttributeDelegate HitChanceDelegate;
 	HitChanceDelegate.BindStatic(GetHitChanceAttribute);
-	TagToAttributeMap.Add(GameplayTags.Attributes_Derived_HitChance, HitChanceDelegate);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_HitChance, HitChanceDelegate);
 	
 	FAttributeDelegate DodgeChanceDelegate;
 	DodgeChanceDelegate.BindStatic(GetDodgeChanceAttribute);
-	TagToAttributeMap.Add(GameplayTags.Attributes_Derived_DodgeChance, DodgeChanceDelegate);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_DodgeChance, DodgeChanceDelegate);
 	
 	FAttributeDelegate AttackSpeedDelegate;
 	AttackSpeedDelegate.BindStatic(GetAttackSpeedAttribute);
-	TagToAttributeMap.Add(GameplayTags.Attributes_Derived_AttackSpeed, AttackSpeedDelegate);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_AttackSpeed, AttackSpeedDelegate);
 	
 	FAttributeDelegate CooldownReductionDelegate;
 	CooldownReductionDelegate.BindStatic(GetCooldownReductionAttribute);
-	TagToAttributeMap.Add(GameplayTags.Attributes_Derived_CooldownReduction, CooldownReductionDelegate);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_CooldownReduction, CooldownReductionDelegate);
 	
 	FAttributeDelegate HealthRegenDelegate;
 	HealthRegenDelegate.BindStatic(GetHealthRegenAttribute);
-	TagToAttributeMap.Add(GameplayTags.Attributes_Derived_HealthRegen, HealthRegenDelegate);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_HealthRegen, HealthRegenDelegate);
 	
 	FAttributeDelegate ManaRegenDelegate;
 	ManaRegenDelegate.BindStatic(GetManaRegenAttribute);
-	TagToAttributeMap.Add(GameplayTags.Attributes_Derived_ManaRegen, ManaRegenDelegate);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_ManaRegen, ManaRegenDelegate);
 	
 	FAttributeDelegate MoveSpeedDelegate;
 	MoveSpeedDelegate.BindStatic(GetMoveSpeedAttribute);
-	TagToAttributeMap.Add(GameplayTags.Attributes_Derived_MoveSpeed, MoveSpeedDelegate);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_MoveSpeed, MoveSpeedDelegate);
 }
 
 /**

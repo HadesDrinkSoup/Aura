@@ -141,4 +141,29 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 	GameplayTags.Attributes_Derived_MoveSpeed = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Attributes.Derived.MoveSpeed"),
 		FString(TEXT("移动速度，角色移动速率。影响走位/风筝/追击/逃跑效率。来源：Agility")));
+	
+	
+	GameplayTags.InputTag_LMB = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("InputTag.LMB"), 
+		FString(TEXT("鼠标左键输入标签")));
+	
+	GameplayTags.InputTag_RMB = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("InputTag.RMB"), 
+		FString(TEXT("鼠标右键键输入标签")));
+	
+	GameplayTags.InputTag_1 = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("InputTag.1"), 
+		FString(TEXT("数字1键输入标签")));
+	
+	GameplayTags.InputTag_2 = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("InputTag.2"), 
+		FString(TEXT("数字2键输入标签")));
+	
+	GameplayTags.InputTag_3 = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("InputTag.3"), 
+		FString(TEXT("数字3键输入标签")));
+	
+	GameplayTags.InputTag_4 = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("InputTag.4"), 
+		FString(TEXT("数字4键输入标签")));
 }

@@ -39,6 +39,14 @@ struct FAuraGameplayTags
 	FGameplayTag Attributes_Derived_MoveSpeed;         // 移动速度 — 受 Agility 影响，决定角色移动速度
 	FGameplayTag Attributes_Derived_HealthRegen;       // 生命恢复 — 受 Vigor + 等级 影响，决定每秒自动恢复的生命值
 	FGameplayTag Attributes_Derived_ManaRegen;         // 法力恢复 — 受 Intelligence + 等级 影响，决定每秒自动恢复的法力值
+	
+	
+	FGameplayTag InputTag_LMB;
+	FGameplayTag InputTag_RMB;
+	FGameplayTag InputTag_1;
+	FGameplayTag InputTag_2;
+	FGameplayTag InputTag_3;
+	FGameplayTag InputTag_4;
 
 private:
 	static FAuraGameplayTags GameplayTags;

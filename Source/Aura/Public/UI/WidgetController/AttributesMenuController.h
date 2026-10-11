@@ -8,6 +8,7 @@
 
 class UAttributesInfo;
 struct FAuraAttributeInfo;
+struct FGameplayTag;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAttributeInfoChangedDelegate, FAuraAttributeInfo, AttributeInfo);
 
 UCLASS()
@@ -24,6 +25,9 @@ public:
 protected:
 	/** 防止 BindCallbacksToDependencies 重复绑定 */
 	bool bCallbacksBound = false;
+
+	/** 根据标签查找并广播单个属性信息；数据资产或标签缺失时安全跳过 */
+	void BroadcastAttributeInfo(const FGameplayTag& AttributeTag) const;
 	
 	UPROPERTY(EditDefaultsOnly, Category="Attributes Information")
 	TObjectPtr<UAttributesInfo> AttributeInfo;

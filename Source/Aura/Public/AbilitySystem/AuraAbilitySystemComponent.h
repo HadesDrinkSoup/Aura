@@ -15,6 +15,8 @@ class AURA_API UAuraAbilitySystemComponent : public UAbilitySystemComponent
 public:
 	virtual void InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor) override;
 	
+	void AddCharacterAbilities(const TArray<TSubclassOf<UGameplayAbility>>& Abilities);
+	
 	FEffectAssetTagsDelegate EffectAssetTagsDelegate;
 	
 protected:

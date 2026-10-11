@@ -61,3 +61,9 @@ void AAuraCharacterBase::ApplyEffectToSelf(const TSubclassOf<UGameplayEffect> Ef
 		ASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
 	}
 }
+
+void AAuraCharacterBase::AddCharacterAbilities() const
+{
+	if (!HasAuthority()) return;
+	AuraAbilitySystemComponent->AddCharacterAbilities(StartupAbilities);
+}

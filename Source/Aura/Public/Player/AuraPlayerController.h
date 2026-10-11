@@ -15,6 +15,8 @@
 #include "GameFramework/PlayerController.h"
 #include "AuraPlayerController.generated.h"
 
+struct FGameplayTag;
+class UAuraInputConfig;
 class IEnemyInterface;
 class UInputMappingContext;
 class UInputAction;
@@ -57,7 +59,14 @@ private:
 	 */
 	void CursorTrace();
 
-
+	/**
+	 * 能力输入回调（由 BindAbilityActions 绑定，携带对应 GameplayTag）。
+	 * 三者在配置中的每个输入动作上分别绑定到 Started / Completed / Triggered 事件。
+	 */
+	void AbilityInputTagPressed(FGameplayTag InputTag);   // 按下（Started）
+	void AbilityInputTagReleased(FGameplayTag InputTag);  // 松开（Completed）
+	void AbilityInputTagHeld(FGameplayTag InputTag);      // 按住（Triggered）
+	
 protected:
 	/** Enhanced Input 映射上下文（含 MoveAction 等输入操作） */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
@@ -66,8 +75,13 @@ protected:
 	/** WASD / 摇杆移动输入操作 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	TObjectPtr<UInputAction> MoveAction;
+	
+	/** 输入配置数据资产：定义「输入动作 ↔ GameplayTag」映射，供 BindAbilityActions 批量绑定能力输入 */
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	TObjectPtr<UAuraInputConfig> AuraInputConfig;
 
 private:
+	
 	//IEnemyInterface 是原生 C++ 接口类，所以必须用原始指针 IEnemyInterface*
 	/** 上一帧光标下方的 IEnemyInterface Actor（用于高亮状态切换对比） */
 	IEnemyInterface* LastActor = nullptr;

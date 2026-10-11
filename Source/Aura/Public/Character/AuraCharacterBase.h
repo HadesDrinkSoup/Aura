@@ -7,6 +7,7 @@
 #include "GameFramework/Character.h"
 #include "AuraCharacterBase.generated.h"
 
+class UGameplayAbility;
 struct FGameplayEffectContextHandle;
 class UGameplayEffect;
 class UAuraAttributeSet;
@@ -24,14 +25,17 @@ protected:
 	virtual void InitActorInfo() {};
 	virtual void InitDefaultAttributes();
 
-	// Helper to create and apply a gameplay effect spec from a GameplayEffect class
+	// 帮助创建和应用GameplayEffect类中的游戏效果规范
 	static void ApplyEffectToSelf(TSubclassOf<UGameplayEffect> EffectClass, UAbilitySystemComponent* ASC, const FGameplayEffectContextHandle& EffectContext, float Level = 1.f);
+	
+	void AddCharacterAbilities() const;
 	
 	UPROPERTY(EditAnywhere, Category="Combat")
 	TObjectPtr<USkeletalMeshComponent> Weapon;
 	
 	UPROPERTY()
 	TObjectPtr<UAuraAbilitySystemComponent> AuraAbilitySystemComponent;
+	
 	UPROPERTY()
 	TObjectPtr<UAuraAttributeSet> AuraAttributeSet;
 	
@@ -43,4 +47,8 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Attributes")
 	TSubclassOf<UGameplayEffect> DerivedAttributes;
+	
+private:
+	UPROPERTY(EditAnywhere, Category="Abilities")
+	TArray<TSubclassOf<UGameplayAbility>> StartupAbilities;
 };
