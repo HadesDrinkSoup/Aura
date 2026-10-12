@@ -19,6 +19,7 @@ UAbilitySystemComponent* AAuraCharacterBase::GetAbilitySystemComponent() const
 
 void AAuraCharacterBase::InitDefaultAttributes()
 {
+	if (!HasAuthority()) return;
 	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
 	// Require ASC and at least one attribute set to apply
 	if (!ASC || (!PrimaryAttributes && !PoolAttributes && !DerivedAttributes)) return;
@@ -53,7 +54,7 @@ void AAuraCharacterBase::InitDefaultAttributes()
 
 void AAuraCharacterBase::ApplyEffectToSelf(const TSubclassOf<UGameplayEffect> EffectClass, UAbilitySystemComponent* ASC, const FGameplayEffectContextHandle& EffectContext, const float Level)
 {
-	if (!ASC || !EffectClass)return;
+	if (!ASC || !EffectClass) return;
 
 	const FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(EffectClass, Level, EffectContext);
 	if (SpecHandle.IsValid() && SpecHandle.Data.IsValid())

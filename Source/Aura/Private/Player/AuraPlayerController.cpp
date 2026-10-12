@@ -129,36 +129,16 @@ void AAuraPlayerController::CursorTrace()
 	CurrentActor = Cast<IEnemyInterface>(CursorHitResult.GetActor());
 	
 	// --- 高亮状态切换逻辑 ---
-	// 4 种情况：
-	//   Last=null,  Current=null  → 无操作
-	//   Last=null,  Current=A     → 高亮 A（光标首次进入敌人）
-	//   Last=A,     Current=null  → 取消高亮 A（光标离开敌人）
-	//   Last=A,     Current=A     → 无操作（仍在同一敌人上）
-	//   Last=A,     Current=B     → 取消 A，高亮 B（光标从一个敌人移到另一个）
-	
-	if (LastActor == nullptr)
+	// 仅当目标发生变化时才更新高亮：先取消旧目标，再高亮新目标
+	if (CurrentActor != LastActor)
 	{
-		if (CurrentActor != nullptr)
-		{
-			// 光标首次悬停到敌人上
-			CurrentActor->HighlightActor();
-		}
-	}
-	else  // LastActor != nullptr —— 上一帧光标下方有敌人
-	{
-		if (CurrentActor != nullptr)
-		{
-			// 光标仍在一个敌人上，检查是否切换了目标
-			if (LastActor != CurrentActor)
-			{
-				LastActor->UnHighlightActor();
-				CurrentActor->HighlightActor();
-			}
-			// 否则 LastActor == CurrentActor，同一目标，无需操作
-		}
-		else  // CurrentActor == nullptr —— 光标已移开，不再指向任何敌人
+		if (LastActor != nullptr)
 		{
 			LastActor->UnHighlightActor();
+		}
+		if (CurrentActor != nullptr)
+		{
+			CurrentActor->HighlightActor();
 		}
 	}
 }

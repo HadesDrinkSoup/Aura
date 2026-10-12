@@ -69,16 +69,17 @@ int32 AAuraCharacter::GetCharacterLevel()
 void AAuraCharacter::InitActorInfo()
 {
 	if (bActorInfoInitialized) return;
-	bActorInfoInitialized = true;
 
 	AAuraPlayerState* AuraPlayerState = GetPlayerState<AAuraPlayerState>();
-	check(AuraPlayerState);
+	if (AuraPlayerState == nullptr) return;
 
 	AuraAbilitySystemComponent = AuraPlayerState->GetAbilitySystemComponent();
 	AuraAbilitySystemComponent->InitAbilityActorInfo(AuraPlayerState, this);
 	AuraAttributeSet = AuraPlayerState->GetAttributeSet();
 	InitDefaultAttributes();
 
+	bActorInfoInitialized = true;
+	
 	// 初始化 UI
 	if (AAuraPlayerController* PC = Cast<AAuraPlayerController>(GetController()))
 	{
