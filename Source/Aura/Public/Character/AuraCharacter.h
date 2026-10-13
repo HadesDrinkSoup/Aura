@@ -16,11 +16,13 @@ public:
 	
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void OnRep_PlayerState() override;
+	virtual void PawnClientRestart() override;
 	
 	virtual int32 GetCharacterLevel() override;
 
 protected:
 	virtual void InitActorInfo() override;
+	void InitOverlayWidget() const;
 
 	/** 防止 PossessedBy 和 OnRep_PlayerState 重复初始化 */
 	bool bActorInfoInitialized = false;

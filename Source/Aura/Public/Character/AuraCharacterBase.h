@@ -7,7 +7,7 @@
 #include "GameFramework/Character.h"
 #include "AuraCharacterBase.generated.h"
 
-class UGameplayAbility;
+class UAuraGameplayAbility;
 struct FGameplayEffectContextHandle;
 class UGameplayEffect;
 class UAuraAttributeSet;
@@ -50,5 +50,5 @@ protected:
 	
 private:
 	UPROPERTY(EditAnywhere, Category="Abilities")
-	TArray<TSubclassOf<UGameplayAbility>> StartupAbilities;
+	TArray<TSubclassOf<UAuraGameplayAbility>> StartupAbilities;
 };

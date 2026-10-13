@@ -24,7 +24,7 @@ class UAbilitySystemComponent;
 UCLASS()
 class AURA_API AAuraPlayerState : public APlayerState, public IAbilitySystemInterface
 {
-	GENERATED_BODY()
+	GENERATED_BODY() 
 public:
 	AAuraPlayerState();
 	

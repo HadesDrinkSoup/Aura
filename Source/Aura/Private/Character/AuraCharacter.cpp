@@ -80,13 +80,29 @@ void AAuraCharacter::InitActorInfo()
 
 	bActorInfoInitialized = true;
 	
-	// 初始化 UI
-	if (AAuraPlayerController* PC = Cast<AAuraPlayerController>(GetController()))
+	// UI 初始化不在这里做：客户端 OnRep_PlayerState 触发时 Controller 可能尚未复制，
+	// 统一移到 PawnClientRestart（Controller 保证就绪）中。
+}
+
+void AAuraCharacter::PawnClientRestart()
+{
+	Super::PawnClientRestart();
+	// 本地玩家 Possess 完成后触发，此时 Controller / PlayerState 均已就绪
+	InitOverlayWidget();
+}
+
+void AAuraCharacter::InitOverlayWidget() const
+{
+	// 确保 GAS 已初始化、Controller 已就绪
+	if (!bActorInfoInitialized) return;
+
+	AAuraPlayerController* PC = Cast<AAuraPlayerController>(GetController());
+	if (!PC) return;
+
+	if (AAuraHUD* HUD = Cast<AAuraHUD>(PC->GetHUD()))
 	{
-		if (AAuraHUD* HUD = Cast<AAuraHUD>(PC->GetHUD()))
-		{
-			const FWidgetControllerParams Params(PC, AuraPlayerState, AuraAbilitySystemComponent, AuraAttributeSet);
-			HUD->InitOverlay(Params);
-		}
+		AAuraPlayerState* AuraPlayerState = GetPlayerState<AAuraPlayerState>();
+		const FWidgetControllerParams Params(PC, AuraPlayerState, AuraAbilitySystemComponent, AuraAttributeSet);
+		HUD->InitOverlay(Params);
 	}
 }
