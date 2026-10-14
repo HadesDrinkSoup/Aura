@@ -2,6 +2,8 @@
 
 
 #include "AuraAssetManager.h"
+
+#include "AbilitySystemGlobals.h"
 #include "AuraGamepalyTags.h"
 #include "Engine/Engine.h"
 
@@ -15,4 +17,6 @@ void UAuraAssetManager::StartInitialLoading()
 {
 	Super::StartInitialLoading();
 	FAuraGameplayTags::InitializeNativeGameplayTags();
+	//使用Taget数据所必需的
+	UAbilitySystemGlobals::Get().InitGlobalData();
 }
