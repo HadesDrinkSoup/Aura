@@ -62,5 +62,5 @@ void UAttributesMenuController::BroadcastAttributeInfo(const FGameplayTag& Attri
 	}
 
 	Info->AttributeValue = AttributeDelegate->Execute().GetNumericValue(AuraAttributeSet);
-	AttributeInfoChangedDelegate.Broadcast(*Info);
+	AttributeInfoChanged.Broadcast(*Info);
 }

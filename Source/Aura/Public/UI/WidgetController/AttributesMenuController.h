@@ -20,7 +20,7 @@ public:
 	virtual void BindCallbacksToDependencies() override;
 	
 	UPROPERTY(BlueprintAssignable, Category = "GAS|Attributes")
-	FOnAttributeInfoChangedDelegate AttributeInfoChangedDelegate;
+	FOnAttributeInfoChangedDelegate AttributeInfoChanged;
 
 protected:
 	/** 防止 BindCallbacksToDependencies 重复绑定 */

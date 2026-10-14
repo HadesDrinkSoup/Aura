@@ -42,21 +42,21 @@ public:
 
 	/** 生命值变化时广播的委托（蓝图绑定到 HealthGlobe 更新 UI） */
 	UPROPERTY(BlueprintAssignable, Category="GAS|Attributes")
-	FOnAttributeValueChangedDelegate OnHealthChangedDelegate;
+	FOnAttributeValueChangedDelegate OnHealthChanged;
 
 	/** 最大生命值变化时广播的委托（蓝图绑定到 HealthGlobe 更新进度条上限） */
 	UPROPERTY(BlueprintAssignable, Category="GAS|Attributes")
-	FOnAttributeValueChangedDelegate OnMaxHealthChangedDelegate;
+	FOnAttributeValueChangedDelegate OnMaxHealthChanged;
 
 	/** 魔法值变化时广播的委托 */
 	UPROPERTY(BlueprintAssignable, Category="GAS|Attributes")
-	FOnAttributeValueChangedDelegate OnManaChangedDelegate;
+	FOnAttributeValueChangedDelegate OnManaChanged;
 	
 	UPROPERTY(BlueprintAssignable, Category="GAS|Attributes")
-	FOnAttributeValueChangedDelegate OnMaxManaChangedDelegate;
+	FOnAttributeValueChangedDelegate OnMaxManaChanged;
 	
 	UPROPERTY(BlueprintAssignable, Category="GAS|Message")
-	FMessageWidgetRowDelegate MessageWidgetRowDelegate;
+	FMessageWidgetRowDelegate MessageWidgetRow;
 	
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="MessageWidgetData")

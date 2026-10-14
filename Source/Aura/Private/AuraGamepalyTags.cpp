@@ -166,4 +166,9 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 	GameplayTags.InputTag_4 = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("InputTag.4"), 
 		FString(TEXT("数字4键输入标签")));
+	
+	GameplayTags.Event_Montage_FireBall = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Event.Montage.FireBall"), 
+		FString(
+			TEXT("用于火球术动画通知")));
 }

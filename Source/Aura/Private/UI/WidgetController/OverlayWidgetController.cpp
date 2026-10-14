@@ -10,10 +10,10 @@ void UOverlayWidgetController::BroadCastInitialValues()
 	// 这对于正确显示 UI 初始状态至关重要：
 	//   - 如果不广播初始值，Widget 会显示默认的 0/0，直到第一次属性变化
 	//   - 广播后，立即显示正确的当前数值
-	OnHealthChangedDelegate.Broadcast(AuraAttributeSet->GetHealth(), -1.f);
-	OnMaxHealthChangedDelegate.Broadcast(AuraAttributeSet->GetMaxHealth(), -1.f);
-	OnManaChangedDelegate.Broadcast(AuraAttributeSet->GetMana(), -1.f);
-	OnMaxManaChangedDelegate.Broadcast(AuraAttributeSet->GetMaxMana(), -1.f);
+	OnHealthChanged.Broadcast(AuraAttributeSet->GetHealth(), -1.f);
+	OnMaxHealthChanged.Broadcast(AuraAttributeSet->GetMaxHealth(), -1.f);
+	OnManaChanged.Broadcast(AuraAttributeSet->GetMana(), -1.f);
+	OnMaxManaChanged.Broadcast(AuraAttributeSet->GetMaxMana(), -1.f);
 }
 
 void UOverlayWidgetController::BindCallbacksToDependencies()
@@ -23,22 +23,22 @@ void UOverlayWidgetController::BindCallbacksToDependencies()
 	AuraAbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AuraAttributeSet->GetHealthAttribute())
 		.AddLambda([this](const FOnAttributeChangeData& Data)
 		{
-			OnHealthChangedDelegate.Broadcast(Data.NewValue, Data.OldValue);
+			OnHealthChanged.Broadcast(Data.NewValue, Data.OldValue);
 		});
 	AuraAbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AuraAttributeSet->GetMaxHealthAttribute())
 		.AddLambda([this](const FOnAttributeChangeData& Data)
 		{
-			OnMaxHealthChangedDelegate.Broadcast(Data.NewValue, Data.OldValue);
+			OnMaxHealthChanged.Broadcast(Data.NewValue, Data.OldValue);
 		});
 	AuraAbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AuraAttributeSet->GetManaAttribute())
 		.AddLambda([this](const FOnAttributeChangeData& Data)
 		{
-			OnManaChangedDelegate.Broadcast(Data.NewValue, Data.OldValue);
+			OnManaChanged.Broadcast(Data.NewValue, Data.OldValue);
 		});
 	AuraAbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AuraAttributeSet->GetMaxManaAttribute())
 		.AddLambda([this](const FOnAttributeChangeData& Data)
 		{
-			OnMaxManaChangedDelegate.Broadcast(Data.NewValue, Data.OldValue);
+			OnMaxManaChanged.Broadcast(Data.NewValue, Data.OldValue);
 		});
 	AuraAbilitySystemComponent->EffectAssetTagsDelegate.AddLambda(
 		[this](const FGameplayTagContainer& AssetTags)
@@ -49,7 +49,7 @@ void UOverlayWidgetController::BindCallbacksToDependencies()
 				if (Tag.MatchesTag(MessageTag))
 				{
 					const FUIWidgetRow* Row = GetDataTableRowByTag<FUIWidgetRow>(MessageWidgetDataTable, Tag);
-					MessageWidgetRowDelegate.Broadcast(*Row);
+					MessageWidgetRow.Broadcast(*Row);
 				}
 			}
 		});

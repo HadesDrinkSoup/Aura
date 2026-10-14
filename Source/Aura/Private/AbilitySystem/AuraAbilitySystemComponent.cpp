@@ -17,7 +17,7 @@ void UAuraAbilitySystemComponent::AddCharacterAbilities(const TArray<TSubclassOf
 		FGameplayAbilitySpec AbilitySpec = FGameplayAbilitySpec(AbilityClass, 1);
 		if (const UAuraGameplayAbility* AuraAbility = CastChecked<UAuraGameplayAbility>(AbilitySpec.Ability))
 		{
-			AbilitySpec.DynamicAbilityTags.AddTag(AuraAbility->AbilityInputTag);
+			AbilitySpec.GetDynamicSpecSourceTags().AddTag(AuraAbility->AbilityInputTag);
 			GiveAbility(AbilitySpec);
 		}
 	} 
@@ -38,7 +38,7 @@ void UAuraAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& Inp
 	// 遍历所有已授予且可激活的能力，找到 DynamicAbilityTags 精确匹配 InputTag 的 Spec
 	for (FGameplayAbilitySpec& AbilitySpec : GetActivatableAbilities())
 	{
-		if (AbilitySpec.DynamicAbilityTags.HasTagExact(InputTag))
+		if (AbilitySpec.GetDynamicSpecSourceTags().HasTagExact(InputTag))
 		{
 			// 标记「按下」并派发给能力实例（基类已处理 InstancedPerExecution 的多实例遍历）
 			AbilitySpecInputPressed(AbilitySpec);
@@ -57,7 +57,7 @@ void UAuraAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag& In
 
 	for (FGameplayAbilitySpec& AbilitySpec : GetActivatableAbilities())
 	{
-		if (AbilitySpec.DynamicAbilityTags.HasTagExact(InputTag))
+		if (AbilitySpec.GetDynamicSpecSourceTags().HasTagExact(InputTag))
 		{
 			// 松开 → 基类将 InputPressed 置 false，并派发 InputReleased 给能力实例
 			// （蓄力类技能通常在松开的瞬间触发真正施放）
@@ -72,7 +72,7 @@ void UAuraAbilitySystemComponent::AbilityInputTagHeld(const FGameplayTag& InputT
 
 	for (FGameplayAbilitySpec& AbilitySpec : GetActivatableAbilities())
 	{
-		if (AbilitySpec.DynamicAbilityTags.HasTagExact(InputTag))
+		if (AbilitySpec.GetDynamicSpecSourceTags().HasTagExact(InputTag))
 		{
 			// 持续按住 → 同样标记按下状态
 			AbilitySpecInputPressed(AbilitySpec);
