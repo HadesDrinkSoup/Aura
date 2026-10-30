@@ -2,12 +2,13 @@
 
 #include "Actor/AuraProjectile.h"
 
-#include "Components/ArrowComponent.h"
+#include "AbilitySystemComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/AudioComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "NiagaraFunctionLibrary.h"
+#include "Aura/Aura.h"
 
 AAuraProjectile::AAuraProjectile()
 {
@@ -18,6 +19,7 @@ AAuraProjectile::AAuraProjectile()
 	// 1) 先创建根组件 SphereComponent（修复原来先创建 Arrow 再创建 Sphere 的问题）
 	SphereComponent = CreateDefaultSubobject<USphereComponent>("SphereComponent");
 	SetRootComponent(SphereComponent);
+	SphereComponent->SetCollisionObjectType(ECC_Projectile);
 	SphereComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	SphereComponent->SetCollisionObjectType(ECC_WorldDynamic);
 	SphereComponent->SetCollisionResponseToAllChannels(ECR_Ignore);
@@ -33,11 +35,7 @@ AAuraProjectile::AAuraProjectile()
 	ProjectileMovementComponent->bRotationFollowsVelocity = true;
 	ProjectileMovementComponent->SetUpdatedComponent(SphereComponent);
 
-	// 3) Arrow 作为可视化辅助
-	ArrowComponent = CreateDefaultSubobject<UArrowComponent>("ArrowComponent");
-	ArrowComponent->SetupAttachment(SphereComponent);
-
-	// 4) 兜底生命周期，防止无限飞行造成泄漏
+	// 3) 兜底生命周期，防止无限飞行造成泄漏
 	InitialLifeSpan = 3.f;
 }
 
@@ -81,7 +79,7 @@ void AAuraProjectile::OnSphereComponentBeginOverlap(UPrimitiveComponent* Overlap
 	{
 		return;
 	}
-
+	
 	// 命中点与法线（部分情况 SweepResult 为空则用 Actor 位置兜底）
 	FVector ImpactLocation = GetActorLocation();
 	FVector ImpactNormal   = -GetActorForwardVector();
@@ -97,7 +95,12 @@ void AAuraProjectile::OnSphereComponentBeginOverlap(UPrimitiveComponent* Overlap
 
 	// 广播所有端：播放特效/音效、停止循环音效
 	Multicast_OnHit(ImpactLocation, ImpactNormal);
-
+	
+	if (UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OtherActor))
+	{
+		TargetASC->ApplyGameplayEffectSpecToSelf(*DamageEffectSpecHandle.Data.Get());
+	}
+	
 	// 服务端销毁（会复制到客户端销毁 Actor）
 	Destroy();
 }

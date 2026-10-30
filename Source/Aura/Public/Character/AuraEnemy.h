@@ -14,7 +14,6 @@
 
 #include "CoreMinimal.h"
 #include "Character/AuraCharacterBase.h"
-#include "Interface/CombatInterface.h"
 #include "Interface/EnemyInterface.h"
 #include "AuraEnemy.generated.h"
 

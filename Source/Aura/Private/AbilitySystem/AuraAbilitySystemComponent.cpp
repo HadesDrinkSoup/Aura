@@ -3,6 +3,7 @@
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AuraGamepalyTags.h"
 #include "AbilitySystem/Abilities/AuraGameplayAbility.h"
+#include "AbilitySystem/Abilities/AuraProjectileSpell.h"
 
 void UAuraAbilitySystemComponent::InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor)
 {
@@ -91,3 +92,27 @@ void UAuraAbilitySystemComponent::ClientEffectApplied_Implementation(UAbilitySys
 	EffectSpec.GetAllAssetTags(TagContainer);
 	EffectAssetTagsDelegate.Broadcast(TagContainer);
 }
+
+void UAuraAbilitySystemComponent::ServerSpawnProjectile_Implementation(const FGameplayAbilitySpecHandle AbilitySpecHandle, const FVector& ProjectileTargetLocation)
+{
+	// ---------------------------------------------------------------------
+	// 服务器端校验：客户端只负责"请求"，真正的生成永远由服务器执行。
+	// 1) 找到请求所对应的技能 Spec；
+	// 2) 只接受服务器上正在激活中的技能实例（客户端无法伪造一次没有在服务器上激活的施法）；
+	// 3) 交给技能自己生成，生成逻辑只保留在 UAuraProjectileSpell 一处。
+	// ---------------------------------------------------------------------
+	const FGameplayAbilitySpec* AbilitySpec = FindAbilitySpecFromHandle(AbilitySpecHandle);
+	if (!AbilitySpec) return;
+
+	// InstancedPerExecution 下一个 Spec 可能同时存在多个实例，挑出真正处于激活状态的那个
+	for (UGameplayAbility* AbilityInstance : AbilitySpec->GetAbilityInstances())
+	{
+		const UAuraProjectileSpell* ProjectileSpell = Cast<UAuraProjectileSpell>(AbilityInstance);
+		if (ProjectileSpell && ProjectileSpell->IsActive())
+		{
+			ProjectileSpell->SpawnProjectileOnServer(ProjectileTargetLocation);
+			return;
+		}
+	}
+}
+
