@@ -52,7 +52,10 @@ public:
 	
 	/** 在属性改变前进行钳制 */
 	virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
-	
+
+	/** 属性改变后回调：MaxHealth / MaxMana 变化时重新钳制 Health / Mana（Infinite 派生 GE 走这条路径） */
+	virtual void PostAttributeChange(const FGameplayAttribute& Attribute, float OldValue, float NewValue) override;
+
 	virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data) override;
 	
 	TMap<FGameplayTag, FAttributeDelegate> TagsToAttributesMap;

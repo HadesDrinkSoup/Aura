@@ -2,6 +2,7 @@
 
 #include "Character/AuraCharacterBase.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
+#include "GameplayEffect.h"
 #include "Aura/Aura.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -57,6 +58,15 @@ void AAuraCharacterBase::InitDefaultAttributes()
 	
 	if (DerivedAttributes)
 	{
+		// 派生属性 GE 是 Infinite（主属性变化时由 GAS 自动重算），
+		// 重复初始化（例如重生）时先移除旧实例，否则修正会叠加。
+		FGameplayEffectQuery Query;
+		Query.EffectDefinition = DerivedAttributes;
+		for (const FActiveGameplayEffectHandle& Handle : ASC->GetActiveEffects(Query))
+		{
+			ASC->RemoveActiveGameplayEffect(Handle);
+		}
+
 		ApplyEffectToSelf(DerivedAttributes, ASC, EffectContextHandle);
 	}
 	

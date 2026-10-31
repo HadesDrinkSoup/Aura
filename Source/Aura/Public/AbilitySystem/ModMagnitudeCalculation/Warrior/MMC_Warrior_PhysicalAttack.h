@@ -1,0 +1,23 @@
+// Study Game Ability System _Hades
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "AbilitySystem/ModMagnitudeCalculation/Common/AuraMMCBase.h"
+#include "MMC_Warrior_PhysicalAttack.generated.h"
+
+/**
+ * 战士 · 物理攻击力
+ * 公式：12 + 力量 × 3.2 + 敏捷 × 0.4 + 等级 × 1.5（钳制：最低 0）
+ * 核心输出：力量收益三职业最高。
+ */
+UCLASS()
+class AURA_API UMMC_Warrior_PhysicalAttack : public UAuraMMCBase
+{
+	GENERATED_BODY()
+
+public:
+	UMMC_Warrior_PhysicalAttack();
+
+	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
+};
