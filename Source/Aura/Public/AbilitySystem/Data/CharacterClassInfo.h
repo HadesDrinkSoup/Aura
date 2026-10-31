@@ -49,10 +49,13 @@ struct FCharacterClassDefaultInfo
  * 职业配置表 —— 所有角色属性的唯一数据源
  *
  * 使用方式：
- *  1. 在 AAuraGameModeBase 上挂一个本资产（DA_CharacterClassInfo）。
+ *  1. 在 Project Settings → Game → Aura Game Settings 里指向本资产（DA_CharacterClassInfo）。
  *  2. 角色 / 敌人 BP 只需要设置 `CharacterClass`（以及敌人的 Level），属性 GE 从这里下发。
  *  3. 敌人个体差异（精英、首领、特殊装备）不要复制整套 GE，而是在 BP 的
  *     `AdditionalInitialEffects` 里追加修正 GE。
+ *
+ * 注意：本表是「数值层」，玩家和敌人共用；选人界面的展示信息（名字 / 立绘 / PawnClass）
+ * 不在这里，见 UPlayerCharacterDefinition。
  */
 UCLASS()
 class AURA_API UCharacterClassInfo : public UDataAsset

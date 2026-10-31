@@ -24,6 +24,10 @@ public:
 	AAuraCharacterBase();
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	virtual FVector GetCombatSocketLocation() override;
+
+	/** 职业的读写：BP 里配的是默认值，战斗关由 GameMode 在 Possess 之前按选人结果覆盖 */
+	void SetCharacterClass(ECharacterClass InClass) { CharacterClass = InClass; }
+	ECharacterClass GetCharacterClass() const { return CharacterClass; }
 	
 protected:
 	virtual void InitActorInfo() {};
@@ -54,7 +58,7 @@ protected:
 
 	/**
 	 * 职业：决定使用哪套属性 GE 与默认技能。
-	 * 属性 GE 本身在 AAuraGameModeBase 的 DA_CharacterClassInfo 里配置。
+	 * 属性 GE 本身在 Project Settings → Game → Aura Game Settings 的 DA_CharacterClassInfo 里配置。
 	 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Character Class")
 	ECharacterClass CharacterClass = ECharacterClass::Elementalist;

@@ -2,18 +2,20 @@
 
 > 目标：**角色 BP 只声明「我是哪个职业、几级」**，属性 GE 与默认技能统一从数据资产下发。
 > 新增一个敌人 = 新建一个 BP + 选职业 + 填等级，不再复制/拖拽 3 个 GE。
+>
+> 本表只描述**数值**，敌我共用；「可选角色 / 选人界面」的展示层见 [CharacterSelection.md](CharacterSelection.md)。
 
 ## 1. 数据流
 
 ```text
-Bp_AuraGameMode
+Project Settings → Game → Aura Game Settings   (UAuraGameSettings)
 └── CharacterClassInfo ──────────────┐
                                      ▼
-                        DA_CharacterClassInfo (UCharacterClassInfo)
-                        └── TMap<ECharacterClass, FCharacterClassDefaultInfo>
-                              ├── Elementalist → Primary / Derived / Pool GE + StartupAbilities
-                              ├── Warrior      → ...
-                              └── Ranger       → ...
+                       DA_CharacterClassInfo (UCharacterClassInfo)
+                       └── TMap<ECharacterClass, FCharacterClassDefaultInfo>
+                             ├── Elementalist → Primary / Derived / Pool GE + StartupAbilities
+                             ├── Warrior      → ...
+                             └── Ranger       → ...
 
 Bp_AuraCharacter / Bp_Goblin_* (AAuraCharacterBase)
 ├── CharacterClass = Elementalist / Warrior / Ranger   ← 唯一的职业入口
@@ -24,11 +26,14 @@ Bp_AuraCharacter / Bp_Goblin_* (AAuraCharacterBase)
 
 初始化时 `AAuraCharacterBase::InitDefaultAttributes`：
 
-1. 从 GameMode 拿 `DA_CharacterClassInfo`
+1. 通过 `UAuraAbilitySystemLibrary::GetCharacterClassInfo` 读 Project Settings 里的 `DA_CharacterClassInfo`
 2. 按 `CharacterClass` 查 `FCharacterClassDefaultInfo`
 3. 依次施加 `Primary → Derived → AdditionalInitialEffects → Pool`
    （个体 GE 放在 Pool 之前，Pool 才能用最终的 MaxHealth/MaxMana 把生命/法力填满）
 4. 派生的技能：`StartupAbilities`（BP）+ 职业的 `StartupAbilities` 合并去重后一起授予
+
+> 玩家角色的 `CharacterClass` 可以在运行时被覆盖：战斗关的 `AAuraGameModeBase` 会在
+> spawn 之后、`PossessedBy` 之前，按选人结果调用 `SetCharacterClass()`。
 
 ## 2. 解析优先级
 
@@ -60,18 +65,20 @@ GE 等级统一取 `GetCharacterLevel()`（最低 1），所以主要属性 GE �
 4. **数据**：`DA_CharacterClassInfo` → `Character Class Information` 加一条 `Paladin → 3 个 GE`，保存。
 5. 角色 BP 选新职业即可；不需要重新接线任何 BP。
 
-## 5. 为什么放在 GameMode
+## 5. 为什么放在 Project Settings（而不是 GameMode）
 
-- **单一数据源**：职业数值只在一处维护，改一个 GE 全职业生效。
-- **服务端专用**：只在 `InitDefaultAttributes`（HasAuthority）和授予技能时读取，客户端不需要。
-- 如果以后想做「编辑器里随时可查/可改」的项目级配置，也可以把同一个 `UCharacterClassInfo` 挂到 `UDeveloperSettings`（Project Settings）上，读取路径换成 `GetDefault<U...>()`。
+- **与关卡解耦**：数据不属于某个关卡。菜单关 / 战斗关是两张地图、两个 GameMode，放 GameMode 就得配两遍。
+- **客户端可读**：`UGameplayStatics::GetGameMode()` 在客户端返回 `nullptr`，放在 GameMode 上，客户端 UI（选人界面）永远读不到职业表；`UDeveloperSettings` 是配置对象，哪里都能读。
+- **单一数据源**：职业数值只在一处维护，改一个 GE 全职业生效；`AAuraGameModeBase` 也因此只剩「创建 Pawn」一件事。
+- 读取路径统一收在 `UAuraAbilitySystemLibrary::GetCharacterClassInfo`，其它代码不直接依赖配置类。
 
 ## 6. 当前项目的接线状态
 
 | 项 | 状态 |
 | --- | --- |
 | `DA_CharacterClassInfo` | 已填入 Elementalist / Warrior / Ranger 三套 GE |
-| `Bp_AuraGameMode.CharacterClassInfo` | 已指向 `DA_CharacterClassInfo` |
+| `DefaultGame.ini` → `[/Script/Aura.AuraGameSettings]` | 已指向 `DA_CharacterClassInfo` |
+| `Bp_AuraGameMode.CharacterClassInfo` | 该属性已从 `AAuraGameModeBase` 删除；BP 里残留的旧值会被忽略 |
 | `Bp_AuraCharacter` | `Elementalist`，BP 上的 GE 覆盖已清空 |
 | `Bp_Goblin_Slingshot` | `Ranger`，覆盖已清空 |
 | `Bp_Goblin_Spear` | `Warrior`，覆盖已清空 |

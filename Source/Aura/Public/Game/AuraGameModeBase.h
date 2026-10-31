@@ -6,13 +6,13 @@
 #include "GameFramework/GameModeBase.h"
 #include "AuraGameModeBase.generated.h"
 
-class UCharacterClassInfo;
-
 /**
- * 游戏模式
+ * 战斗关的游戏模式
  *
- * 这里挂载全局职业配置表：所有角色 / 敌人的属性 GE 与默认技能都从它读取，
- * 新建敌人时只需要在 BP 里选职业 + 填等级，不必再逐个拖 GE。
+ * 职责只有一件：**按本局选人结果创建并初始化玩家 Pawn**。
+ * 全局静态数据（职业表、可选角色名单）在 UAuraGameSettings 里；
+ * 本局选择（玩家选了哪个角色）在 UAuraCharacterSelectionSubsystem 里。
+ * 因此菜单关不需要继承本类，也不必重复配置任何数据资产。
  */
 UCLASS()
 class AURA_API AAuraGameModeBase : public AGameModeBase
@@ -20,9 +20,12 @@ class AURA_API AAuraGameModeBase : public AGameModeBase
 	GENERATED_BODY()
 
 public:
-	/** 全局职业配置表（DA_CharacterClassInfo） */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character Class Defaults")
-	TObjectPtr<UCharacterClassInfo> CharacterClassInfo;
+	/** 按选人结果返回 Pawn 类；没选过则回退到 BP 上配的 DefaultPawnClass */
+	virtual UClass* GetDefaultPawnClassForController_Implementation(AController* InController) override;
 
-	UCharacterClassInfo* GetCharacterClassInfo() const { return CharacterClassInfo; }
+	/**
+	 * spawn 完成、Possess 之前，把选中的职业写到 Pawn 上。
+	 * 这样随后的 PossessedBy → InitActorInfo → InitDefaultAttributes 才能按正确职业下发 GE。
+	 */
+	virtual APawn* SpawnDefaultPawnAtTransform_Implementation(AController* NewPlayer, const FTransform& SpawnTransform) override;
 };
