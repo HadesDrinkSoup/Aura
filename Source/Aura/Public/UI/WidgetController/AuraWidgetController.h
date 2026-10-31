@@ -11,6 +11,10 @@ class UAuraAbilitySystemComponent;
 class AAuraPlayerState;
 class AAuraPlayerController;
 
+/** 浮点属性值变化委托：NewValue — 变化后的属性值，OldValue — 变化前的属性值 */
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAttributeValueChangedDelegate, float, NewValue, float, OldValue);
+
+
 /**
  * WidgetController 初始化参数结构体
  *

@@ -17,6 +17,8 @@
 #include "Interface/EnemyInterface.h"
 #include "AuraEnemy.generated.h"
 
+class UEnemyHealthBarWidgetController;
+class UWidgetComponent;
 /**
  * 敌方角色 —— 可被玩家光标检测并高亮
  *
@@ -43,6 +45,19 @@ public:
 protected:
 	virtual void InitActorInfo() override;
 	
+	/** 创建并初始化敌人血条的 WidgetController（每个敌人生成一个独立实例） */
+	virtual void InitHealthBar();
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "Class Default ")
 	int32 Level = 1;
+	
+	UPROPERTY(EditDefaultsOnly, Category= "Class Default ")
+	TObjectPtr<UWidgetComponent> HealthBar;
+	
+	UPROPERTY(EditDefaultsOnly, Category= "Class Default ")
+	TSubclassOf<UEnemyHealthBarWidgetController> HealthBarControllerClass;
+	
+	/** 本敌人血条的 WidgetController 实例（缓存引用防止被 GC 回收） */
+	UPROPERTY()
+	TObjectPtr<UEnemyHealthBarWidgetController> HealthBarController;
 };
