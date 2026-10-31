@@ -20,4 +20,13 @@ public:
 	UMMC_Elementalist_MagicResistance();
 
 	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
+
+private:
+	// 元素法师 · 魔法抗性：3 + 活力 × 0.6 + 智力 × 1.2 + 等级 × 0.4
+	// 智力兼顾魔抗，法系内战中抗性最好。
+	static constexpr float BaseMagicResistance = 3.f;
+
+	static constexpr float VigorCoefficient = 0.6f;
+	static constexpr float IntelligenceCoefficient = 1.2f;
+	static constexpr float LevelCoefficient = 0.4f;
 };

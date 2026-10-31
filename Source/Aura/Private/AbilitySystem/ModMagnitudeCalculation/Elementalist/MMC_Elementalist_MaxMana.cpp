@@ -3,17 +3,6 @@
 #include "AbilitySystem/ModMagnitudeCalculation/Elementalist/MMC_Elementalist_MaxMana.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 
-namespace
-{
-	// 元素法师 · 最大法力值：120 + 智力 × 15 + 活力 × 2 + 等级 × 9
-	// 法力池最大，智力收益最高，支撑长时间施法。
-	constexpr float BaseMana = 120.f;
-
-	constexpr float IntelligenceCoefficient = 15.f;
-	constexpr float VigorCoefficient = 2.f;
-	constexpr float LevelCoefficient = 9.f;
-}
-
 UMMC_Elementalist_MaxMana::UMMC_Elementalist_MaxMana()
 {
 	CaptureTargetAttributes(UAuraAttributeSet::GetIntelligenceAttribute(),

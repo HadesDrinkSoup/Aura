@@ -20,4 +20,12 @@ public:
 	UMMC_Ranger_HealthRegen();
 
 	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
+
+private:
+	// 游侠 · 生命恢复：0.8 + 活力 × 0.1 + 等级 × 0.04
+	// 回血中等，续航依赖脱战与闪避。
+	static constexpr float BaseHealthRegen = 0.8f;
+
+	static constexpr float VigorCoefficient = 0.1f;
+	static constexpr float LevelCoefficient = 0.04f;
 };

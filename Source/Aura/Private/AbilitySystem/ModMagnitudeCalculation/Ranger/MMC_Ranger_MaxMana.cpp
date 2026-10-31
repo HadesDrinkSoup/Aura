@@ -3,17 +3,6 @@
 #include "AbilitySystem/ModMagnitudeCalculation/Ranger/MMC_Ranger_MaxMana.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 
-namespace
-{
-	// 游侠 · 最大法力值：55 + 智力 × 6.5 + 活力 × 1.5 + 等级 × 4.5
-	// 法力中等，足以支撑标记与位移类技能。
-	constexpr float BaseMana = 55.f;
-
-	constexpr float IntelligenceCoefficient = 6.5f;
-	constexpr float VigorCoefficient = 1.5f;
-	constexpr float LevelCoefficient = 4.5f;
-}
-
 UMMC_Ranger_MaxMana::UMMC_Ranger_MaxMana()
 {
 	CaptureTargetAttributes(UAuraAttributeSet::GetIntelligenceAttribute(),

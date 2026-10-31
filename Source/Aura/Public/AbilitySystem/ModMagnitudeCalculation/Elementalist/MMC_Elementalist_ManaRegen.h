@@ -20,4 +20,12 @@ public:
 	UMMC_Elementalist_ManaRegen();
 
 	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
+
+private:
+	// 元素法师 · 法力恢复：3 + 智力 × 0.3 + 等级 × 0.1
+	// 回蓝核心职业，支撑高频技能循环。
+	static constexpr float BaseManaRegen = 3.f;
+
+	static constexpr float IntelligenceCoefficient = 0.3f;
+	static constexpr float LevelCoefficient = 0.1f;
 };

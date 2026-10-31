@@ -3,17 +3,6 @@
 #include "AbilitySystem/ModMagnitudeCalculation/Warrior/MMC_Warrior_MaxMana.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 
-namespace
-{
-	// 战士 · 最大法力值：25 + 智力 × 3.5 + 活力 × 1 + 等级 × 2.5
-	// 法力池最小，只够支撑少量战技。
-	constexpr float BaseMana = 25.f;
-
-	constexpr float IntelligenceCoefficient = 3.5f;
-	constexpr float VigorCoefficient = 1.f;
-	constexpr float LevelCoefficient = 2.5f;
-}
-
 UMMC_Warrior_MaxMana::UMMC_Warrior_MaxMana()
 {
 	CaptureTargetAttributes(UAuraAttributeSet::GetIntelligenceAttribute(),

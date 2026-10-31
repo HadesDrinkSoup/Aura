@@ -20,4 +20,12 @@ public:
 	UMMC_Warrior_MagicalAttack();
 
 	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
+
+private:
+	// 战士 · 魔法攻击力：2 + 智力 × 0.8 + 等级 × 0.3
+	// 几乎无魔法输出，智力收益极低。
+	static constexpr float BaseMagicalAttack = 2.f;
+
+	static constexpr float IntelligenceCoefficient = 0.8f;
+	static constexpr float LevelCoefficient = 0.3f;
 };

@@ -20,4 +20,13 @@ public:
 	UMMC_Ranger_ManaRegen();
 
 	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
+
+private:
+	// 游侠 · 法力恢复：1 + 智力 × 0.12 + 敏捷 × 0.04 + 等级 × 0.04
+	// 回蓝中等，敏捷提供少量额外回复。
+	static constexpr float BaseManaRegen = 1.f;
+
+	static constexpr float IntelligenceCoefficient = 0.12f;
+	static constexpr float AgilityCoefficient = 0.04f;
+	static constexpr float LevelCoefficient = 0.04f;
 };

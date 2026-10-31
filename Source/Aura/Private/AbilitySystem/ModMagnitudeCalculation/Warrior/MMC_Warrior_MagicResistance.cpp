@@ -3,17 +3,6 @@
 #include "AbilitySystem/ModMagnitudeCalculation/Warrior/MMC_Warrior_MagicResistance.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 
-namespace
-{
-	// 战士 · 魔法抗性：1 + 活力 × 0.8 + 智力 × 0.15 + 等级 × 0.15
-	// 魔抗偏低，需要装备弥补法术承伤。
-	constexpr float BaseMagicResistance = 1.f;
-
-	constexpr float VigorCoefficient = 0.8f;
-	constexpr float IntelligenceCoefficient = 0.15f;
-	constexpr float LevelCoefficient = 0.15f;
-}
-
 UMMC_Warrior_MagicResistance::UMMC_Warrior_MagicResistance()
 {
 	CaptureTargetAttributes(UAuraAttributeSet::GetVigorAttribute(),

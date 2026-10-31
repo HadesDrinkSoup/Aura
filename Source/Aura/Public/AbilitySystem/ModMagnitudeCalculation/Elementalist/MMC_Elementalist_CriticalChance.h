@@ -20,4 +20,12 @@ public:
 	UMMC_Elementalist_CriticalChance();
 
 	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
+
+private:
+	// 元素法师 · 暴击几率：5 + 智力 × 0.1 + 敏捷 × 0.05
+	// 暴击主要来自智力，敏捷只提供少量补充。
+	static constexpr float BaseCriticalChance = 5.f;
+
+	static constexpr float IntelligenceCoefficient = 0.1f;
+	static constexpr float AgilityCoefficient = 0.05f;
 };

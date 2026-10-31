@@ -3,16 +3,6 @@
 #include "AbilitySystem/ModMagnitudeCalculation/Warrior/MMC_Warrior_HitChance.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 
-namespace
-{
-	// 战士 · 命中几率：82 + 敏捷 × 0.08 + 等级 × 0.15
-	// 命中稳定偏高，保证近战技能不落空。
-	constexpr float BaseHitChance = 82.f;
-
-	constexpr float AgilityCoefficient = 0.08f;
-	constexpr float LevelCoefficient = 0.15f;
-}
-
 UMMC_Warrior_HitChance::UMMC_Warrior_HitChance()
 {
 	CaptureTargetAttribute(UAuraAttributeSet::GetAgilityAttribute());

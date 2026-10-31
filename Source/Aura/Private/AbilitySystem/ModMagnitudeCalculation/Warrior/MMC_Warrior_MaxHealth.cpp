@@ -3,17 +3,6 @@
 #include "AbilitySystem/ModMagnitudeCalculation/Warrior/MMC_Warrior_MaxHealth.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 
-namespace
-{
-	// 战士 · 最大生命值：140 + 活力 × 15 + 力量 × 9 + 等级 × 15
-	// 血量最高：活力与力量双收益，是前排承伤的核心。
-	constexpr float BaseHealth = 140.f;
-
-	constexpr float VigorCoefficient = 15.f;
-	constexpr float StrengthCoefficient = 9.f;
-	constexpr float LevelCoefficient = 15.f;
-}
-
 UMMC_Warrior_MaxHealth::UMMC_Warrior_MaxHealth()
 {
 	CaptureTargetAttributes(UAuraAttributeSet::GetVigorAttribute(),

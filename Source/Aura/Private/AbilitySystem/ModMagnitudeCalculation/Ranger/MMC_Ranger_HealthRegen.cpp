@@ -3,16 +3,6 @@
 #include "AbilitySystem/ModMagnitudeCalculation/Ranger/MMC_Ranger_HealthRegen.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 
-namespace
-{
-	// 游侠 · 生命恢复：0.8 + 活力 × 0.1 + 等级 × 0.04
-	// 回血中等，续航依赖脱战与闪避。
-	constexpr float BaseHealthRegen = 0.8f;
-
-	constexpr float VigorCoefficient = 0.1f;
-	constexpr float LevelCoefficient = 0.04f;
-}
-
 UMMC_Ranger_HealthRegen::UMMC_Ranger_HealthRegen()
 {
 	CaptureTargetAttribute(UAuraAttributeSet::GetVigorAttribute());

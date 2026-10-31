@@ -3,16 +3,6 @@
 #include "AbilitySystem/ModMagnitudeCalculation/Warrior/MMC_Warrior_AttackSpeed.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 
-namespace
-{
-	// 战士 · 攻击速度：100 + 敏捷 × 0.2 + 等级 × 0.1
-	// 攻速中等，重视单次伤害而非攻击频率。
-	constexpr float BaseAttackSpeed = 100.f;
-
-	constexpr float AgilityCoefficient = 0.2f;
-	constexpr float LevelCoefficient = 0.1f;
-}
-
 UMMC_Warrior_AttackSpeed::UMMC_Warrior_AttackSpeed()
 {
 	CaptureTargetAttribute(UAuraAttributeSet::GetAgilityAttribute());

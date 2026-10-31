@@ -3,16 +3,6 @@
 #include "AbilitySystem/ModMagnitudeCalculation/Elementalist/MMC_Elementalist_ManaRegen.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 
-namespace
-{
-	// 元素法师 · 法力恢复：3 + 智力 × 0.3 + 等级 × 0.1
-	// 回蓝核心职业，支撑高频技能循环。
-	constexpr float BaseManaRegen = 3.f;
-
-	constexpr float IntelligenceCoefficient = 0.3f;
-	constexpr float LevelCoefficient = 0.1f;
-}
-
 UMMC_Elementalist_ManaRegen::UMMC_Elementalist_ManaRegen()
 {
 	CaptureTargetAttribute(UAuraAttributeSet::GetIntelligenceAttribute());

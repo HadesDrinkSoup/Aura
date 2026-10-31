@@ -3,17 +3,6 @@
 #include "AbilitySystem/ModMagnitudeCalculation/Ranger/MMC_Ranger_MagicResistance.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 
-namespace
-{
-	// 游侠 · 魔法抗性：2 + 活力 × 0.5 + 智力 × 0.5 + 等级 × 0.25
-	// 魔抗中等，活力与智力均衡提供。
-	constexpr float BaseMagicResistance = 2.f;
-
-	constexpr float VigorCoefficient = 0.5f;
-	constexpr float IntelligenceCoefficient = 0.5f;
-	constexpr float LevelCoefficient = 0.25f;
-}
-
 UMMC_Ranger_MagicResistance::UMMC_Ranger_MagicResistance()
 {
 	CaptureTargetAttributes(UAuraAttributeSet::GetVigorAttribute(),

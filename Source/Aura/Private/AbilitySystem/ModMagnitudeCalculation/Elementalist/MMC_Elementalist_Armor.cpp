@@ -3,17 +3,6 @@
 #include "AbilitySystem/ModMagnitudeCalculation/Elementalist/MMC_Elementalist_Armor.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 
-namespace
-{
-	// 元素法师 · 护甲：0 + 活力 × 0.8 + 力量 × 0.2 + 等级 × 0.15
-	// 基础护甲为 0，只能获得极低的物理减免。
-	constexpr float BaseArmor = 0.f;
-
-	constexpr float VigorCoefficient = 0.8f;
-	constexpr float StrengthCoefficient = 0.2f;
-	constexpr float LevelCoefficient = 0.15f;
-}
-
 UMMC_Elementalist_Armor::UMMC_Elementalist_Armor()
 {
 	CaptureTargetAttributes(UAuraAttributeSet::GetVigorAttribute(),

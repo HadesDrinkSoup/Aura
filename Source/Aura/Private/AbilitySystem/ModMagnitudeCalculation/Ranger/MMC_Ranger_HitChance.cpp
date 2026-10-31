@@ -3,16 +3,6 @@
 #include "AbilitySystem/ModMagnitudeCalculation/Ranger/MMC_Ranger_HitChance.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 
-namespace
-{
-	// 游侠 · 命中几率：88 + 敏捷 × 0.18 + 等级 × 0.2
-	// 命中最高，远程攻击的稳定性是核心优势。
-	constexpr float BaseHitChance = 88.f;
-
-	constexpr float AgilityCoefficient = 0.18f;
-	constexpr float LevelCoefficient = 0.2f;
-}
-
 UMMC_Ranger_HitChance::UMMC_Ranger_HitChance()
 {
 	CaptureTargetAttribute(UAuraAttributeSet::GetAgilityAttribute());

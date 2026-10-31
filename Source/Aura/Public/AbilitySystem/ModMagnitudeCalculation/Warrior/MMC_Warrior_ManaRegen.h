@@ -20,4 +20,12 @@ public:
 	UMMC_Warrior_ManaRegen();
 
 	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
+
+private:
+	// 战士 · 法力恢复：0.5 + 智力 × 0.05 + 等级 × 0.02
+	// 回蓝最低，法力属于稀缺资源。
+	static constexpr float BaseManaRegen = 0.5f;
+
+	static constexpr float IntelligenceCoefficient = 0.05f;
+	static constexpr float LevelCoefficient = 0.02f;
 };

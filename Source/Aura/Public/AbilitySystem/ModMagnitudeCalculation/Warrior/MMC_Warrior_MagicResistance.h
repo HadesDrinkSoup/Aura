@@ -20,4 +20,13 @@ public:
 	UMMC_Warrior_MagicResistance();
 
 	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
+
+private:
+	// 战士 · 魔法抗性：1 + 活力 × 0.8 + 智力 × 0.15 + 等级 × 0.15
+	// 魔抗偏低，需要装备弥补法术承伤。
+	static constexpr float BaseMagicResistance = 1.f;
+
+	static constexpr float VigorCoefficient = 0.8f;
+	static constexpr float IntelligenceCoefficient = 0.15f;
+	static constexpr float LevelCoefficient = 0.15f;
 };

@@ -20,4 +20,12 @@ public:
 	UMMC_Warrior_CooldownReduction();
 
 	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
+
+private:
+	// 战士 · 冷却缩减：0 + 智力 × 0.08 + 等级 × 0.03
+	// 冷却缩减最低，技能循环明显偏慢。
+	static constexpr float BaseCooldownReduction = 0.f;
+
+	static constexpr float IntelligenceCoefficient = 0.08f;
+	static constexpr float LevelCoefficient = 0.03f;
 };

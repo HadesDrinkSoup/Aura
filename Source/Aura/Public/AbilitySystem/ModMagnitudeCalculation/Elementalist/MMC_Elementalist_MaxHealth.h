@@ -20,4 +20,13 @@ public:
 	UMMC_Elementalist_MaxHealth();
 
 	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
+
+private:
+	// 元素法师 · 最大生命值：65 + 活力 × 7 + 力量 × 2 + 等级 × 7
+	// 体魄最弱：血量主要来自等级，活力收益明显低于战士。
+	static constexpr float BaseHealth = 65.f;
+
+	static constexpr float VigorCoefficient = 7.f;
+	static constexpr float StrengthCoefficient = 2.f;
+	static constexpr float LevelCoefficient = 7.f;
 };

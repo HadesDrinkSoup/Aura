@@ -3,15 +3,6 @@
 #include "AbilitySystem/ModMagnitudeCalculation/Ranger/MMC_Ranger_DodgeChance.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 
-namespace
-{
-	// 游侠 · 闪避几率：6 + 敏捷 × 0.18
-	// 闪避核心职业：敏捷收益最高。
-	constexpr float BaseDodgeChance = 6.f;
-
-	constexpr float AgilityCoefficient = 0.18f;
-}
-
 UMMC_Ranger_DodgeChance::UMMC_Ranger_DodgeChance()
 {
 	CaptureTargetAttribute(UAuraAttributeSet::GetAgilityAttribute());

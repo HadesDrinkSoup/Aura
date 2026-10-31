@@ -3,17 +3,6 @@
 #include "AbilitySystem/ModMagnitudeCalculation/Ranger/MMC_Ranger_PhysicalAttack.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 
-namespace
-{
-	// 游侠 · 物理攻击力：8 + 力量 × 1.3 + 敏捷 × 2.4 + 等级 × 1.2
-	// 敏捷是主要加成，力量提供基础底子。
-	constexpr float BasePhysicalAttack = 8.f;
-
-	constexpr float StrengthCoefficient = 1.3f;
-	constexpr float AgilityCoefficient = 2.4f;
-	constexpr float LevelCoefficient = 1.2f;
-}
-
 UMMC_Ranger_PhysicalAttack::UMMC_Ranger_PhysicalAttack()
 {
 	CaptureTargetAttributes(UAuraAttributeSet::GetStrengthAttribute(),

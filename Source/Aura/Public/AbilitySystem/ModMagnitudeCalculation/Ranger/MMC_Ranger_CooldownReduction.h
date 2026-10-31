@@ -20,4 +20,12 @@ public:
 	UMMC_Ranger_CooldownReduction();
 
 	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
+
+private:
+	// 游侠 · 冷却缩减：1 + 敏捷 × 0.1 + 智力 × 0.05
+	// 冷却缩减一般，主要来自敏捷。
+	static constexpr float BaseCooldownReduction = 1.f;
+
+	static constexpr float AgilityCoefficient = 0.1f;
+	static constexpr float IntelligenceCoefficient = 0.05f;
 };

@@ -20,4 +20,12 @@ public:
 	UMMC_Warrior_HealthRegen();
 
 	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
+
+private:
+	// 战士 · 生命恢复：1.5 + 活力 × 0.18 + 等级 × 0.06
+	// 回血最高，配合高血量形成持续作战能力。
+	static constexpr float BaseHealthRegen = 1.5f;
+
+	static constexpr float VigorCoefficient = 0.18f;
+	static constexpr float LevelCoefficient = 0.06f;
 };

@@ -20,4 +20,11 @@ public:
 	UMMC_Ranger_MoveSpeed();
 
 	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
+
+private:
+	// 游侠 · 移动速度：420 + 敏捷 × 0.55
+	// 移速最快，风筝与拉扯是核心优势。
+	static constexpr float BaseMoveSpeed = 420.f;
+
+	static constexpr float AgilityCoefficient = 0.55f;
 };

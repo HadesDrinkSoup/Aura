@@ -3,16 +3,6 @@
 #include "AbilitySystem/ModMagnitudeCalculation/Ranger/MMC_Ranger_AttackSpeed.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 
-namespace
-{
-	// 游侠 · 攻击速度：110 + 敏捷 × 0.45 + 等级 × 0.2
-	// 攻速最高，高频普攻与技能衔接是核心玩法。
-	constexpr float BaseAttackSpeed = 110.f;
-
-	constexpr float AgilityCoefficient = 0.45f;
-	constexpr float LevelCoefficient = 0.2f;
-}
-
 UMMC_Ranger_AttackSpeed::UMMC_Ranger_AttackSpeed()
 {
 	CaptureTargetAttribute(UAuraAttributeSet::GetAgilityAttribute());

@@ -20,4 +20,12 @@ public:
 	UMMC_Warrior_AttackSpeed();
 
 	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
+
+private:
+	// 战士 · 攻击速度：100 + 敏捷 × 0.2 + 等级 × 0.1
+	// 攻速中等，重视单次伤害而非攻击频率。
+	static constexpr float BaseAttackSpeed = 100.f;
+
+	static constexpr float AgilityCoefficient = 0.2f;
+	static constexpr float LevelCoefficient = 0.1f;
 };

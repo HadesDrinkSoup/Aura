@@ -20,4 +20,11 @@ public:
 	UMMC_Warrior_DodgeChance();
 
 	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
+
+private:
+	// 战士 · 闪避几率：3 + 敏捷 × 0.07
+	// 闪避成长最低，靠护甲而不是闪避生存。
+	static constexpr float BaseDodgeChance = 3.f;
+
+	static constexpr float AgilityCoefficient = 0.07f;
 };

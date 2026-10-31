@@ -3,16 +3,6 @@
 #include "AbilitySystem/ModMagnitudeCalculation/Elementalist/MMC_Elementalist_AttackSpeed.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 
-namespace
-{
-	// 元素法师 · 攻击速度：95 + 敏捷 × 0.15 + 等级 × 0.1
-	// 基础攻速最低，普攻不是主要输出手段。
-	constexpr float BaseAttackSpeed = 95.f;
-
-	constexpr float AgilityCoefficient = 0.15f;
-	constexpr float LevelCoefficient = 0.1f;
-}
-
 UMMC_Elementalist_AttackSpeed::UMMC_Elementalist_AttackSpeed()
 {
 	CaptureTargetAttribute(UAuraAttributeSet::GetAgilityAttribute());

@@ -20,4 +20,13 @@ public:
 	UMMC_Ranger_MaxHealth();
 
 	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
+
+private:
+	// 游侠 · 最大生命值：90 + 活力 × 9 + 力量 × 4 + 等级 × 9
+	// 血量中等：靠闪避与走位生存，而不是硬抗伤害。
+	static constexpr float BaseHealth = 90.f;
+
+	static constexpr float VigorCoefficient = 9.f;
+	static constexpr float StrengthCoefficient = 4.f;
+	static constexpr float LevelCoefficient = 9.f;
 };

@@ -20,4 +20,13 @@ public:
 	UMMC_Ranger_Armor();
 
 	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
+
+private:
+	// 游侠 · 护甲：1 + 活力 × 1 + 力量 × 0.35 + 等级 × 0.25
+	// 护甲偏低，被近身时风险很高。
+	static constexpr float BaseArmor = 1.f;
+
+	static constexpr float VigorCoefficient = 1.f;
+	static constexpr float StrengthCoefficient = 0.35f;
+	static constexpr float LevelCoefficient = 0.25f;
 };

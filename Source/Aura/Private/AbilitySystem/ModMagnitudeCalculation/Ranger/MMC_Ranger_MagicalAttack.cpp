@@ -3,17 +3,6 @@
 #include "AbilitySystem/ModMagnitudeCalculation/Ranger/MMC_Ranger_MagicalAttack.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 
-namespace
-{
-	// 游侠 · 魔法攻击力：4 + 智力 × 1.5 + 敏捷 × 0.4 + 等级 × 0.7
-	// 魔法输出为辅，敏捷提供少量额外法强。
-	constexpr float BaseMagicalAttack = 4.f;
-
-	constexpr float IntelligenceCoefficient = 1.5f;
-	constexpr float AgilityCoefficient = 0.4f;
-	constexpr float LevelCoefficient = 0.7f;
-}
-
 UMMC_Ranger_MagicalAttack::UMMC_Ranger_MagicalAttack()
 {
 	CaptureTargetAttributes(UAuraAttributeSet::GetIntelligenceAttribute(),

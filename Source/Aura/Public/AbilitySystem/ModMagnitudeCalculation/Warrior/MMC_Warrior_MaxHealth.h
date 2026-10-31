@@ -20,4 +20,13 @@ public:
 	UMMC_Warrior_MaxHealth();
 
 	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
+
+private:
+	// 战士 · 最大生命值：140 + 活力 × 15 + 力量 × 9 + 等级 × 15
+	// 血量最高：活力与力量双收益，是前排承伤的核心。
+	static constexpr float BaseHealth = 140.f;
+
+	static constexpr float VigorCoefficient = 15.f;
+	static constexpr float StrengthCoefficient = 9.f;
+	static constexpr float LevelCoefficient = 15.f;
 };

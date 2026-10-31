@@ -20,4 +20,13 @@ public:
 	UMMC_Ranger_MagicalAttack();
 
 	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
+
+private:
+	// 游侠 · 魔法攻击力：4 + 智力 × 1.5 + 敏捷 × 0.4 + 等级 × 0.7
+	// 魔法输出为辅，敏捷提供少量额外法强。
+	static constexpr float BaseMagicalAttack = 4.f;
+
+	static constexpr float IntelligenceCoefficient = 1.5f;
+	static constexpr float AgilityCoefficient = 0.4f;
+	static constexpr float LevelCoefficient = 0.7f;
 };

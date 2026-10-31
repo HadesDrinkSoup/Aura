@@ -20,4 +20,13 @@ public:
 	UMMC_Ranger_PhysicalAttack();
 
 	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
+
+private:
+	// 游侠 · 物理攻击力：8 + 力量 × 1.3 + 敏捷 × 2.4 + 等级 × 1.2
+	// 敏捷是主要加成，力量提供基础底子。
+	static constexpr float BasePhysicalAttack = 8.f;
+
+	static constexpr float StrengthCoefficient = 1.3f;
+	static constexpr float AgilityCoefficient = 2.4f;
+	static constexpr float LevelCoefficient = 1.2f;
 };

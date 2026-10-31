@@ -20,4 +20,13 @@ public:
 	UMMC_Ranger_MaxMana();
 
 	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
+
+private:
+	// 游侠 · 最大法力值：55 + 智力 × 6.5 + 活力 × 1.5 + 等级 × 4.5
+	// 法力中等，足以支撑标记与位移类技能。
+	static constexpr float BaseMana = 55.f;
+
+	static constexpr float IntelligenceCoefficient = 6.5f;
+	static constexpr float VigorCoefficient = 1.5f;
+	static constexpr float LevelCoefficient = 4.5f;
 };

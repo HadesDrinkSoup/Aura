@@ -20,4 +20,12 @@ public:
 	UMMC_Elementalist_HealthRegen();
 
 	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
+
+private:
+	// 元素法师 · 生命恢复：0.5 + 活力 × 0.08 + 等级 × 0.03
+	// 基础回血最低，续航依赖法力与技能。
+	static constexpr float BaseHealthRegen = 0.5f;
+
+	static constexpr float VigorCoefficient = 0.08f;
+	static constexpr float LevelCoefficient = 0.03f;
 };

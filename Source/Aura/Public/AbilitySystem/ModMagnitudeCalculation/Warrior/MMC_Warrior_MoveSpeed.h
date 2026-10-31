@@ -20,4 +20,12 @@ public:
 	UMMC_Warrior_MoveSpeed();
 
 	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
+
+private:
+	// 战士 · 移动速度：390 + 敏捷 × 0.3 + 力量 × 0.05
+	// 移速中等，力量提供极少额外移速。
+	static constexpr float BaseMoveSpeed = 390.f;
+
+	static constexpr float AgilityCoefficient = 0.3f;
+	static constexpr float StrengthCoefficient = 0.05f;
 };

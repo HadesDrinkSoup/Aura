@@ -20,4 +20,12 @@ public:
 	UMMC_Warrior_CriticalChance();
 
 	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
+
+private:
+	// 战士 · 暴击几率：5 + 敏捷 × 0.08 + 力量 × 0.04
+	// 暴击来自敏捷与力量的稳定加成，成长平缓。
+	static constexpr float BaseCriticalChance = 5.f;
+
+	static constexpr float AgilityCoefficient = 0.08f;
+	static constexpr float StrengthCoefficient = 0.04f;
 };

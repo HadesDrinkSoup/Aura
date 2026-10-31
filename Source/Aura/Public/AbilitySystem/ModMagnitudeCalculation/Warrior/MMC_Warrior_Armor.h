@@ -20,4 +20,13 @@ public:
 	UMMC_Warrior_Armor();
 
 	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
+
+private:
+	// 战士 · 护甲：5 + 活力 × 1.8 + 力量 × 1.3 + 等级 × 0.55
+	// 护甲最高：活力 + 力量双加成，物理减伤核心。
+	static constexpr float BaseArmor = 5.f;
+
+	static constexpr float VigorCoefficient = 1.8f;
+	static constexpr float StrengthCoefficient = 1.3f;
+	static constexpr float LevelCoefficient = 0.55f;
 };

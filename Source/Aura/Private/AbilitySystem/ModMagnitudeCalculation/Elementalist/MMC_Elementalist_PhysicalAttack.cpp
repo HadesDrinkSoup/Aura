@@ -3,17 +3,6 @@
 #include "AbilitySystem/ModMagnitudeCalculation/Elementalist/MMC_Elementalist_PhysicalAttack.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 
-namespace
-{
-	// 元素法师 · 物理攻击力：3 + 力量 × 1 + 敏捷 × 0.3 + 等级 × 0.6
-	// 几乎不依赖武器，物理攻击只作兜底输出。
-	constexpr float BasePhysicalAttack = 3.f;
-
-	constexpr float StrengthCoefficient = 1.f;
-	constexpr float AgilityCoefficient = 0.3f;
-	constexpr float LevelCoefficient = 0.6f;
-}
-
 UMMC_Elementalist_PhysicalAttack::UMMC_Elementalist_PhysicalAttack()
 {
 	CaptureTargetAttributes(UAuraAttributeSet::GetStrengthAttribute(),

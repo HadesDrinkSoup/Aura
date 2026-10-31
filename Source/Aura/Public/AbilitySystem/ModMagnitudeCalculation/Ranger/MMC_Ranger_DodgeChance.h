@@ -20,4 +20,11 @@ public:
 	UMMC_Ranger_DodgeChance();
 
 	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
+
+private:
+	// 游侠 · 闪避几率：6 + 敏捷 × 0.18
+	// 闪避核心职业：敏捷收益最高。
+	static constexpr float BaseDodgeChance = 6.f;
+
+	static constexpr float AgilityCoefficient = 0.18f;
 };

@@ -48,7 +48,8 @@ protected:
 	/** 创建并初始化敌人血条的 WidgetController（每个敌人生成一个独立实例） */
 	virtual void InitHealthBar();
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "Class Default ")
+	/** 敌人等级：参与 GE 等级与 MMC 等级系数，不同敌人直接在 BP 里改 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= "Class Default ")
 	int32 Level = 1;
 	
 	UPROPERTY(EditDefaultsOnly, Category= "Class Default ")

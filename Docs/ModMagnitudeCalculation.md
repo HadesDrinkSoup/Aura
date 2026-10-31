@@ -1,6 +1,6 @@
 # 派生属性自定义计算（MMC）—— 三职业重构
 
-> 所有派生属性（Derived Attributes）的 Magnitude 都由 C++ 的 MMC 计算，每个职业拥有独立的一套公式；修改数值只需改对应 `.cpp` 文件顶部的常量。
+> 所有派生属性（Derived Attributes）的 Magnitude 都由 C++ 的 MMC 计算，每个职业拥有独立的一套公式；修改数值只需改对应头文件的 `static constexpr` 常量。
 
 ## 1. 目录结构
 
@@ -10,11 +10,11 @@ Source/Aura/Public/AbilitySystem/ModMagnitudeCalculation/
 │   └── AuraMMCBase.h                 // 公共基类：捕获、读取、等级解析
 ├── Elementalist/                     // 元素法师：14 个 MMC
 ├── Warrior/                          // 战士：14 个 MMC
-├── Ranger/                           // 游侠：14 个 MMC
-└── MMC_*.h                           // 旧版通用实现（仍被 GE_DerivedAttributes 引用）
+└── Ranger/                           // 游侠：14 个 MMC
 ```
 
 Private 目录保持与之完全对应的结构（`Private/AbilitySystem/ModMagnitudeCalculation/<职业>/`）。
+每个 MMC 的系数以 `static constexpr` 成员写在类内，避免了 unity build 下匿名命名空间重名的问题。
 
 ## 2. 公共基类 `UAuraMMCBase`
 
@@ -113,20 +113,26 @@ Private 目录保持与之完全对应的结构（`Private/AbilitySystem/ModMagn
 
 ## 5. 接入 GameplayEffect
 
-1. 编译 C++（UHT 会为每个职业生成 14 个 `UMMC_<职业>_<属性>` 类）。
-2. 三个职业的派生属性 GE（已完成配置，可直接使用）：
-   - `Content/Blueprint/AbilitySystem/GameplayEffects/DefaultAttributes/Elementalist/GE_DerivedAttributes_Elementalist`
-   - `.../Warrior/GE_DerivedAttributes_Warrior`
-   - `.../Ranger/GE_DerivedAttributes_Ranger`
+1. 编译 C++（每个职业有 14 个 `UMMC_<职业>_<属性>` 类）。
+2. 属性 GE 由**职业配置表**统一下发，不需要在每个角色 BP 上单独拖（见 [CharacterClassInfo.md](CharacterClassInfo.md)）：
+   - `Content/Blueprint/AbilitySystem/Data/DA_CharacterClassInfo`：`Elementalist / Warrior / Ranger → 3 个属性 GE`
+   - 角色 BP 只设置 `CharacterClass`（和敌人的 `Level`）
+3. 三个职业的派生属性 GE：
 
-   每个都是 14 个 Modifier：
+   | GE | 内容 |
+   | --- | --- |
+   | `GE_DerivedAttributes_Elementalist` | 14 Modifier，`MMC_Elementalist_*`，Infinite |
+   | `GE_DerivedAttributes_Warrior` | 14 Modifier，`MMC_Warrior_*`，Infinite |
+   | `GE_DerivedAttributes_Ranger` | 14 Modifier，`MMC_Ranger_*`，Infinite |
+
+   每个 Modifier 的配置要点：
    - **Modifier Op**：`Add`
    - **Magnitude Calculation Type**：`Custom Calculation Class`
-   - **Calculation Class**：`MMC_<职业>_<属性>`（例如 `MMC_Elementalist_MaxHealth`）
+   - **Calculation Class**：`MMC_<职业>_<属性>`
    - **Duration Policy**：`Infinite`（关键，见第 6 节）
-3. 池属性 GE `GE_Pool_Attributes_<职业>`：`Health ← MaxHealth`、`Mana ← MaxMana` 使用 **Attribute Based** 幅度，**Attribute Source 必须是 `Target`**。
+4. 池属性 GE `GE_Pool_Attributes_<职业>`：`Health ← MaxHealth`、`Mana ← MaxMana` 使用 **Attribute Based** 幅度，**Attribute Source 必须是 `Target`**。
    原因：`ApplyGameplayEffectSpecToSelf` 只捕获 Target 属性；捕获源为 `Source` 时 `CanCalculateMagnitude()` 返回 false，Health/Mana 会被写成 0，并打印 `Modifier ... asked to CalculateMagnitude and failed, falling back to 0`。
-4. 施加顺序由 `AAuraCharacterBase::InitDefaultAttributes` 保证：`PrimaryAttributes` → `DerivedAttributes` → `PoolAttributes`。
+5. 施加顺序由 `AAuraCharacterBase::InitDefaultAttributes` 保证：`PrimaryAttributes` → `DerivedAttributes` → `PoolAttributes` → `AdditionalInitialEffects`。
 
 ## 6. 为什么"次要属性"不跟随主要属性？
 
@@ -137,7 +143,7 @@ Private 目录保持与之完全对应的结构（`Private/AbilitySystem/ModMagn
 | `Instant` | 只在施加的瞬间算一次；之后主属性怎么变都不会重算 |
 | `Infinite` | GAS 会监听 MMC 中「非快照」捕获的属性，主属性变化时自动重算并写回派生属性 ✅ |
 
-原来的 `Aura/GE_DerivedAttributes` 是 Infinite，所以看起来一直"跟随"；三个职业的 GE 之前是 Instant（Warrior / Ranger 甚至是 0 个 Modifier 的空 GE），换成职业 GE 后自然就"不跟随"了。
+三个职业的 GE 之前是 Instant（Warrior / Ranger 甚至是 0 个 Modifier 的空 GE），所以换成职业 GE 后出现"次要属性不跟随"。
 
 实测（元素法师，把 STR 3→33、VIG 4→14）：`MaxHealth 106 → 236`，正好等于 `65 + 14×7 + 33×2 + 7`。
 
@@ -148,11 +154,11 @@ Private 目录保持与之完全对应的结构（`Private/AbilitySystem/ModMagn
 
 ## 7. 调参与扩展
 
-- **改数值**：直接修改对应 `.cpp` 顶部的 `constexpr` 常量（基础值 / 各属性系数 / 等级系数），无需改公式。
-- **新增属性**：在 `STATS` 表中加一条，运行 `python Tools/ModMagnitudeCalculation/generate_mmc.py` 会补齐三职业的头文件与源文件；也可以在三个职业目录下手写一份同构文件。
-- **新增职业**：在 `CLASSES` / `STATS` 中补一个职业键，生成器会按同样结构输出新目录。
+- **改数值**：直接修改对应头文件里的 `static constexpr` 常量（基础值 / 各属性系数 / 等级系数），无需改公式。
+- **新增属性**：复制同职业目录下最接近的一个 `.h/.cpp`，改类名、捕获属性与常量即可。
+- **新增职业**：复制一个职业目录并重命名，然后在 `ECharacterClass` 中加枚举、在 `DA_CharacterClassInfo` 中加一条（详见 [CharacterClassInfo.md](CharacterClassInfo.md)）。
 - **概率类属性**：钳制写在 MMC 内部，保证 GE 的加法叠加不会突破上限；如果后续还要通过 Buff 继续加成，需要把钳制下沉到 `UAuraAttributeSet::PreAttributeChange`。
 
 ## 8. 关于旧文件
 
-`ModMagnitudeCalculation/MMC_*.h`（14 个）是重构前的通用实现，仍被 `DefaultAttributes/Aura/GE_DerivedAttributes` 引用，因此本次 **保留未动**；三职业 GE 全部迁移到新类之后，可以再统一删除。
+旧版通用 MMC（`ModMagnitudeCalculation/MMC_*.h/.cpp`）与 `DefaultAttributes/Aura/GE_DerivedAttributes` 已经删除，所有角色都改为按职业取 GE；如果某个旧资源仍引用 `MMC_MaxHealth` 这类旧类，会显示为 None，需要重指到对应职业的 MMC。

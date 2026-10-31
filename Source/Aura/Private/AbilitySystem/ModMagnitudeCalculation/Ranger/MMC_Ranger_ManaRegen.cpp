@@ -3,17 +3,6 @@
 #include "AbilitySystem/ModMagnitudeCalculation/Ranger/MMC_Ranger_ManaRegen.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 
-namespace
-{
-	// 游侠 · 法力恢复：1 + 智力 × 0.12 + 敏捷 × 0.04 + 等级 × 0.04
-	// 回蓝中等，敏捷提供少量额外回复。
-	constexpr float BaseManaRegen = 1.f;
-
-	constexpr float IntelligenceCoefficient = 0.12f;
-	constexpr float AgilityCoefficient = 0.04f;
-	constexpr float LevelCoefficient = 0.04f;
-}
-
 UMMC_Ranger_ManaRegen::UMMC_Ranger_ManaRegen()
 {
 	CaptureTargetAttributes(UAuraAttributeSet::GetIntelligenceAttribute(),

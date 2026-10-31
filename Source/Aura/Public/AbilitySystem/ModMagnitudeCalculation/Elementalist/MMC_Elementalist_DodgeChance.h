@@ -20,4 +20,11 @@ public:
 	UMMC_Elementalist_DodgeChance();
 
 	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
+
+private:
+	// 元素法师 · 闪避几率：2 + 敏捷 × 0.08
+	// 闪避成长最差，不靠敏捷生存。
+	static constexpr float BaseDodgeChance = 2.f;
+
+	static constexpr float AgilityCoefficient = 0.08f;
 };
