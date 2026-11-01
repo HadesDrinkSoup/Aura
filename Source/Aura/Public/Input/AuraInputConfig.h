@@ -34,6 +34,11 @@ struct FAuraInputAction
  * 输入配置数据资产（UDataAsset）。
  * 存放所有「输入动作 ↔ GameplayTag」的映射，
  * 由角色/玩家控制器在运行时读取，用于把玩家输入路由到 GAS 能力。
+ *
+ * 使用方式：在编辑器里基于本类创建 DataAsset（例如 DA_InputConfig），
+ * 填好 AbilityInputActions 后，由 AAuraPlayerController::BeginPlay 通过
+ * AuraGameSettings 取到同一份实例；整个项目只维护这一处映射，
+ * 新增技能时只需在这里加一条，不用改 C++ 绑定代码。
  */
 UCLASS()
 class AURA_API UAuraInputConfig : public UDataAsset
@@ -42,6 +47,7 @@ class AURA_API UAuraInputConfig : public UDataAsset
 public:
 	/**
 	 * 根据给定的 GameplayTag 查找对应的输入动作。
+	 * 采用顺序遍历（列表规模很小，几条到十几条，无需为此建 Map）。
 	 * @param InputTag  要查找的 GameplayTag
 	 * @param bLogFound 为 true 时会在找到/未找到时打印日志
 	 * @return 匹配的 UInputAction 指针；找不到时返回 nullptr

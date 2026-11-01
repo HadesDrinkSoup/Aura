@@ -66,7 +66,17 @@ public:
 	/** 职业 -> 默认配置 */
 	UPROPERTY(EditDefaultsOnly, Category = "Character Class Defaults")
 	TMap<ECharacterClass, FCharacterClassDefaultInfo> CharacterClassInformation;
+	
+	/**
+	 * 通用能力：所有角色（玩家 / 敌人 / 任意职业）出生时都会授予的技能，例如受击反应。
+	 *
+	 * 与职业的 StartupAbilities 是并集关系，由 AAuraCharacterBase::GetCombinedStartupAbilities
+	 * 合并进起始技能列表；即使 CharacterClass 在 CharacterClassInformation 里查不到也会下发。
+	 * 若某个角色需要「额外一份」通用技能，直接配在角色 BP 的 StartupAbilities 上即可，不要复制本列表。
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = "Character Class Defaults")
+	TArray<TSubclassOf<UAuraGameplayAbility>> CommonAbilities;
 
 	/** 查找职业默认配置；找不到返回 nullptr（不崩溃） */
-	const FCharacterClassDefaultInfo* FindClassDefaultInfo(ECharacterClass CharacterClass) const;
+	const FCharacterClassDefaultInfo* FindCharacterClassInformation(const ECharacterClass& CharacterClass) const;
 };

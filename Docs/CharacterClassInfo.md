@@ -12,11 +12,12 @@ Project Settings → Game → Aura Game Settings   (UAuraGameSettings)
 └── CharacterClassInfo ──────────────┐
                                      ▼
                        DA_CharacterClassInfo (UCharacterClassInfo)
-                       └── TMap<ECharacterClass, FCharacterClassDefaultInfo>
-                             ├── Elementalist → Primary / Derived / Pool GE + StartupAbilities
-                             ├── Warrior      → ...
-                             ├── Ranger       → ...
-                             └── Tank         → ...
+                       ├── TMap<ECharacterClass, FCharacterClassDefaultInfo>
+                       │     ├── Elementalist → Primary / Derived / Pool GE + StartupAbilities
+                       │     ├── Warrior      → ...
+                       │     ├── Ranger       → ...
+                       │     └── Tank         → ...
+                       └── CommonAbilities                  ← 全职业共享的起始技能
 
 Bp_AuraCharacter / Bp_Goblin_* (AAuraCharacterBase)
 ├── CharacterClass = Elementalist / Warrior / Ranger / Tank   ← 唯一的职业入口
@@ -31,7 +32,8 @@ Bp_AuraCharacter / Bp_Goblin_* (AAuraCharacterBase)
 2. 按 `CharacterClass` 查 `FCharacterClassDefaultInfo`
 3. 依次施加 `Primary → Derived → AdditionalInitialEffects → Pool`
    （个体 GE 放在 Pool 之前，Pool 才能用最终的 MaxHealth/MaxMana 把生命/法力填满）
-4. 派生的技能：`StartupAbilities`（BP）+ 职业的 `StartupAbilities` 合并去重后一起授予
+4. 派生的技能：`StartupAbilities`（BP）+ 职业的 `StartupAbilities` + 表的 `CommonAbilities`
+   取并集去重后一起授予（顺序 BP → 职业 → 通用，见 `AAuraCharacterBase::GetCombinedStartupAbilities`）
 
 > 玩家角色的 `CharacterClass` 可以在运行时被覆盖：战斗关的 `AAuraGameModeBase` 会在
 > spawn 之后、`PossessedBy` 之前，按选人结果调用 `SetCharacterClass()`。
@@ -93,4 +95,5 @@ GE 等级统一取 `GetCharacterLevel()`（最低 1），所以主要属性 GE �
 - **纯数据的职业变体**：若希望「GoblinWarrior」这种变体不改 C++，可以把 `TMap` 的键从 `ECharacterClass` 换成 `FGameplayTag`（如 `Character.Class.Warrior.Goblin`），MMC 仍复用 Warrior 的那一套。代价是失去枚举的编译期检查。
 - **难度/精英倍率**：用一个对 `MaxHealth / PhysicalAttack` 做 `Multiply` 的 **Infinite** GE 放进 `AdditionalInitialEffects`，比复制整套 GE 更省事。
   （派生属性是由 Infinite GE 以 `Add` 叠加的，Instant 的 Multiply 只会乘 base=0，看起来就是“没生效”。）
-- **技能也进表**：`FCharacterClassDefaultInfo` 已经带 `StartupAbilities`，后续可同样加 `CommonAbilities`、`PassiveEffects` 等字段。
+- **技能也进表**：`FCharacterClassDefaultInfo` 已经带 `StartupAbilities`，`UCharacterClassInfo` 上的
+  `CommonAbilities`（全职业共享技能）也已接通；后续可再加 `PassiveEffects`（出生即施加的被动 GE）等字段。

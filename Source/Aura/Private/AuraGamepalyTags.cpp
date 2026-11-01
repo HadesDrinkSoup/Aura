@@ -9,11 +9,34 @@
 //
 //   AddNativeGameplayTag 的第二个参数是编辑器内对设计师显示的描述文本。
 
+/**
+ * @file AuraGamepalyTags.cpp
+ * @brief 全项目 native GameplayTag 的集中注册实现（AuraGameplayTags.h 里那个单例的填充处）。
+ *
+ * 要点：
+ *  - 全部 tag 都在这里一次性 Add 完，**不写进 DefaultGameplayTags.ini**：native 注册的好处是
+ *    改了 tag 名一定跟着代码走，不会出现"ini 里删了、代码里还在用"的悬空引用；
+ *  - 每个 Add 都带描述字符串，GameplayTag 编辑器/资产里的 tooltip 就是它，改语义时记得同步改描述；
+ *  - 注册时机由 UAuraAssetManager::StartInitialLoading 保证（早于任何 GE/Ability/GAS 初始化），
+ *    因此本函数内部不需要判重、不需要加锁，也不应被其他代码调用第二次（重复调用虽安全但没意义）；
+ *  - 这里的 tag 只被 UAuraAttributeSet 的构造（属性 tag→Getter 映射）和资产（输入配置、GA、动画通知）消费，
+ *    C++ 战斗逻辑里不要按字符串硬编码，一律走 FAuraGameplayTags::Get()。
+ */
+
 #include "AuraGamepalyTags.h"
 #include "GameplayTagsManager.h"
 
+/**
+ * 单例的存储本体（静态成员，写在 .cpp 里避免头文件里出现多处定义）。
+ * 进程启动时零初始化，所有 FGameplayTag 为空；只有 InitializeNativeGameplayTags 会写入真实值。
+ */
 FAuraGameplayTags FAuraGameplayTags::GameplayTags;
 
+/**
+ * 把下面所有属性逐个注册到 GameplayTagManager，并回填到单例。
+ * 调用时机：UAuraAssetManager::StartInitialLoading（引擎完成资源管理器初始化后、任何游戏对象存在之前）。
+ * 无返回值、无失败分支：AddNativeGameplayTag 对同名 tag 是幂等的，失败也不会返回空（除非名称为非法 FName）。
+ */
 void FAuraGameplayTags::InitializeNativeGameplayTags()
 {
 	// =========================================================================
@@ -142,27 +165,54 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 		FName("Attributes.Derived.MoveSpeed"),
 		FString(TEXT("移动速度，角色移动速率。影响走位/风筝/追击/逃跑效率。来源：Agility")));
 	
+	// =========================================================================
+	// 攻击效果
+	// =========================================================================
 	
+	// 攻击伤害
+	GameplayTags.Damage = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Damage"),
+		FString(TEXT("伤害")));
+	// 攻击命中反馈
+	GameplayTags.Effects_HitReact = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Effects.HitReact"),
+		FString(TEXT("命中反馈")));
+	
+	// =========================================================================
+	// Input Tags — 输入到技能的映射键（不参与 GE，纯"哪个键对应哪个技能"的标识）
+	//
+	// 匹配方式：ASC 的 AbilityInputTagPressed/Held/Released 里用 HasTagExact 精确匹配技能的
+	// AbilityInputTag（来自 GA 蓝图配置），所以这里每个 tag 都是独立的叶子节点，父子匹配在这里不生效。
+	// 消费方：Content/Blueprint/Input/DA_InputConfig（键位 → tag）与各 GA 蓝图（tag → 技能）。
+	// C++ 代码对这些成员没有直接引用。
+	// =========================================================================
+
+	// 左键：主技能键。GA_FireBall、GA_TestAbility 都用它触发，是当前唯一真正在用的输入槽
 	GameplayTags.InputTag_LMB = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("InputTag.LMB"), 
 		FString(TEXT("鼠标左键输入标签")));
 	
+	// 右键：次要技能槽。DA_InputConfig 已映射键位，但当前没有 GA 资产占用该 tag（预留）
 	GameplayTags.InputTag_RMB = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("InputTag.RMB"), 
 		FString(TEXT("鼠标右键键输入标签")));
 	
+	// 数字键 1：技能槽 1。键位已映射，当前无 GA 占用（预留）
 	GameplayTags.InputTag_1 = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("InputTag.1"), 
 		FString(TEXT("数字1键输入标签")));
 	
+	// 数字键 2：技能槽 2。键位已映射，当前无 GA 占用（预留）
 	GameplayTags.InputTag_2 = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("InputTag.2"), 
 		FString(TEXT("数字2键输入标签")));
 	
+	// 数字键 3：技能槽 3。键位已映射，当前无 GA 占用（预留）
 	GameplayTags.InputTag_3 = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("InputTag.3"), 
 		FString(TEXT("数字3键输入标签")));
 	
+	// 数字键 4：技能槽 4。键位已映射，当前无 GA 占用（预留）
 	GameplayTags.InputTag_4 = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("InputTag.4"), 
 		FString(TEXT("数字4键输入标签")));

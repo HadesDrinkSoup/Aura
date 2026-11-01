@@ -18,6 +18,10 @@ class UAuraInputConfig;
  * 作用：把配置里的一组「输入动作 ↔ GameplayTag」映射，
  * 一次性绑定到「按下 / 松开 / 按住」三种触发事件上，
  * 触发回调时携带对应的 GameplayTag。
+ *
+ * 使用位置：AAuraPlayerController::SetupInputComponent 中把 Cast 后的本组件
+ * 与 AuraInputConfig 一起传入 BindAbilityActions，回调各有三个：
+ * AbilityInputTagPressed / Released / Held。
  */
 UCLASS()
 class AURA_API UAuraEnhancedInputComponent : public UEnhancedInputComponent
@@ -31,6 +35,11 @@ public:
 	 *   - ReleasedFunc → ETriggerEvent::Completed（松开）
 	 *   - HeldFunc     → ETriggerEvent::Triggered（按住）
 	 * 每个回调都会携带对应的 GameplayTag（Action.InputTag）作为参数。
+	 *
+	 * 实现要点：UEnhancedInputComponent::BindAction 支持在委托参数之后追加
+	 * 额外的透传参数，这里把 Action.InputTag 作为追加参数传入，于是回调签名
+	 * 可以写成 (const FInputActionValue& Value, FGameplayTag InputTag)，
+	 * 无需在回调里反查是哪个输入触发了它。
 	 *
 	 * @tparam UserClass       持有回调函数的对象类型（通常是角色或玩家控制器）
 	 * @tparam PressedFuncType 按下回调的函数类型

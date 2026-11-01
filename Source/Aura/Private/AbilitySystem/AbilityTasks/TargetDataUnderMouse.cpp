@@ -1,5 +1,18 @@
 // Study Game Ability System _Hades
 
+/**
+ * @file TargetDataUnderMouse.cpp
+ * @brief AbilityTask 实现：本地控制端采集鼠标光标下的命中结果，同步给服务器并在两端广播 ValidData。
+ *
+ * 三条执行阶段（与文件内编号一致）：
+ *   第 0 步 CreateTargetDataUnderMouse：只 new 出 Task 并挂到技能上；
+ *   第 1 步 Activate：按"是否本地控制"分流——本地采集，远程注册回调；
+ *   第 2 步 SendMouseCursorData：开预测窗口 → 射线检测 → 本地广播 → Server RPC 同步；
+ *   第 3 步 OnTargetDataReplicatedCallback：远程端收到数据后清缓存并广播。
+ *
+ * 本 Task 不主动 EndTask()：它只产出一次目标数据，生命周期跟着技能走
+ * （技能 EndAbility 时由 GAS 统一清理所有 Task），因此广播完不需要也不应该自己结束。
+ */
 
 #include "AbilitySystem/AbilityTasks/TargetDataUnderMouse.h"
 
@@ -92,6 +105,9 @@ void UTargetDataUnderMouse::SendMouseCursorData() const
 	//     ECC_Visibility = 只检测对 Visibility 通道有响应的物体（默认的地面/角色都会挡光）；
 	//     bTraceComplex=false 用简单碰撞，性能更好；
 	//     命中结果全部写进 CursorHit（HitActor、ImpactPoint、Trace Start/End、骨骼名等）。
+	//     注意：这里没有判空 PC。LocalController 路径通常一定带有效 PlayerController
+	//     （能拿到鼠标的设备才有本地控制权）；只有"本地控制但没有 PlayerController"的 Pawn
+	//     才会在这里空指针，本项目的 GA_FireBall 只由玩家角色触发，因此没有加判空。
 	const APlayerController* PC = Ability->GetCurrentActorInfo()->PlayerController.Get();
 	FHitResult CursorHit;
 	PC->GetHitResultUnderCursor(ECC_Visibility, false, CursorHit);
@@ -144,8 +160,13 @@ void UTargetDataUnderMouse::SendMouseCursorData() const
 // ═════════════════════════════════════════════════════════════════════════════
 void UTargetDataUnderMouse::OnTargetDataReplicatedCallback(const FGameplayAbilityTargetDataHandle& DataHandle, FGameplayTag ActivationTag) const
 {
+	// 3.0 关于两个不像"业务参数"的参数：
+	//     ActivationTag 是 ASC 广播委托时带上的 ApplicationTag（对应 ServerSetReplicatedTargetData 的第 4 个参数），
+	//     本类发 RPC 时传的是空 FGameplayTag，所以这个值在这里恒为空、不使用；
+	//     函数声明为 const 是因为回调只负责把数据转发到广播口，不修改 Task 自身状态。
 	// 3.1 消费（清空）ASC 里缓存的目标数据与确认标记（AbilitySystemComponent_Abilities.cpp:3900）。
 	//     数据只应该被这次技能激活使用一次，不清掉的话会被下一次激活/下一次查询重复拿到。
+	//     顺序上先消费再广播：这样广播进技能蓝图后，蓝图的后续逻辑再去查 ASC 也拿不到这份旧数据。
 	AbilitySystemComponent->ConsumeClientReplicatedTargetData(GetAbilitySpecHandle(), GetActivationPredictionKey());
 	// 3.2 把数据往上交给技能蓝图（与本地路径同一个输出口 ValidData）。
 	if (ShouldBroadcastAbilityTaskDelegates())
