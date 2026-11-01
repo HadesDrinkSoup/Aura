@@ -1,8 +1,6 @@
 // Study Game Ability System _Hades
 
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
-#include "AbilitySystem/Data/CharacterClassInfo.h"
-#include "Game/AuraCharacterRoster.h"
 #include "Game/AuraGameSettings.h"
 #include "Kismet/GameplayStatics.h"
 #include "Player/AuraPlayerController.h"
