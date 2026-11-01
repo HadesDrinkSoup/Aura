@@ -9,7 +9,7 @@
 /**
  * 游侠 · 魔法抗性
  * 公式：2 + 活力 × 0.5 + 智力 × 0.5 + 等级 × 0.25（钳制：最低 0）
- * 魔抗中等，活力与智力均衡提供。
+ * 魔抗最低：活力与智力均衡提供，被法术命中最痛。
  */
 UCLASS()
 class AURA_API UMMC_Ranger_MagicResistance : public UAuraMMCBase
@@ -23,7 +23,7 @@ public:
 
 private:
 	// 游侠 · 魔法抗性：2 + 活力 × 0.5 + 智力 × 0.5 + 等级 × 0.25
-	// 魔抗中等，活力与智力均衡提供。
+	// 魔抗最低：活力与智力均衡提供，被法术命中最痛。
 	static constexpr float BaseMagicResistance = 2.f;
 
 	static constexpr float VigorCoefficient = 0.5f;

@@ -60,27 +60,27 @@ protected:
 	 * 职业：决定使用哪套属性 GE 与默认技能。
 	 * 属性 GE 本身在 Project Settings → Game → Aura Game Settings 的 DA_CharacterClassInfo 里配置。
 	 */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Character Class")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Character Class")
 	ECharacterClass CharacterClass = ECharacterClass::Elementalist;
 
 	/**
 	 * 可选：直接在本 BP 上覆盖职业的属性 GE（留空则使用职业配置表）。
 	 * 通常只在「职业表里没有的特殊个体」上使用。
 	 */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Attributes")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Attributes")
 	TSubclassOf<UGameplayEffect> PoolAttributes;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Attributes")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Attributes")
 	TSubclassOf<UGameplayEffect> PrimaryAttributes;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Attributes")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Attributes")
 	TSubclassOf<UGameplayEffect> DerivedAttributes;
 
 	/**
 	 * 个体差异：在职业 GE 之后追加施加的 GE。
 	 * 例如「精英哥布林」用一个 Multiply MaxHealth 的 GE，而不必复制整套职业 GE。
 	 */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Attributes")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Attributes")
 	TArray<TSubclassOf<UGameplayEffect>> AdditionalInitialEffects;
 	
 private:

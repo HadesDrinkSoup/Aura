@@ -9,7 +9,7 @@
 /**
  * 战士 · 物理攻击力
  * 公式：12 + 力量 × 3.2 + 敏捷 × 0.4 + 等级 × 1.5（钳制：最低 0）
- * 核心输出：力量收益三职业最高。
+ * 核心输出：力量收益四职业最高。
  */
 UCLASS()
 class AURA_API UMMC_Warrior_PhysicalAttack : public UAuraMMCBase
@@ -23,7 +23,7 @@ public:
 
 private:
 	// 战士 · 物理攻击力：12 + 力量 × 3.2 + 敏捷 × 0.4 + 等级 × 1.5
-	// 核心输出：力量收益三职业最高。
+	// 核心输出：力量收益四职业最高。
 	static constexpr float BasePhysicalAttack = 12.f;
 
 	static constexpr float StrengthCoefficient = 3.2f;

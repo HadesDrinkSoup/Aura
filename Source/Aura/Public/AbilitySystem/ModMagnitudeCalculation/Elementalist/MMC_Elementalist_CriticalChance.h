@@ -8,8 +8,8 @@
 
 /**
  * 元素法师 · 暴击几率
- * 公式：5 + 智力 × 0.1 + 敏捷 × 0.05（钳制：0 ~ 75）
- * 暴击主要来自智力，敏捷只提供少量补充。
+ * 公式：4 + 智力 × 0.05 + 敏捷 × 0.04（钳制：0 ~ 75）
+ * 暴击偏低：法系不靠爆发，智力只做温和加成，排在战士之后、坦克之前。
  */
 UCLASS()
 class AURA_API UMMC_Elementalist_CriticalChance : public UAuraMMCBase
@@ -22,10 +22,10 @@ public:
 	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
 
 private:
-	// 元素法师 · 暴击几率：5 + 智力 × 0.1 + 敏捷 × 0.05
-	// 暴击主要来自智力，敏捷只提供少量补充。
-	static constexpr float BaseCriticalChance = 5.f;
+	// 元素法师 · 暴击几率：4 + 智力 × 0.05 + 敏捷 × 0.04
+	// 暴击偏低：法系不靠爆发，智力只做温和加成，排在战士之后、坦克之前。
+	static constexpr float BaseCriticalChance = 4.f;
 
-	static constexpr float IntelligenceCoefficient = 0.1f;
-	static constexpr float AgilityCoefficient = 0.05f;
+	static constexpr float IntelligenceCoefficient = 0.05f;
+	static constexpr float AgilityCoefficient = 0.04f;
 };

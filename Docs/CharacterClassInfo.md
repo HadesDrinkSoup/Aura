@@ -15,10 +15,11 @@ Project Settings → Game → Aura Game Settings   (UAuraGameSettings)
                        └── TMap<ECharacterClass, FCharacterClassDefaultInfo>
                              ├── Elementalist → Primary / Derived / Pool GE + StartupAbilities
                              ├── Warrior      → ...
-                             └── Ranger       → ...
+                             ├── Ranger       → ...
+                             └── Tank         → ...
 
 Bp_AuraCharacter / Bp_Goblin_* (AAuraCharacterBase)
-├── CharacterClass = Elementalist / Warrior / Ranger   ← 唯一的职业入口
+├── CharacterClass = Elementalist / Warrior / Ranger / Tank   ← 唯一的职业入口
 ├── Level（敌人可编辑）                                ← 影响 GE 等级与 MMC 等级系数
 ├── Primary/Derived/PoolAttributes                     ← 可选：个体覆盖（一般留空）
 └── AdditionalInitialEffects                           ← 个体差异（精英/首领）
@@ -46,11 +47,12 @@ Bp_AuraCharacter / Bp_Goblin_* (AAuraCharacterBase)
 > 覆盖是"整套替换"而不是逐个 Modifier 合并：一旦 BP 上填了 Derived GE，就不会再用职业表里的那个。
 
 GE 等级统一取 `GetCharacterLevel()`（最低 1），所以主要属性 GE 用 CurveTable 时可以直接按等级取数值。
+三条职业的主属性曲线表（按等级的 力量/智力/敏捷/活力）见 [PrimaryAttributes_CurveTable.md](PrimaryAttributes_CurveTable.md)。
 
 ## 3. 新增一个敌人（不改 C++）
 
 1. 复制一个现有敌人 BP（例如 `Bp_Goblin_Spear`），父类仍是 `Bp_AuraEnemyBase`。
-2. Details → `Character Class` → 选 `Warrior / Ranger / Elementalist`。
+2. Details → `Character Class` → 选 `Warrior / Ranger / Elementalist / Tank`。
 3. `Level` 填等级（1、5、10……）。
 4. 需要个体差异时，在 `Additional Initial Effects` 里加修正 GE（可以不建新职业）。
 5. 保证 BP 上三个 `...Attributes` 覆盖字段为空。
@@ -76,7 +78,8 @@ GE 等级统一取 `GetCharacterLevel()`（最低 1），所以主要属性 GE �
 
 | 项 | 状态 |
 | --- | --- |
-| `DA_CharacterClassInfo` | 已填入 Elementalist / Warrior / Ranger 三套 GE |
+| `DA_CharacterClassInfo` | 已填入 Elementalist / Warrior / Ranger 三套 GE；`Tank` 待登记（见下一行） |
+| `Tank` 职业 | C++（枚举 + 14 个 `MMC_Tank_*`）与 `DataTable/CT_PrimaryAttributes_Tank.csv` 已就绪；还需在编辑器建 `CT_PrimaryAttributes_Tank` / 3 个 `GE_*_Tank` 并登记到 `DA_CharacterClassInfo` |
 | `DefaultGame.ini` → `[/Script/Aura.AuraGameSettings]` | 已指向 `DA_CharacterClassInfo` |
 | `Bp_AuraGameMode.CharacterClassInfo` | 该属性已从 `AAuraGameModeBase` 删除；BP 里残留的旧值会被忽略 |
 | `Bp_AuraCharacter` | `Elementalist`，BP 上的 GE 覆盖已清空 |
