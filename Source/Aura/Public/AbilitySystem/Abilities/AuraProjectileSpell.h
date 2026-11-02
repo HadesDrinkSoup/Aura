@@ -22,7 +22,7 @@ class AAuraProjectile;
  *
  * 目标点来源：本类不采集输入。蓝图在激活时先用 AbilityTask TargetDataUnderMouse 把鼠标命中的
  * ValidData 取出来，再把命中点作为 ProjectileTargetLocation 调 SpawnProjectile。
- */
+ */ 
 UCLASS()
 class AURA_API UAuraProjectileSpell : public UAuraGameplayAbility
 {

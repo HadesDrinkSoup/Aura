@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Engine/TimerHandle.h"
 #include "AbilitySystemInterface.h"
 #include "AbilitySystem/Data/CharacterClassInfo.h"
 #include "GameFramework/Character.h"
@@ -49,6 +50,7 @@ public:
 	
 	virtual UAnimMontage* GetHitReactMontage_Implementation() override;
 	
+	/** 死亡逻辑 */
 	virtual void Death_Implementation() override;
 
 	/** 职业的读写：BP 里配的是默认值，战斗关由 GameMode 在 Possess 之前按选人结果覆盖 */
@@ -94,6 +96,16 @@ protected:
 	 */
 	TArray<TSubclassOf<UAuraGameplayAbility>> GetCombinedStartupAbilities() const;
 	
+	/** 死亡溶解：把网格体与武器各自换成自己的溶解材质 */
+	void Dissolve();
+	
+	/** 溶解时间线（蓝图实现）。参数是「网格体」的动态材质实例。*/
+	UFUNCTION(BlueprintImplementableEvent, Category="Combat")
+	void StartWeaponDissolveTimeLine(UMaterialInstanceDynamic* DynamicMaterialInstance);
+	
+	UFUNCTION(BlueprintImplementableEvent, Category="Combat")
+	void StartMeshDissolveTimeLine(UMaterialInstanceDynamic* DynamicMaterialInstance);
+	
 	/** 武器网格（手部武器），用于取攻击插槽坐标；不参与碰撞 */
 	UPROPERTY(EditAnywhere, Category="Combat")
 	TObjectPtr<USkeletalMeshComponent> Weapon;
@@ -137,14 +149,25 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Attributes")
 	TArray<TSubclassOf<UGameplayEffect>> AdditionalInitialEffects;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Combat")
+	TObjectPtr<UMaterialInstance> MeshDissolveMaterialInstance;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Combat")
+	TObjectPtr<UMaterialInstance> WeaponDissolveMaterialInstance;
+	
 private:
+	/** 将死亡复制到所有客户端 */
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastHandleDeath();
+	
+	/** 武器跟随网格体溶解的重复计时器句柄 */
+	FTimerHandle DissolveSyncTimerHandle;
 	
 	/** 本 BP 额外配置的起始技能（在职业默认技能之前，最终取并集并去重） */
 	UPROPERTY(EditAnywhere, Category="Abilities")
 	TArray<TSubclassOf<UAuraGameplayAbility>> StartupAbilities;
 	
+	/** 攻击命中动画蒙太奇 */
 	UPROPERTY(EditAnywhere, Category="Combat")
 	TObjectPtr<UAnimMontage> HitReactMontage;
 };
