@@ -58,6 +58,36 @@ UAnimMontage* AAuraCharacterBase::GetHitReactMontage_Implementation()
 	return HitReactMontage;
 }
 
+void AAuraCharacterBase::Death_Implementation()
+{
+	// 死亡只允许由服务器发起：客户端不能自己去调 Death，只能通过 MulticastHandleDeath 收到广播
+	if (!HasAuthority()) return;
+
+
+	// 注意：这里必须调用 RPC 本身 MulticastHandleDeath()，
+	// 直接调 MulticastHandleDeath_Implementation() 会跳过 UFunction 的 RPC 入口，
+	// 结果是只有服务器执行，客户端永远收不到死亡通知（不会倒、不会脱武器、不会关碰撞）。
+	MulticastHandleDeath();
+}
+
+void AAuraCharacterBase::MulticastHandleDeath_Implementation()
+{
+	UE_LOG(LogTemp, Warning, TEXT("[Death] %s NetMode=%d Auth=%d"),
+		*GetName(), static_cast<int32>(GetNetMode()), HasAuthority() ? 1 : 0);
+
+	Weapon->DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepWorld,true));
+	Weapon->SetSimulatePhysics(true);
+	GetMesh()->SetEnableGravity(true);
+	Weapon->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+	
+	GetMesh()->SetSimulatePhysics(true);
+	GetMesh()->SetEnableGravity(true);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+	GetMesh()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
+	
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+}
+
 /**
  * 从全局职业配置表（DA_CharacterClassInfo）取本角色职业的默认配置。
  * 通过 UAuraAbilitySystemLibrary::GetCharacterClassInfo(this) 读取 GameSettings 中的表；

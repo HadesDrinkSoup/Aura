@@ -71,6 +71,8 @@ struct FAuraGameplayTags
 	/** 攻击效果 */
 	FGameplayTag Damage;						//攻击伤害
 	FGameplayTag Effects_HitReact;				//攻击命中反馈
+	FGameplayTag Effects_Death;					//角色死亡
+	
 	/**
 	 * InputTag 组：技能蓝图的输入标识，不是属性、也不参与 GE。
 	 *

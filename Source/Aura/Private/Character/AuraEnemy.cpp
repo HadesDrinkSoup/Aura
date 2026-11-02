@@ -58,6 +58,7 @@ void AAuraEnemy::BeginPlay()
 	
 	InitActorInfo();
 	
+	// 监听是否被攻击命中
 	AuraAbilitySystemComponent->RegisterGameplayTagEvent(FAuraGameplayTags::Get().Effects_HitReact,
 		EGameplayTagEventType::NewOrRemoved).AddUObject(this,&AAuraEnemy::HitReactTagChanged); 
 }
@@ -147,7 +148,13 @@ int32 AAuraEnemy::GetCharacterLevel()
 	return Level;
 }
 
-void AAuraEnemy::HitReactTagChanged(const FGameplayTag CallbackTag, int32 NewCount)
+void AAuraEnemy::Death_Implementation()
+{
+	SetLifeSpan(LifeSpan);
+	Super::Death_Implementation();
+}
+
+void AAuraEnemy::HitReactTagChanged(const FGameplayTag CallbackTag, const int32 NewCount)
 {
 	bHitReact = NewCount > 0;
 	GetCharacterMovement()->MaxWalkSpeed = bHitReact ? 0.f : BaseWalkSpeed;

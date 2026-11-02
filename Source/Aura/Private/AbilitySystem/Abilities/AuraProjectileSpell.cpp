@@ -123,14 +123,15 @@ void UAuraProjectileSpell::SpawnProjectileOnServer(const FVector& ProjectileTarg
 
 	if (!IsValid(Projectile)) return;
 
-	// 注意：这里没有校验 SourceASC / DamageEffectClass / SpecHandle。
-	// 配置正确时（AvatarActor 实现了 IAbilitySystemInterface、DamageEffectClass 已填）
-	// 一定拿得到有效句柄；若 DamageEffectClass 为空，句柄无效，
-	// 投射物命中时会直接解引用 SpecHandle.Data（AuraProjectile.cpp:101），属于"配置错就崩"的路径。
+	// 获取施法者的能力组件
 	const UAbilitySystemComponent* SourceASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetAvatarActorFromActorInfo());
+	// 创建伤害效果的 Spec
 	const FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, GetAbilityLevel(), SourceASC->MakeEffectContext());
+	// 获取项目的 GameplayTag 单例
 	const FAuraGameplayTags GameplayTags = FAuraGameplayTags::Get();
+	// 根据技能等级计算实际伤害
 	const float ScaledDamage = Damage.GetValueAtLevel(GetAbilityLevel());
+	// 向一个已经创建的 FGameplayEffectSpec（效果规格）中“写入”一个与 GameplayTag 绑定的浮点数值
 	UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(SpecHandle,GameplayTags.Damage, ScaledDamage);
 	Projectile->DamageEffectSpecHandle = SpecHandle;
 	

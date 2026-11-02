@@ -281,19 +281,26 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const struct FGameplayEffectMo
 	{
 		const float LocalIncomingDamage = GetIncomingDamage();
 		SetIncomingDamage(0.f);
+		// 只处理正伤害；治疗请走独立的 IncomingHealing
+		if (LocalIncomingDamage <= 0.f) return;
+		// 已死则忽略后续伤害，防止重复触发死亡
+		if (GetHealth() <= 0.f)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s 已死亡"), *EffectProperties.TargetAvatarActor->GetName());
+			return;
+		}
+		
 		if (LocalIncomingDamage > 0.f)
 		{
 			const float NewHealth = GetHealth() - LocalIncomingDamage;
 			SetHealth(FMath::Clamp(NewHealth, 0.f, GetMaxHealth()));
-			UE_LOG(LogTemp, Warning, TEXT("%s 生命值受到伤害 %f， 当前生命值%f"), *EffectProperties.TargetAvatarActor->GetName(), LocalIncomingDamage, GetHealth());
+			UE_LOG(LogTemp, Log, TEXT("%s 生命值受到伤害 %f， 当前生命值%f"), *EffectProperties.TargetAvatarActor->GetName(), LocalIncomingDamage, GetHealth());
 			//是否致命
 			const bool bFatal = NewHealth <= 0.f;
-			if (!bFatal)
-			{
-				FGameplayTagContainer TagContainer;
-				TagContainer.AddTag(FAuraGameplayTags::Get().Effects_HitReact);
-				EffectProperties.TargetASC->TryActivateAbilitiesByTag(TagContainer); 
-			}
+			FGameplayTagContainer TagContainer;
+			const FGameplayTag EffectTag = bFatal ? FAuraGameplayTags::Get().Effects_Death : FAuraGameplayTags::Get().Effects_HitReact;
+			TagContainer.AddTag(EffectTag);
+			EffectProperties.TargetASC->TryActivateAbilitiesByTag(TagContainer);
 		}
 	}
 }

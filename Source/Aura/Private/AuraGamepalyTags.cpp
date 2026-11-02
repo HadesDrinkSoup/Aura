@@ -177,6 +177,11 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 	GameplayTags.Effects_HitReact = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Effects.HitReact"),
 		FString(TEXT("命中反馈")));
+	// 攻击命中反馈
+	GameplayTags.Effects_Death = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Effects.Death"),
+		FString(TEXT("死亡")));
+	
 	
 	// =========================================================================
 	// Input Tags — 输入到技能的映射键（不参与 GE，纯"哪个键对应哪个技能"的标识）

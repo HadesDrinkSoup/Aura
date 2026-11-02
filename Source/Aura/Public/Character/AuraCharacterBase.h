@@ -48,6 +48,8 @@ public:
 	virtual FVector GetCombatSocketLocation() override;
 	
 	virtual UAnimMontage* GetHitReactMontage_Implementation() override;
+	
+	virtual void Death_Implementation() override;
 
 	/** 职业的读写：BP 里配的是默认值，战斗关由 GameMode 在 Possess 之前按选人结果覆盖 */
 	void SetCharacterClass(ECharacterClass InClass) { CharacterClass = InClass; }
@@ -136,6 +138,9 @@ protected:
 	TArray<TSubclassOf<UGameplayEffect>> AdditionalInitialEffects;
 	
 private:
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastHandleDeath();
+	
 	/** 本 BP 额外配置的起始技能（在职业默认技能之前，最终取并集并去重） */
 	UPROPERTY(EditAnywhere, Category="Abilities")
 	TArray<TSubclassOf<UAuraGameplayAbility>> StartupAbilities;

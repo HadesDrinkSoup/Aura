@@ -51,6 +51,8 @@ public:
 	/** 敌人等级直接取编辑器里配置的 Level（不依赖 PlayerState） */
 	virtual int32 GetCharacterLevel() override;
 	
+	virtual void Death_Implementation() override;
+	
 	void HitReactTagChanged(const FGameplayTag CallbackTag, int32 NewCount);
 	
 	UPROPERTY(BlueprintReadOnly, Category= "Combat")
@@ -74,6 +76,10 @@ protected:
 	/** 基础移动速度 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= "Class Default ")
 	float BaseWalkSpeed = 250.f;
+	
+	/** 死亡后的存在时间 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= "Class Default ")
+	float LifeSpan = 5.f;
 	
 	/** 头顶血条的 WidgetComponent；构造时挂到根组件上，由蓝图指定 WidgetClass 与显示参数 */
 	UPROPERTY(EditDefaultsOnly, Category= "Class Default ")
