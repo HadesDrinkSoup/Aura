@@ -143,7 +143,7 @@ void AAuraEnemy::UnHighlightActor()
 }
 
 /** 敌人等级直接读自身配置，不涉及跨对象查询，因此没有 check/回退逻辑 */
-int32 AAuraEnemy::GetCharacterLevel()
+int32 AAuraEnemy::GetCharacterLevel() const
 {
 	return Level;
 }

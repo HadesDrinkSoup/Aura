@@ -46,7 +46,7 @@ public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
 	/** 近战判定/特效起点：武器骨骼网格上 WeaponTipSocketName 插槽的世界坐标 */
-	virtual FVector GetCombatSocketLocation() override;
+	virtual FVector GetCombatSocketLocation() const override;
 	
 	virtual UAnimMontage* GetHitReactMontage_Implementation() override;
 	

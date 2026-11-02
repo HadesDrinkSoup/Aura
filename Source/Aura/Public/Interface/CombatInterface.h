@@ -43,13 +43,13 @@ public:
 	 * 技能层在构建 Spec 时用它设置 EffectLevel。
 	 * 返回 0 表示该对象没有等级概念，调用方应自行兜底（例如 FMath::Max(Level, 1)）。
 	 */
-	virtual int32 GetCharacterLevel() {return 0;};
+	virtual int32 GetCharacterLevel() const {return 0;};
 	/**
 	 * 武器尖端的世界坐标，作为近战判定、投射物生成点与特效原点的统一基准。
 	 * 调用方：UAuraProjectileSpell 发射投射物时读取该坐标决定出生位置与朝向。
 	 * 默认返回零向量，表示该对象没有可用的战斗插槽。
 	 */
-	virtual FVector GetCombatSocketLocation() {return FVector(0,0,0);};
+	virtual FVector GetCombatSocketLocation() const {return FVector(0,0,0);};
 	
 	/**
 	 * 让角色转向指定目标点；仅在蓝图（BlueprintImplementableEvent）中实现，

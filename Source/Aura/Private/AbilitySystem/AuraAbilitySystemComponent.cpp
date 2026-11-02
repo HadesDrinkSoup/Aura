@@ -2,7 +2,7 @@
 
 /**
  * @file AuraAbilitySystemComponent.cpp
- * @brief ASC 实现：ActorInfo 初始化时挂接 GE 回调、技能授予、输入标签到技能事件的翻译、投射物生成请求。
+ * @brief ASC 实现：ActorInfo 初始化时挂接 GE 回调、技能授予、输入标签到技能事件的翻译。
  *
  * 要点：
  *  - 本类不设置复制模式，复制模式由持有者（AAuraPlayerState / AAuraEnemy）各自决定；
@@ -13,7 +13,6 @@
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AuraGamepalyTags.h"
 #include "AbilitySystem/Abilities/AuraGameplayAbility.h"
-#include "AbilitySystem/Abilities/AuraProjectileSpell.h"
 
 /**
  * 调用基类完成 Owner/Avatar 绑定，然后把本 ASC 挂到「GE 施加到自身」的引擎委托上。
@@ -140,36 +139,5 @@ void UAuraAbilitySystemComponent::ClientEffectApplied_Implementation(UAbilitySys
 	FGameplayTagContainer TagContainer;
 	EffectSpec.GetAllAssetTags(TagContainer);
 	EffectAssetTagsDelegate.Broadcast(TagContainer);
-}
-
-/**
- * Server RPC 的实现：校验请求并为「服务器上真正激活中」的投射物技能生成投射物。
- * 失败分支全部静默返回：
- *   - Spec 句柄无效（技能已被移除/句柄过期）：丢弃；
- *   - Spec 存在但没有任何激活中的实例（客户端提前请求、或技能已结束）：丢弃；
- *   - 激活中的实例不是 UAuraProjectileSpell（同一 ASC 上其它技能的句柄被冒充）：丢弃。
- * 生成动作委托给技能自身，保证"投射物只在一个地方生成"（生成参数、Muzzle 位置、朝向计算都在那里）。
- */
-void UAuraAbilitySystemComponent::ServerSpawnProjectile_Implementation(const FGameplayAbilitySpecHandle AbilitySpecHandle, const FVector& ProjectileTargetLocation)
-{
-	// ---------------------------------------------------------------------
-	// 服务器端校验：客户端只负责"请求"，真正的生成永远由服务器执行。
-	// 1) 找到请求所对应的技能 Spec；
-	// 2) 只接受服务器上正在激活中的技能实例（客户端无法伪造一次没有在服务器上激活的施法）；
-	// 3) 交给技能自己生成，生成逻辑只保留在 UAuraProjectileSpell 一处。
-	// ---------------------------------------------------------------------
-	const FGameplayAbilitySpec* AbilitySpec = FindAbilitySpecFromHandle(AbilitySpecHandle);
-	if (!AbilitySpec) return;
-
-	// InstancedPerExecution 下一个 Spec 可能同时存在多个实例，挑出真正处于激活状态的那个
-	for (UGameplayAbility* AbilityInstance : AbilitySpec->GetAbilityInstances())
-	{
-		const UAuraProjectileSpell* ProjectileSpell = Cast<UAuraProjectileSpell>(AbilityInstance);
-		if (ProjectileSpell && ProjectileSpell->IsActive())
-		{
-			ProjectileSpell->SpawnProjectileOnServer(ProjectileTargetLocation);
-			return;
-		}
-	}
 }
 

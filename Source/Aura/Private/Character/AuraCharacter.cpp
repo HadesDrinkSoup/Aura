@@ -74,7 +74,7 @@ void AAuraCharacter::OnRep_PlayerState()
  * 用 check 而不是判空返回 1：玩家角色一定挂在 AuraPlayerState 下，
  * 取不到说明 DefaultPawn/PlayerStateClass 配错，属于开发期错误，应当立即暴露。
  */
-int32 AAuraCharacter::GetCharacterLevel()
+int32 AAuraCharacter::GetCharacterLevel() const
 {
 	const AAuraPlayerState* AuraPlayerState = GetPlayerState<AAuraPlayerState>();
 	check(AuraPlayerState);

@@ -48,7 +48,7 @@ UAbilitySystemComponent* AAuraCharacterBase::GetAbilitySystemComponent() const
 }
 
 /** 取武器骨骼网格上插槽的世界坐标，作为近战判定/特效生成的原点 */
-FVector AAuraCharacterBase::GetCombatSocketLocation()
+FVector AAuraCharacterBase::GetCombatSocketLocation() const
 {
 	return Weapon->GetSocketLocation(WeaponTipSocketName);
 }

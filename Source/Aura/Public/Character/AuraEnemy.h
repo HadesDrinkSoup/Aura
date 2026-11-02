@@ -49,7 +49,7 @@ public:
 	virtual void UnHighlightActor() override;
 	
 	/** 敌人等级直接取编辑器里配置的 Level（不依赖 PlayerState） */
-	virtual int32 GetCharacterLevel() override;
+	virtual int32 GetCharacterLevel() const override;
 	
 	virtual void Death_Implementation() override;
 	

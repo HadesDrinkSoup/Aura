@@ -35,8 +35,6 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FEffectAssetTagsDelegate, const FGameplayTag
  *  - AddCharacterAbilities：把技能类变成 AbilitySpec，并把输入标签写进 Spec 的 DynamicSpecSourceTags，
  *    之后由输入处理函数按标签找回该技能；
  *  - AbilityInputTagPressed/Released/Held：把 Enhanced Input 的输入标签翻译成 GAS 的输入事件与激活请求；
- *  - ServerSpawnProjectile：客户端请求 → 服务器校验 → 生成投射物（投射物的权威生成点只有一处：
- *    UAuraProjectileSpell::SpawnProjectileOnServer）；
  *  - EffectAssetTagsDelegate：对 UI 层暴露的 GE 标签广播口。
  */
 UCLASS()
@@ -98,20 +96,6 @@ public:
 	 * @param InputTag 与按下时同一个输入标签
 	 */
 	void AbilityInputTagHeld(const FGameplayTag& InputTag);
-
-	/**
-	 * 客户端 -> 服务器：请求为某个已激活的技能生成投射物。
-	 *
-	 * 为什么 RPC 放在 ASC 上而不是 GameplayAbility 上：
-	 * GameplayAbility 是普通 UObject，没有网络连接/NetGUID，声明在上面的 Server RPC 不会被正确路由；
-	 * ASC 是挂在 PlayerState/Character 上的 ActorComponent，RPC 由它所在的 Actor 负责收发。
-	 *
-	 * 服务器收到后只承认"服务器上确实处于激活状态"的技能实例，客户端无法凭空伪造一次施法。
-	 * @param AbilitySpecHandle      客户端当时激活的那个技能 Spec 句柄；服务器找不到对应 Spec 时直接忽略
-	 * @param ProjectileTargetLocation 目标点（世界坐标），由技能按鼠标/目标数据求出后传入
-	 */
-	UFUNCTION(Server, Reliable)
-	void ServerSpawnProjectile(const FGameplayAbilitySpecHandle AbilitySpecHandle, const FVector& ProjectileTargetLocation);
 
 	/**
 	 * GE 资产标签广播口：每次「GE 施加到本 ASC 自身」且到达拥有者客户端时触发一次。

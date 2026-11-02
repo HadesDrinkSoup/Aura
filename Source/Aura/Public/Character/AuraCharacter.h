@@ -63,7 +63,7 @@ public:
 	virtual void PawnClientRestart() override;
 	
 	/** 玩家等级存放在 PlayerState（跨死亡保留、且会被复制到客户端）；check 用于暴露 PlayerState 类型配错 */
-	virtual int32 GetCharacterLevel() override;
+	virtual int32 GetCharacterLevel() const override;
 
 protected:
 	/**

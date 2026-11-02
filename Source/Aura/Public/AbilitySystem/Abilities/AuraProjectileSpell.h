@@ -15,8 +15,9 @@ class AAuraProjectile;
  *
  * 网络分工（本类的核心约定）：
  *  - SpawnActor 只在服务器发生：客户端生成的 Actor 不会被复制给别人，表现也不会有；
- *  - 客户端只负责"请求"：SpawnProjectile 把目标点通过 ASC 的 Server RPC
- *    （UAuraAbilitySystemComponent::ServerSpawnProjectile）发给服务器，由服务器再调 SpawnProjectileOnServer；
+ *  - 客户端不额外"请求"：技能是 Local Predicted，激活由 GAS 复制到服务器；
+ *    目标点通过 TargetDataUnderMouse 里的 ServerSetReplicatedTargetData（ASC 内置 Server RPC）
+ *    同步过去，服务器上同一份技能实例再调用 SpawnProjectileOnServer 生成；
  *  - 伤害不在本类结算：本类只把"伤害 GE 的 Spec 句柄"塞进投射物（AAuraProjectile::DamageEffectSpecHandle），
  *    真正的 ApplyGameplayEffectSpecToSelf 发生在投射物命中目标的服务器侧（见 AuraProjectile.cpp:99-102）。
  *
@@ -27,17 +28,6 @@ UCLASS()
 class AURA_API UAuraProjectileSpell : public UAuraGameplayAbility
 {
 	GENERATED_BODY()
-public:
-	/**
-	 * 真正在服务器上生成投射物，是唯一会 SpawnActor 的地方。
-	 *
-	 * 两条调用路径：
-	 * - 服务器本机（单机 / listen server 主机 / AI）：SpawnProjectile 里直接调用；
-	 * - 远程客户端：客户端通过 ASC 的 Server RPC 把"发射请求"发到服务器，
-	 *   服务器找到本次激活的技能实例后调用（见 UAuraAbilitySystemComponent::ServerSpawnProjectile）。
-	 */
-	void SpawnProjectileOnServer(const FVector& ProjectileTargetLocation) const;
-
 protected:
 	/**
 	 * 技能激活入口（重写 UGameplayAbility::ActivateAbility）。
@@ -51,7 +41,8 @@ protected:
 	 * 蓝图调用：向目标点发射投射物。
 	 *
 	 * - 服务器：立即生成；
-	 * - 客户端：没有服务器权限，不能自己生成，改为把请求转发给服务器（Server RPC）。
+	 * - 客户端：直接返回（不生成、也不发额外请求）；落点由 TargetDataUnderMouse 同步到服务器，
+	 *   服务器端那份技能实例会再执行一次本函数并在那里生成。
 	 */
 	UFUNCTION(BlueprintCallable, Category="ProjectileSpell")
 	void SpawnProjectile(const FVector& ProjectileTargetLocation);
