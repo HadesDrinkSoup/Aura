@@ -5,7 +5,9 @@
 #include "AuraGamepalyTags.h"
 #include "GameplayEffectExtension.h"
 #include "GameFramework/Character.h"
+#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "Player/AuraPlayerController.h"
 
 /**
  * @file AuraAttributeSet.cpp
@@ -294,6 +296,15 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const struct FGameplayEffectMo
 		{
 			const float NewHealth = GetHealth() - LocalIncomingDamage;
 			SetHealth(FMath::Clamp(NewHealth, 0.f, GetMaxHealth()));
+			// 伤害数字：只有「施法者 ≠ 受击者」才飘字，避免自己打自己刷屏
+			if (EffectProperties.InstigatorCharacter != EffectProperties.TargetCharacter)
+			{
+				if (AAuraPlayerController* DamagePC = Cast<AAuraPlayerController>(
+					UGameplayStatics::GetPlayerController(EffectProperties.InstigatorCharacter, 0)))
+				{
+					DamagePC->ShowDamageNumber(LocalIncomingDamage, EffectProperties.TargetCharacter);
+				}
+			}
 			UE_LOG(LogTemp, Log, TEXT("%s 生命值受到伤害 %f， 当前生命值%f"), *EffectProperties.TargetAvatarActor->GetName(), LocalIncomingDamage, GetHealth());
 			//是否致命
 			const bool bFatal = NewHealth <= 0.f;

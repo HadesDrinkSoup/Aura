@@ -18,10 +18,12 @@
 #include "InputActionValue.h"
 #include "Engine/HitResult.h"
 #include "Engine/LocalPlayer.h"
+#include "GameFramework/Character.h"
 #include "GameFramework/Pawn.h"
 #include "Input/AuraEnhancedInputComponent.h"
 #include "Interface/EnemyInterface.h"
 #include "Player/AuraPlayerState.h"
+#include "UI/Widget/WidgetComponent/FloatingTextWidgetComponent.h"
 
 // -----------------------------------------------------------------------------
 // 构造 & 初始化
@@ -39,6 +41,23 @@ void AAuraPlayerController::PlayerTick(const float DeltaTime)
 	CursorTrace();
 }
 
+void AAuraPlayerController::ShowDamageNumber(const float& Damage, ACharacter* TargetCharacter) const
+{
+	// 飘字只是本地表现：只在本机玩家身上创建，避免服务器/客户端各建一份
+	if (!IsLocalController() || !FloatingTextWidgetClass || !IsValid(TargetCharacter))
+	{
+		return;
+	}
+	
+	UFloatingTextWidgetComponent* DamageText = NewObject<UFloatingTextWidgetComponent>(TargetCharacter, FloatingTextWidgetClass);
+	//动态创建的组件需要注册
+	DamageText->RegisterComponent();
+
+	// 挂在敌人身上：飘字跟随敌人
+	DamageText->AttachToComponent(TargetCharacter->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+	DamageText->SetFloatingText(FText::AsNumber(FMath::RoundToInt(Damage)));
+}
+
 void AAuraPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
@@ -54,7 +73,7 @@ void AAuraPlayerController::BeginPlay()
 	// 鼠标捕获期间仍显示光标，避免光标突然消失
 	InputModeData.SetHideCursorDuringCapture(false);
 	SetInputMode(InputModeData);
-  
+
 	// --- 注册 Enhanced Input 映射上下文 ---
 	// 通过 LocalPlayer 获取 EnhancedInput 子系统，并将 AuraContext 映射上下文添加到最高优先级
 	// 注意：每个 LocalPlayer 有自己独立的 EnhancedInput 子系统，因此客户端各自注册即可
@@ -92,7 +111,7 @@ void AAuraPlayerController::SetupInputComponent()
 // 输入回调
 // -----------------------------------------------------------------------------
 
-void AAuraPlayerController::Move(const FInputActionValue& Value)
+void AAuraPlayerController::Move(const FInputActionValue &Value)
 {
 	if (APawn* ControlledPawn = GetPawn())
 	{
@@ -123,11 +142,11 @@ void AAuraPlayerController::CursorTrace()
 	FHitResult CursorHitResult;
 	GetHitResultUnderCursor(ECC_Visibility, false, CursorHitResult);
 	if (!CursorHitResult.bBlockingHit) return;
-	
+
 	// 帧状态：保存上一帧命中的 Actor，更新当前帧命中
 	LastActor = CurrentActor;
 	CurrentActor = Cast<IEnemyInterface>(CursorHitResult.GetActor());
-	
+
 	// --- 高亮状态切换逻辑 ---
 	// 仅当目标发生变化时才更新高亮：先取消旧目标，再高亮新目标
 	if (CurrentActor != LastActor)

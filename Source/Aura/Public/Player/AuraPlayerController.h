@@ -15,6 +15,7 @@
 #include "GameFramework/PlayerController.h"
 #include "AuraPlayerController.generated.h"
 
+class UFloatingTextWidgetComponent;
 class UAuraAbilitySystemComponent;
 struct FGameplayTag;
 class UAuraInputConfig;
@@ -38,7 +39,8 @@ public:
 
 	/** 每帧驱动 CursorTrace 以更新光标下方目标的高亮状态 */
 	virtual void PlayerTick(float DeltaTime) override;
-
+	
+	void ShowDamageNumber(const float &Damage, ACharacter* TargetCharacter) const;
 protected:
 	
 	/** 配置鼠标光标、输入模式（Game & UI）、注册 AuraContext 映射上下文 */
@@ -52,7 +54,7 @@ private:
 	 * 移动回调 —— 由 Enhanced Input 在 Triggered 阶段持续调用
 	 * @param Value 包含二维输入向量（左右 = X，前后 = Y）
 	 */
-	void Move(const FInputActionValue& Value);
+	void Move(const FInputActionValue &Value);
 
 	/**
 	 * 每帧从光标位置投射 Visibility 射线，检测下方 Actor 是否实现了 IEnemyInterface，
@@ -85,6 +87,9 @@ protected:
 	
 	UPROPERTY()
 	TObjectPtr<UAuraAbilitySystemComponent> AuraAbilitySystemComponent;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Widgets")
+	TSubclassOf<UFloatingTextWidgetComponent> FloatingTextWidgetClass;
 
 private:
 	
