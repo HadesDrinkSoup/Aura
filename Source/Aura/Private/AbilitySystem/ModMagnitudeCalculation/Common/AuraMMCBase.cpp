@@ -5,27 +5,6 @@
 #include "GameplayEffectTypes.h"
 #include "Interface/CombatInterface.h"
 
-DEFINE_LOG_CATEGORY_STATIC(LogAuraMMC, Log, All);
-
-namespace
-{
-	/** 尝试把 UObject 解析为可提供角色等级的对象 */
-	int32 ResolveCharacterLevel(UObject* Candidate)
-	{
-		if (!Candidate)
-		{
-			return 0;
-		}
-
-		if (ICombatInterface* CombatInterface = Cast<ICombatInterface>(Candidate))
-		{
-			return CombatInterface->GetCharacterLevel();
-		}
-
-		return 0;
-	}
-}
-
 UAuraMMCBase::UAuraMMCBase()
 {
 	// 所有职业 MMC 都从「目标」捕获属性且不做快照，因此这里不需要额外配置。
@@ -36,7 +15,7 @@ void UAuraMMCBase::CaptureTargetAttribute(const FGameplayAttribute& Attribute)
 {
 	if (!Attribute.IsValid())
 	{
-		UE_LOG(LogAuraMMC, Warning, TEXT("%s: 尝试捕获无效属性，已忽略"), *GetClass()->GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s: 尝试捕获无效属性，已忽略"), *GetClass()->GetName());
 		return;
 	}
 
@@ -72,7 +51,7 @@ float UAuraMMCBase::GetCapturedMagnitude(const FGameplayAttribute& Attribute,
 	if (!Definition)
 	{
 		// 属于代码配置错误：子类忘记在构造函数中登记该属性
-		UE_LOG(LogAuraMMC, Warning, TEXT("%s: 属性 %s 未登记到 RelevantAttributesToCapture，按 0 处理"),
+		UE_LOG(LogTemp, Warning, TEXT("%s: 属性 %s 未登记到 RelevantAttributesToCapture，按 0 处理"),
 			*GetClass()->GetName(), *Attribute.GetName());
 		return 0.f;
 	}
@@ -98,17 +77,10 @@ FAggregatorEvaluateParameters UAuraMMCBase::BuildEvaluateParameters(const FGamep
 int32 UAuraMMCBase::GetCharacterLevelFromSpec(const FGameplayEffectSpec& Spec)
 {
 	const FGameplayEffectContext* EffectContext = Spec.GetContext().Get();
-	if (!EffectContext)
-	{
-		return 0;
-	}
+	if (!EffectContext) return 0;
 
 	// 默认从 SourceObject 解析（InitDefaultAttributes 中会把角色自身设为 SourceObject）
-	if (const int32 SourceObjectLevel = ResolveCharacterLevel(EffectContext->GetSourceObject()))
-	{
-		return SourceObjectLevel;
-	}
-
-	// 兜底：某些直接由技能/系统施加的 GE 只设置了 Instigator
-	return ResolveCharacterLevel(EffectContext->GetInstigator());
+	const ICombatInterface* CombatInterface = Cast<ICombatInterface>(EffectContext->GetSourceObject());
+	if (!CombatInterface) return 0;
+	return CombatInterface->GetCharacterLevel();
 }

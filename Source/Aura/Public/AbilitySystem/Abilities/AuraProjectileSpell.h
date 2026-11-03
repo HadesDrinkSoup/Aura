@@ -58,11 +58,10 @@ protected:
 	
 	/**
 	 * 命中时施加的伤害 GE 类（Instant / Duration 由 GE 资产自己决定）。
-	 * 用法：SpawnProjectileOnServer 里 MakeOutgoingSpec(DamageEffectClass, GetAbilityLevel(), ...)，
+	 * 用法：SpawnProjectileOnServer 里 MakeOutgoingSpec(DamageEffectClass, SetAbilityLevel(), ...)，
 	 * 得到的 Spec 句柄被塞给投射物，由投射物命中目标时 Apply。
-	 * 等级取 GetAbilityLevel()，而技能授予时 Level 固定传 1（AuraAbilitySystemComponent.cpp:18），
-	 * 所以当前无论角色几级，伤害 GE 的等级都是 1——要让伤害随角色等级成长，得改授予时的 Level
-	 * 或把成长做进 GE 的 MMC / CurveTable。
+	 * 等级取 UAuraGameplayAbility::SetAbilityLevel()——即施法者的角色等级实时值，
+	 * 所以角色升级后伤害会立刻按 CT_Damage 的新档位结算（Spec 里授予时写的 Level=1 只作兜底）。
 	 *
 	 * 注：Category 与 ProjectileClass 同名（编辑器里两者会挤在同一分组），
 	 * 另外标记写成了 BluePrintReadOnly（P 大写）；UHT 仍按 BlueprintReadOnly 处理

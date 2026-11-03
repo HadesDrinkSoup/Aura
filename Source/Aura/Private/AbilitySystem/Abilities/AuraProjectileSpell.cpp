@@ -17,7 +17,6 @@
 
 #include "AbilitySystem/Abilities/AuraProjectileSpell.h"
 
-#include "AuraGamepalyTags.h"
 #include "Actor/AuraProjectile.h"
 #include "Interface/CombatInterface.h"
 #include "AbilitySystemBlueprintLibrary.h"
@@ -58,7 +57,8 @@ void UAuraProjectileSpell::SpawnProjectile(const FVector& ProjectileTargetLocati
 
 	// 客户端没有服务器权限：Actor 只能在服务器上生成，客户端生成的东西不会被复制给别人。
 	// 目标点会由 TargetDataUnderMouse 同步到服务器，服务器端那份技能实例随后会再调用本函数。
-	if (!AvatarActor && !AvatarActor->HasAuthority()) return;
+	// 两个条件都要「或」：AvatarActor 为空时根本不能解引用；非权威端也不生成
+	if (!AvatarActor || !AvatarActor->HasAuthority()) return;
 
 	if (!ProjectileClass)
 	{
@@ -84,7 +84,7 @@ void UAuraProjectileSpell::SpawnProjectile(const FVector& ProjectileTargetLocati
 	// 一旦命中就要 Apply DamageEffectSpecHandle；延迟生成让我们能在 BeginPlay 之前把该句柄写好，
 	// 避免"刚生成就撞到东西、句柄还是空"的窗口期。
 	// Owner 传角色本身：AAuraProjectile::BeginPlay 会 IgnoreActorWhenMoving(Owner)，
-	// 防止投射物出生在武器/胶囊里立刻和自己人重叠；Instigator 传 Pawn，供伤害归因使用。
+	// 防止投射物出生在武器/胶囊里立刻和自己人重叠；SpawnActorDeferred 的 Instigator 形参传 Pawn，供伤害归因使用。
 	// AlwaysSpawn：出生点与角色碰撞体重叠，默认的碰撞处理会拒绝生成或把位置挪开。
 	AAuraProjectile* Projectile = GetWorld()->SpawnActorDeferred<AAuraProjectile>(
 		ProjectileClass, 
@@ -97,14 +97,23 @@ void UAuraProjectileSpell::SpawnProjectile(const FVector& ProjectileTargetLocati
 
 	// 获取施法者的能力组件
 	const UAbilitySystemComponent* SourceASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetAvatarActorFromActorInfo());
+	// 技能等级 = 施法者角色等级（UAuraGameplayAbility::SetAbilityLevel）。
+	// 取一次存下来，保证「查 CurveTable 的等级」和「写进 Spec 的等级」是同一个数，
+	// 不会出现基础伤害按 10 级算、而 GE 等级还是 1 的错配。
+	const int32 AbilityLevel = SetAbilityLevel();
 	// 创建伤害效果的 Spec
-	const FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, GetAbilityLevel(), SourceASC->MakeEffectContext());
-	// 获取项目的 GameplayTag 单例
-	const FAuraGameplayTags GameplayTags = FAuraGameplayTags::Get();
+	const FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, static_cast<float>(AbilityLevel), SourceASC->MakeEffectContext());
 	// 根据技能等级计算实际伤害
-	const float ScaledDamage = Damage.GetValueAtLevel(GetAbilityLevel());
+	const float ScaledDamage = Damage.GetValueAtLevel(AbilityLevel);
+
+	// 诊断日志：等级变没变、曲线有没有配，一眼就能看出是哪一环没生效
+	const FString CurveName = Damage.Curve.CurveTable ? Damage.Curve.CurveTable->GetName() : TEXT("未配置");
+	UE_LOG(LogTemp, Log, TEXT("%s 施法：角色等级=%d 基础伤害=%.2f（CurveTable=%s 行=%s）"),
+		*GetNameSafe(GetAvatarActorFromActorInfo()), AbilityLevel, ScaledDamage,
+		*CurveName, *Damage.Curve.RowName.ToString());
+
 	// 向一个已经创建的 FGameplayEffectSpec（效果规格）中“写入”一个与 GameplayTag 绑定的浮点数值
-	UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(SpecHandle,GameplayTags.Damage, ScaledDamage);
+	UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(SpecHandle, DamageType, ScaledDamage);
 	Projectile->DamageEffectSpecHandle = SpecHandle;
 	
 	// FinishSpawning 才真正把 Actor 放进世界并跑 BeginPlay；上面赋的 SpecHandle 已经就位。

@@ -21,12 +21,12 @@ DECLARE_DELEGATE_RetVal(FGameplayAttribute, FAttributeDelegate);
  *
  * 由 UAuraAttributeSet::SetEffectProperties 从 FGameplayEffectModCallbackData 里拆出来：
  * GE 回调只给出 EffectSpec 与目标 ASC，想知道"这一下是谁打的、打的是谁"必须顺着 EffectContext
- * 回溯原始 Instigator，再逐级取 ASC → AvatarActor → PlayerController / Character。
+ * 回溯原始 Source，再逐级取 ASC → AvatarActor → PlayerController / Character。
  * 拆成结构体的原因是 PostGameplayEffectExecute 后续逻辑（伤害/治疗/死亡、UI 通知）都需要这套信息，
  * 而多取一次就要多一次空值判断，集中在一处更好维护。
  *
  * 空值约定：每个字段都是"取得到才有值"，全部可能为 nullptr，使用前必须判空。典型来源：
- *  - 环境伤害 / 初始化属性 GE 没有真实施法者 → Instigator 侧整组为空；
+ *  - 环境伤害 / 初始化属性 GE 没有真实施法者 → Source 侧整组为空；
  *  - 敌人（AI）ASC 没有 PlayerController → Controller 为空，但 Avatar/Character 有值；
  *  - 目标是道具/可破坏物等非 Character 的 Actor → Character 为空，但 ASC/Avatar 有值。
  */
@@ -40,34 +40,34 @@ struct FEffectProperties
 	/**
 	 * 本次 GE 的执行上下文（Data.EffectSpec.GetContext() 的拷贝）。
 	 * 施法者信息就是从它取出来的：GetOriginalInstigatorAbilitySystemComponent() 会沿上下文链
-	 * 回溯到最初发起者（而非中间转发者）。上下文也可能无效（例如没有设置 Instigator 的系统性 GE）。
+	 * 回溯到最初发起者（而非中间转发者）。上下文也可能无效（例如没有设置 Source 的系统性 GE）。
 	 */
 	UPROPERTY()
 	FGameplayEffectContextHandle EffectContextHandle;
 	/**
-	 * 施法者的 ASC（原始 Instigator 的 ASC）。为 nullptr 时说明这次 GE 没有x真实施法者，
-	 * 此时下面三个 Instigator 字段都保持为空，调用方不应把它当成"未知玩家"来处理。
+	 * 施法者的 ASC（原始 Source 的 ASC）。为 nullptr 时说明这次 GE 没有x真实施法者，
+	 * 此时下面三个 Source 字段都保持为空，调用方不应把它当成"未知玩家"来处理。
 	 */
 	UPROPERTY()
-	UAbilitySystemComponent* InstigatorASC = nullptr;
+	UAbilitySystemComponent* SourceASC = nullptr;
 	/**
 	 * 施法者 ASC 的 AvatarActor —— 实际在世界里表现的那个角色（玩家侧通常是 Character，
-	 * 而不是持有 ASC 的 PlayerState）。只有 InstigatorASC 及其 AbilityActorInfo/AvatarActor 都有效时才赋值。
+	 * 而不是持有 ASC 的 PlayerState）。只有 SourceASC 及其 AbilityActorInfo/AvatarActor 都有效时才赋值。
 	 */
 	UPROPERTY()
-	AActor* InstigatorAvatarActor = nullptr;
+	AActor* SourceAvatarActor = nullptr;
 	/**
 	 * 施法者对应的 PlayerController：只有"施法者由玩家控制"时才有值，AI 施法者恒为 nullptr。
 	 * 常用于客户端侧的特效/音效朝向、以及"只有玩家才能触发的成就/统计"判断。
 	 */
 	UPROPERTY()
-	APlayerController* InstigatorController = nullptr;
+	APlayerController* SourceController = nullptr;
 	/**
-	 * InstigatorAvatarActor 转成 ACharacter 的结果；Avatar 不是 Character（例如挂 ASC 的载具/道具）时为空。
-	 * 需要角色网格、动画、移动组件时用它，不要直接强转 InstigatorAvatarActor。
+	 * SourceAvatarActor 转成 ACharacter 的结果；Avatar 不是 Character（例如挂 ASC 的载具/道具）时为空。
+	 * 需要角色网格、动画、移动组件时用它，不要直接强转 SourceAvatarActor。
 	 */
 	UPROPERTY()
-	ACharacter* InstigatorCharacter = nullptr;
+	ACharacter* SourceCharacter = nullptr;
 
 	/**
 	 * 受击者（目标）的 ASC。注意：它不是 Data.Target 本身，
@@ -490,11 +490,11 @@ private:
 	 * 从 GE 的 ModCallbackData 解析出「施法者 / 受击者」双方快照，填入传入的结构体。
 	 *
 	 * 为什么需要它：FGameplayEffectModCallbackData 只给 EffectSpec（含 EffectContext）与目标 ASC，
-	 * 而"谁造成的这次效果"必须走 EffectContext 的原始 Instigator ASC，
+	 * 而"谁造成的这次效果"必须走 EffectContext 的原始 Source ASC，
 	 * 再顺着 ASC 的 AbilityActorInfo 取 AvatarActor / PlayerController，逐级都有空的可能。
 	 *
 	 * 取值路径：
-	 *  - Instigator：EffectContext.GetOriginalInstigatorAbilitySystemComponent() → AbilityActorInfo
+	 *  - Source：EffectContext.GetOriginalInstigatorAbilitySystemComponent() → AbilityActorInfo
 	 *    → AvatarActor / PlayerController → Cast<ACharacter>；
 	 *  - Target：Data.Target.AbilityActorInfo → AvatarActor → Cast<ACharacter> +
 	 *    UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(AvatarActor) 反查 ASC。

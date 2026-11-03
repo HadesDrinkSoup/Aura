@@ -142,12 +142,6 @@ void AAuraEnemy::UnHighlightActor()
 	Weapon->SetRenderCustomDepth(false);
 }
 
-/** 敌人等级直接读自身配置，不涉及跨对象查询，因此没有 check/回退逻辑 */
-int32 AAuraEnemy::GetCharacterLevel() const
-{
-	return Level;
-}
-
 void AAuraEnemy::Death_Implementation()
 {
 	SetLifeSpan(LifeSpan);

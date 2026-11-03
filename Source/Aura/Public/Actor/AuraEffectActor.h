@@ -80,7 +80,7 @@ protected:
 	/**
 	 * 向目标 Actor 施加指定的 GameplayEffect
 	 *
-	 * @param InstigatorActor      效果的发起者
+	 * @param SourceActor      效果的发起者
 	 * @param TargetActor          效果的目标（需拥有 AbilitySystemComponent）
 	 * @param GameplayEffectClass  要施加的 GameplayEffect 类
 	 *
@@ -92,13 +92,13 @@ protected:
 	 *  - 目标 ASC 为空、GE 类为空、Spec 句柄无效三种情况都只是 return，不报错、不销毁自身，
 	 *    因此"把药剂放在没有 ASC 的装饰物上"不会刷屏，但也不会给出任何反馈。
 	 *  - EffectContext 的 SourceObject = 本 Actor，EffectCauser = 本 Actor，
-	 *    Instigator = InstigatorActor（为空时退化为本 Actor）。
+	 *    Source = SourceActor（为空时退化为本 Actor）。
 	 *    这样 GE 上的标签判定/击杀归属能追溯到"哪瓶药水、谁碰的"。
 	 *  - GE 等级固定取 ActorLevel，因此想让 GE 随时间成长只能改这个字段或换 GE 类。
 	 *  - 该方法只施加、不判断是否重复施加：同一目标反复进出重叠区域会反复施加新实例。
 	 */
 	UFUNCTION(BlueprintCallable, Category="Applied Effects")
-	void ApplyEffectToTarget(AActor* InstigatorActor, AActor* TargetActor, const TSubclassOf<UGameplayEffect>& GameplayEffectClass);
+	void ApplyEffectToTarget(AActor* SourceActor, AActor* TargetActor, const TSubclassOf<UGameplayEffect>& GameplayEffectClass);
 
 	/**
 	 * Overlap 开始时的回调
@@ -109,7 +109,7 @@ protected:
 	 * 因此"一次性消耗品"模式下本次 Overlap 之后不会再收到 OnEndOverlap。
 	 */
 	UFUNCTION(BlueprintCallable, Category="Applied Effects")
-	void OnBeginOverlap(AActor* InstigatorActor, AActor* TargetActor);
+	void OnBeginOverlap(AActor* SourceActor, AActor* TargetActor);
 
 	/**
 	 * Overlap 结束时的回调
@@ -119,7 +119,7 @@ protected:
 	 * 不被本次 bRemoveOnExit 清掉（详见 cpp 实现处的注释）。
 	 */
 	UFUNCTION(BlueprintCallable, Category="Applied Effects")
-	void OnEndOverlap(AActor* InstigatorActor, AActor* TargetActor);
+	void OnEndOverlap(AActor* SourceActor, AActor* TargetActor);
 
 	// ============================================================================
 	// 配置属性
@@ -228,7 +228,7 @@ private:
 	// ============================================================================
 
 	/** 批量施加效果数组：按数组顺序逐个调用 ApplyEffectToTarget，任一项为空/无效只跳过该项，不影响后续项 */
-	void ApplyEffectArrayToTarget(AActor* InstigatorActor, AActor* TargetActor, const TArray<TSubclassOf<UGameplayEffect>>& EffectClasses);
+	void ApplyEffectArrayToTarget(AActor* SourceActor, AActor* TargetActor, const TArray<TSubclassOf<UGameplayEffect>>& EffectClasses);
 
 	/** 移除目标 ASC 上所有已追踪的 Infinite 效果句柄 */
 	void RemoveStoredEffects(UAbilitySystemComponent* TargetASC);

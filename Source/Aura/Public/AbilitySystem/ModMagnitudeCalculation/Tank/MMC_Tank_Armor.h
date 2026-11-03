@@ -31,7 +31,7 @@ public:
 
 	/**
 	 * 计算护甲幅度：BaseArmor + 活力 × 2.6 + 力量 × 1.4 + 角色等级 × 0.7。
-	 * 等级取自 EffectContext 解析出的角色等级（SourceObject → Instigator 兜底），不是 GE 自身的 Level，
+	 * 等级取自 EffectContext 解析出的角色等级（SourceObject → Source 兜底），不是 GE 自身的 Level，
 	 * 因此同一套公式套在敌人身上也能按其等级给出对应护甲。
 	 * @param Spec 正在结算的 GE Spec，用于取捕获属性值与来源/目标标签
 	 * @return 护甲点数，保底 0

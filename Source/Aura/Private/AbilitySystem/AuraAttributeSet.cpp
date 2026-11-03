@@ -297,10 +297,10 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const struct FGameplayEffectMo
 			const float NewHealth = GetHealth() - LocalIncomingDamage;
 			SetHealth(FMath::Clamp(NewHealth, 0.f, GetMaxHealth()));
 			// 伤害数字：只有「施法者 ≠ 受击者」才飘字，避免自己打自己刷屏
-			if (EffectProperties.InstigatorCharacter != EffectProperties.TargetCharacter)
+			if (EffectProperties.SourceCharacter != EffectProperties.TargetCharacter)
 			{
 				if (AAuraPlayerController* DamagePC = Cast<AAuraPlayerController>(
-					UGameplayStatics::GetPlayerController(EffectProperties.InstigatorCharacter, 0)))
+					UGameplayStatics::GetPlayerController(EffectProperties.SourceCharacter, 0)))
 				{
 					DamagePC->ShowDamageNumber(LocalIncomingDamage, EffectProperties.TargetCharacter);
 				}
@@ -467,9 +467,9 @@ void UAuraAttributeSet::OnRep_MoveSpeed(const FGameplayAttributeData& OldMoveSpe
  * 这样拿到的 ASC 与 Avatar 是同一实体，避免把"属性所在对象"和"表现对象"搞混。
  *
  * 空值后果（本函数不做兜底赋值，全部保持默认构造的 nullptr）：
- *  - AI 敌人施法：InstigatorController 为空，但 InstigatorASC/AvatarActor/Character 有值；
- *  - 初始化属性 GE（AAuraCharacterBase::InitDefaultAttributes 设置 Instigator=Character）：
- *    InstigatorController 有值（玩家）或为空（敌人），Avatar 是角色本身；
+ *  - AI 敌人施法：SourceController 为空，但 SourceASC/AvatarActor/Character 有值；
+ *  - 初始化属性 GE（AAuraCharacterBase::InitDefaultAttributes 设置 Source=Character）：
+ *    SourceController 有值（玩家）或为空（敌人），Avatar 是角色本身；
  *  - 目标是道具/可破坏物：TargetCharacter 为空。
  * 调用方（PostGameplayEffectExecute）必须按需判空；当前实现里的日志没有判空（仅描述现状）。
  *
@@ -478,24 +478,24 @@ void UAuraAttributeSet::OnRep_MoveSpeed(const FGameplayAttributeData& OldMoveSpe
  */
 void UAuraAttributeSet::SetEffectProperties(const FGameplayEffectModCallbackData& Data, FEffectProperties& EffectProperties)
 {
-	// --- 获取事件源（Instigator）信息 ---
+	// --- 获取事件源（Source）信息 ---
 	EffectProperties.EffectContextHandle = Data.EffectSpec.GetContext();
-	// 原始施法者的 ASC：为 nullptr 说明这次 GE 没有设置过 Instigator（例如某些系统性/环境 GE）
-	EffectProperties.InstigatorASC = EffectProperties.EffectContextHandle.GetOriginalInstigatorAbilitySystemComponent();
+	// 原始施法者的 ASC：为 nullptr 说明这次 GE 没有设置过 Source（例如某些系统性/环境 GE）
+	EffectProperties.SourceASC = EffectProperties.EffectContextHandle.GetOriginalInstigatorAbilitySystemComponent();
 
-	if (EffectProperties.InstigatorASC)
+	if (EffectProperties.SourceASC)
 	{
 		// 双重判空：ASC 存在不代表它完成过 InitAbilityActorInfo（未初始化的 ASC 拿不到 Avatar）
-		if (EffectProperties.InstigatorASC->AbilityActorInfo.IsValid() && EffectProperties.InstigatorASC->AbilityActorInfo->AvatarActor.IsValid())
+		if (EffectProperties.SourceASC->AbilityActorInfo.IsValid() && EffectProperties.SourceASC->AbilityActorInfo->AvatarActor.IsValid())
 		{
-			EffectProperties.InstigatorAvatarActor = EffectProperties.InstigatorASC->AbilityActorInfo->AvatarActor.Get();
+			EffectProperties.SourceAvatarActor = EffectProperties.SourceASC->AbilityActorInfo->AvatarActor.Get();
 			// Avatar 不一定是 Character（可能是挂 ASC 的道具），转换失败时保持 nullptr
-			EffectProperties.InstigatorCharacter = Cast<ACharacter>(EffectProperties.InstigatorAvatarActor);
+			EffectProperties.SourceCharacter = Cast<ACharacter>(EffectProperties.SourceAvatarActor);
 
 			// 只有玩家控制的 ASC 才有 PlayerController（AI 施法者为空）
-			if (EffectProperties.InstigatorASC->AbilityActorInfo->PlayerController.IsValid())
+			if (EffectProperties.SourceASC->AbilityActorInfo->PlayerController.IsValid())
 			{
-				EffectProperties.InstigatorController = EffectProperties.InstigatorASC->AbilityActorInfo->PlayerController.Get();
+				EffectProperties.SourceController = EffectProperties.SourceASC->AbilityActorInfo->PlayerController.Get();
 			}
 		}
 	}

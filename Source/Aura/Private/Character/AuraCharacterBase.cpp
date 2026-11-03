@@ -200,7 +200,7 @@ void AAuraCharacterBase::InitDefaultAttributes()
 	}
 
 	// GE 等级 = 角色等级：主要属性 GE 用 CurveTable 时可以直接按等级取数值
-	const float EffectLevel = static_cast<float>(FMath::Max(GetCharacterLevel(), 1));
+	const int32 EffectLevel = FMath::Max(GetCharacterLevel(), 1);
 
 	// Apply Primary attributes (if present)
 	if (PrimaryEffect)

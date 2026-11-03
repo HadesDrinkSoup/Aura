@@ -45,13 +45,13 @@ AAuraEffectActor::AAuraEffectActor()
  * 向目标施加单个 GE，并在其为 Infinite 时登记句柄。
  *
  * 调用链：蓝图 Overlap 回调 → OnBeginOverlap/OnEndOverlap → ApplyEffectArrayToTarget → 本函数。
- * 参数语义：TargetActor 决定效果落在谁的 ASC 上；InstigatorActor 只写入 EffectContext
- * （击杀归属、GE 的 Instigator 标签判定），为空时退化为本 Actor，避免上下文缺失。
+ * 参数语义：TargetActor 决定效果落在谁的 ASC 上；SourceActor 只写入 EffectContext
+ * （击杀归属、GE 的 Source 标签判定），为空时退化为本 Actor，避免上下文缺失。
  *
  * 失败分支全部静默返回：没有 ASC（不是角色/没有 GAS）、GE 类为空、Spec 无效。
  * 这样即使 BP 里漏配一项，也不会打断同一数组里后续效果的施加。
  */
-void AAuraEffectActor::ApplyEffectToTarget(AActor* InstigatorActor, AActor* TargetActor, const TSubclassOf<UGameplayEffect>& GameplayEffectClass)
+void AAuraEffectActor::ApplyEffectToTarget(AActor* SourceActor, AActor* TargetActor, const TSubclassOf<UGameplayEffect>& GameplayEffectClass)
 {
 	// 用接口查询而不是 Cast<ACharacter>：凡实现了 IAbilitySystemInterface 的 Actor 都算合法目标；
 	// 玩家侧的 ASC 实际挂在 PlayerState 上，但该函数会沿接口正确取到，不需要特殊处理。
@@ -60,18 +60,18 @@ void AAuraEffectActor::ApplyEffectToTarget(AActor* InstigatorActor, AActor* Targ
 	
 	if (!GameplayEffectClass) return;
 
-	// 上下文建在"目标的 ASC"上：InstigatorActor 可能为空或与目标分离（例如地面陷阱），
-	// 用目标的 ASC 才能保证 SourceObject/Instigator 一定写进同一份有效上下文。
+	// 上下文建在"目标的 ASC"上：SourceActor 可能为空或与目标分离（例如地面陷阱），
+	// 用目标的 ASC 才能保证 SourceObject/Source 一定写进同一份有效上下文。
 	FGameplayEffectContextHandle EffectContextHandle = TargetASC->MakeEffectContext();
 	// SourceObject = 本 Actor：GE 的 GameplayTag 判定、部分 MMC 会读它来区分"哪瓶药/哪个区域"。
 	EffectContextHandle.AddSourceObject(this);
-	if (!InstigatorActor)
+	if (!SourceActor)
 	{
-		InstigatorActor = this;
+		SourceActor = this;
 	}
-	// 两个实参分别是 Instigator（谁触发的）与 EffectCauser（由什么物体造成的），
+	// 两个实参分别是 Source（谁触发的）与 EffectCauser（由什么物体造成的），
 	// 这里把 EffectCauser 记为本 Actor，便于死亡日志/伤害归因区分"谁碰的"和"碰了什么"。
-	EffectContextHandle.AddInstigator(InstigatorActor, this);
+	EffectContextHandle.AddInstigator(SourceActor, this);
 
 	// GE 等级取 ActorLevel：只有用到按等级取值的曲线/MMC 的 GE 才会体现出差别
 	const FGameplayEffectSpecHandle EffectSpecHandle = TargetASC->MakeOutgoingSpec(GameplayEffectClass, ActorLevel, EffectContextHandle);
@@ -105,11 +105,11 @@ void AAuraEffectActor::ApplyEffectToTarget(AActor* InstigatorActor, AActor* Targ
  * 因此若 GE 之间存在属性依赖（例如 Infinite 光环的 OnApplied 要读 Instant 写入的属性），
  * 必须在蓝图里自行排好数组顺序——这里不做任何排序或依赖解析。
  */
-void AAuraEffectActor::ApplyEffectArrayToTarget(AActor* InstigatorActor, AActor* TargetActor, const TArray<TSubclassOf<UGameplayEffect>>& EffectClasses)
+void AAuraEffectActor::ApplyEffectArrayToTarget(AActor* SourceActor, AActor* TargetActor, const TArray<TSubclassOf<UGameplayEffect>>& EffectClasses)
 {
 	for (const TSubclassOf<UGameplayEffect>& EffectClass : EffectClasses)
 	{
-		ApplyEffectToTarget(InstigatorActor, TargetActor, EffectClass);
+		ApplyEffectToTarget(SourceActor, TargetActor, EffectClass);
 	}
 }
 
@@ -158,20 +158,20 @@ void AAuraEffectActor::RemoveStoredEffects(UAbilitySystemComponent* TargetASC)
  *  3) bDestroy 放在最后，保证一次性消耗品是"先给效果、再销毁自己"，顺序颠倒会导致什么都没给上。
  * 若 GE 之间有更强的依赖，只能靠蓝图里的数组顺序保证——本函数不做依赖解析。
  */
-void AAuraEffectActor::OnBeginOverlap(AActor* InstigatorActor, AActor* TargetActor)
+void AAuraEffectActor::OnBeginOverlap(AActor* SourceActor, AActor* TargetActor)
 {
 	// 1. 再施加进入效果
 	if (!OnEnterInstantEffects.IsEmpty())
 	{
-		ApplyEffectArrayToTarget(InstigatorActor, TargetActor, OnEnterInstantEffects);
+		ApplyEffectArrayToTarget(SourceActor, TargetActor, OnEnterInstantEffects);
 	}
 	if (!OnEnterDurationEffects.IsEmpty())
 	{
-		ApplyEffectArrayToTarget(InstigatorActor, TargetActor, OnEnterDurationEffects);
+		ApplyEffectArrayToTarget(SourceActor, TargetActor, OnEnterDurationEffects);
 	}
 	if (!OnEnterInfiniteEffects.IsEmpty())
 	{
-		ApplyEffectArrayToTarget(InstigatorActor, TargetActor, OnEnterInfiniteEffects);
+		ApplyEffectArrayToTarget(SourceActor, TargetActor, OnEnterInfiniteEffects);
 	}
 
 	// 2. 销毁自身（一次性消耗品模式）
@@ -197,7 +197,7 @@ void AAuraEffectActor::OnBeginOverlap(AActor* InstigatorActor, AActor* TargetAct
  * 未做端过滤的原因与 OnBeginOverlap 相同：只有服务器收到重叠事件时才应走到这里；
  * 客户端即使因本地移动产生重叠，也只会因为没有权威而静默失败（外加引擎告警）。
  */
-void AAuraEffectActor::OnEndOverlap(AActor* InstigatorActor, AActor* TargetActor)
+void AAuraEffectActor::OnEndOverlap(AActor* SourceActor, AActor* TargetActor)
 {
 	// 1. 先移除已追踪的旧效果（如进入时施加的毒气 DoT），再施加新效果（如永久 MaxHP-10），
 	//    避免新 Infinite 效果被自己的 bRemoveOnExit 误删
@@ -214,15 +214,15 @@ void AAuraEffectActor::OnEndOverlap(AActor* InstigatorActor, AActor* TargetActor
 	// 2. 再施加离开效果（顺序同进入：Instant → Duration → Infinite）
 	if (!OnExitInstantEffects.IsEmpty())
 	{
-		ApplyEffectArrayToTarget(InstigatorActor, TargetActor, OnExitInstantEffects);
+		ApplyEffectArrayToTarget(SourceActor, TargetActor, OnExitInstantEffects);
 	}
 	if (!OnExitDurationEffects.IsEmpty())
 	{
-		ApplyEffectArrayToTarget(InstigatorActor, TargetActor, OnExitDurationEffects);
+		ApplyEffectArrayToTarget(SourceActor, TargetActor, OnExitDurationEffects);
 	}
 	if (!OnExitInfiniteEffects.IsEmpty())
 	{
-		ApplyEffectArrayToTarget(InstigatorActor, TargetActor, OnExitInfiniteEffects);
+		ApplyEffectArrayToTarget(SourceActor, TargetActor, OnExitInfiniteEffects);
 	}
 
 	// 3. 销毁自身（一次性消耗品模式）

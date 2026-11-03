@@ -27,7 +27,7 @@ UMMC_Ranger_Armor::UMMC_Ranger_Armor()
 
 /**
  * 计算游侠护甲，被 GAS 在 GE 求值时调用（非快照捕获的属性变化会再次触发）。
- * 输入：活力、力量（均从目标捕获）、角色等级（从 GE 上下文解析，SourceObject 优先、Instigator 兜底）。
+ * 输入：活力、力量（均从目标捕获）、角色等级（从 GE 上下文解析，SourceObject 优先、Source 兜底）。
  * 公式：护甲 = 1 + 活力 × 1 + 力量 × 0.35 + 等级 × 0.25
  *  - 基础 1 点：保证裸装/0 级时也有护甲，不依赖任何属性；
  *  - 活力项是主收益（每点 1 点护甲），力量项只有 0.35 的零头，体现游侠不靠力量生存；
@@ -44,7 +44,7 @@ float UMMC_Ranger_Armor::CalculateBaseMagnitude_Implementation(const FGameplayEf
 		UAuraAttributeSet::GetVigorAttribute(), Spec, EvaluationParameters);
 	const float Strength = GetCapturedMagnitude(
 		UAuraAttributeSet::GetStrengthAttribute(), Spec, EvaluationParameters);
-	// 等级：先 SourceObject 再 Instigator；都解析不到返回 0，此时护甲只由属性项构成
+	// 等级：先 SourceObject 再 Source；都解析不到返回 0，此时护甲只由属性项构成
 	const int32 Level = GetCharacterLevelFromSpec(Spec);
 
 	const float Result = BaseArmor + Vigor * VigorCoefficient + Strength * StrengthCoefficient + Level * LevelCoefficient;

@@ -43,7 +43,7 @@ public:
 	 * 技能层在构建 Spec 时用它设置 EffectLevel。
 	 * 返回 0 表示该对象没有等级概念，调用方应自行兜底（例如 FMath::Max(Level, 1)）。
 	 */
-	virtual int32 GetCharacterLevel() const {return 0;};
+	virtual int32 GetCharacterLevel() const {return 1;};
 	/**
 	 * 武器尖端的世界坐标，作为近战判定、投射物生成点与特效原点的统一基准。
 	 * 调用方：UAuraProjectileSpell 发射投射物时读取该坐标决定出生位置与朝向。

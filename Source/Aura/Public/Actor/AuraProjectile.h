@@ -71,7 +71,7 @@ public:
 	 *
 	 * 关键点：
 	 *  - 由施法者在生成时创建（SourceASC->MakeOutgoingSpec(DamageEffectClass, 技能等级, 上下文)），
-	 *    因此 Spec 里的等级、SetByCaller、Instigator 都来自施法者而不是投射物；
+	 *    因此 Spec 里的等级、SetByCaller、Source 都来自施法者而不是投射物；
 	 *  - meta=(ExposeOnSpawn=true) 表示它可以在 SpawnActorDeferred 之后、FinishSpawning 之前
 	 *    （或通过 SpawnActor 的 ExposeOnSpawn 参数）赋值——这是唯一能在 BeginPlay 前注入数据的窗口；
 	 *  - 没有标记 Replicated：客户端拿到的是空句柄。命中结算只在服务器发生，所以不需要同步；

@@ -24,7 +24,7 @@ Private 目录保持与之完全对应的结构（`Private/AbilitySystem/ModMagn
 | `CaptureTargetAttribute(s)` | 以「目标 + 非快照」方式登记捕获，派生属性随基础属性实时刷新 |
 | `GetCapturedMagnitude` | 统一读取属性，未登记/读取失败返回 0，并保证结果非负 |
 | `BuildEvaluateParameters` | 带上来源/目标标签，供属性聚合器做标签过滤 |
-| `GetCharacterLevelFromSpec` | 先取 `SourceObject`，再退回 `Instigator`，解析失败返回 0 |
+| `GetCharacterLevelFromSpec` | 先取 `SourceObject`，再退回 `Source`，解析失败返回 0 |
 
 子类只负责「捕获哪些属性 + 用什么公式」，不再重复样板代码。
 

@@ -6,6 +6,7 @@
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystemInterface.h"
 #include "GameFramework/PlayerState.h"
+#include "Interface/CombatInterface.h"
 #include "AuraPlayerState.generated.h"
 
 class UAuraAttributeSet;
@@ -22,7 +23,7 @@ class UAbilitySystemComponent;
  * 实现 IAbilitySystemInterface 后，GAS 框架能通过该接口自动获取 ASC
  */
 UCLASS()
-class AURA_API AAuraPlayerState : public APlayerState, public IAbilitySystemInterface
+class AURA_API AAuraPlayerState : public APlayerState, public IAbilitySystemInterface, public ICombatInterface
 {
 	GENERATED_BODY() 
 public:
@@ -35,7 +36,7 @@ public:
 	// 获取属性集的便捷访问方法
 	UAuraAttributeSet* GetAttributeSet() const {return AuraAttributeSet;}
 	
-	int32 GetCharacterLevel() const {return Level;}
+	virtual int32 GetCharacterLevel() const override {return Level;}
 	
 protected:
 	// 技能系统组件 —— GAS 核心，管理技能授予、激活与 GameplayEffect
@@ -45,7 +46,7 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UAuraAttributeSet> AuraAttributeSet;
 	
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing= OnRep_Level, Category= "Class Default ")
+	UPROPERTY(EditDefaultsOnly, ReplicatedUsing= OnRep_Level, Category= "Class Default ")
 	int32 Level = 1;
 	
 	UFUNCTION()

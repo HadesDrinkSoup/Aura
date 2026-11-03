@@ -14,7 +14,7 @@
  *  - 以「目标 + 非快照」方式登记要捕获的属性，保证派生属性随基础属性实时刷新
  *  - 安全读取捕获属性（未登记或读取失败时返回 0，并保证结果不为负）
  *  - 构建带来源/目标标签的评估参数（供属性聚合器按标签过滤）
- *  - 从 EffectContext 解析角色等级（SourceObject -> Instigator 兜底）
+ *  - 从 EffectContext 解析角色等级（SourceObject -> Source 兜底）
  *
  * 具体公式由 Elementalist / Warrior / Ranger 三个目录下的子类实现；
  * 在编辑器中把 GE 的 Modifier -> Calculation Class 指向对应职业的 MMC 即可。
@@ -47,6 +47,6 @@ protected:
 	/** 构建带来源与目标标签的评估参数 */
 	static FAggregatorEvaluateParameters BuildEvaluateParameters(const FGameplayEffectSpec& Spec);
 
-	/** 解析施法者角色等级：优先 SourceObject，其次 Instigator，都解析不到时返回 0 */
+	/** 解析施法者角色等级：优先 SourceObject，其次 Source，都解析不到时返回 0 */
 	static int32 GetCharacterLevelFromSpec(const FGameplayEffectSpec& Spec);
 };

@@ -49,7 +49,7 @@ public:
 	virtual void UnHighlightActor() override;
 	
 	/** 敌人等级直接取编辑器里配置的 Level（不依赖 PlayerState） */
-	virtual int32 GetCharacterLevel() const override;
+	virtual int32 GetCharacterLevel() const override {return Level;}
 	
 	virtual void Death_Implementation() override;
 	
@@ -70,7 +70,7 @@ protected:
 	virtual void InitHealthBar();
 	
 	/** 敌人等级：参与 GE 等级与 MMC 等级系数，不同敌人直接在 BP 里改 */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= "Class Default ")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "Class Default ")
 	int32 Level = 1;
 	
 	/** 基础移动速度 */

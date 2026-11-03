@@ -166,13 +166,20 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 		FString(TEXT("移动速度，角色移动速率。影响走位/风筝/追击/逃跑效率。来源：Agility")));
 	
 	// =========================================================================
-	// 攻击效果
+	// 攻击类型
 	// =========================================================================
 	
-	// 攻击伤害
-	GameplayTags.Damage = UGameplayTagsManager::Get().AddNativeGameplayTag(
-		FName("Damage"),
-		FString(TEXT("伤害")));
+	// 物理伤害
+	GameplayTags.Damage_Type_Physical = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Damage.Type.Physical"),
+		FString(TEXT("物理伤害")));
+	GameplayTags.Damage_Type_Magical = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Damage.Type.Magical"),
+		FString(TEXT("魔法伤害")));
+	
+	// =========================================================================
+	// 攻击反馈
+	// =========================================================================
 	// 攻击命中反馈
 	GameplayTags.Effects_HitReact = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Effects.HitReact"),

@@ -68,8 +68,11 @@ struct FAuraGameplayTags
 	FGameplayTag Attributes_Derived_HealthRegen;       // 生命恢复 — 受 Vigor + 等级 影响，决定每秒自动恢复的生命值
 	FGameplayTag Attributes_Derived_ManaRegen;         // 法力恢复 — 受 Intelligence + 等级 影响，决定每秒自动恢复的法力值
 	
-	/** 攻击效果 */
-	FGameplayTag Damage;						//攻击伤害
+	/** 攻击类型 */
+	FGameplayTag Damage_Type_Physical;	//物理攻击
+	FGameplayTag Damage_Type_Magical;	//物理攻击
+	
+	/** 命中反馈 */
 	FGameplayTag Effects_HitReact;				//攻击命中反馈
 	FGameplayTag Effects_Death;					//角色死亡
 	
