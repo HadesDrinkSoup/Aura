@@ -40,7 +40,7 @@ public:
 	/** 每帧驱动 CursorTrace 以更新光标下方目标的高亮状态 */
 	virtual void PlayerTick(float DeltaTime) override;
 	
-	void ShowDamageNumber(const float &Damage, ACharacter* TargetCharacter) const;
+	void ShowFloatingText(const FText& Text, ACharacter* TargetCharacter, const FLinearColor& Color = FLinearColor::Yellow, const float FontSize = 40.f) const;
 protected:
 	
 	/** 配置鼠标光标、输入模式（Game & UI）、注册 AuraContext 映射上下文 */

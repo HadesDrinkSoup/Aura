@@ -41,21 +41,14 @@ void AAuraPlayerController::PlayerTick(const float DeltaTime)
 	CursorTrace();
 }
 
-void AAuraPlayerController::ShowDamageNumber(const float& Damage, ACharacter* TargetCharacter) const
+void AAuraPlayerController::ShowFloatingText(const FText& Text, ACharacter* TargetCharacter, const FLinearColor& Color, const float FontSize) const
 {
 	// 飘字只是本地表现：只在本机玩家身上创建，避免服务器/客户端各建一份
-	if (!IsLocalController() || !FloatingTextWidgetClass || !IsValid(TargetCharacter))
-	{
-		return;
-	}
-	
-	UFloatingTextWidgetComponent* DamageText = NewObject<UFloatingTextWidgetComponent>(TargetCharacter, FloatingTextWidgetClass);
-	//动态创建的组件需要注册
-	DamageText->RegisterComponent();
-
-	// 挂在敌人身上：飘字跟随敌人
-	DamageText->AttachToComponent(TargetCharacter->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
-	DamageText->SetFloatingText(FText::AsNumber(FMath::RoundToInt(Damage)));
+	if (!IsLocalController() || !FloatingTextWidgetClass || !IsValid(TargetCharacter)) return;
+	UFloatingTextWidgetComponent* FloatingText = NewObject<UFloatingTextWidgetComponent>(TargetCharacter, FloatingTextWidgetClass);
+	FloatingText->RegisterComponent();
+	FloatingText->AttachToComponent(TargetCharacter->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+	FloatingText->SetFloatingText(Text, Color, FontSize);
 }
 
 void AAuraPlayerController::BeginPlay()

@@ -14,5 +14,5 @@ class AURA_API UFloatingTextWidgetComponent : public UWidgetComponent
 public:
 	//设置漂浮文本内容（蓝图可调用，蓝图子类也可重写）
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
-	void SetFloatingText(const FText &Text);
+	void SetFloatingText(const FText &Text, const FLinearColor& Color, const float FontSize);
 };

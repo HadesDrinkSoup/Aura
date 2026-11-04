@@ -299,10 +299,16 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const struct FGameplayEffectMo
 			// 伤害数字：只有「施法者 ≠ 受击者」才飘字，避免自己打自己刷屏
 			if (EffectProperties.SourceCharacter != EffectProperties.TargetCharacter)
 			{
-				if (AAuraPlayerController* DamagePC = Cast<AAuraPlayerController>(
-					UGameplayStatics::GetPlayerController(EffectProperties.SourceCharacter, 0)))
+				if (const AAuraPlayerController* PC = Cast<AAuraPlayerController>(UGameplayStatics::GetPlayerController(EffectProperties.SourceCharacter, 0)))
 				{
-					DamagePC->ShowDamageNumber(LocalIncomingDamage, EffectProperties.TargetCharacter);
+					// 暴击标记是施法时掷好写进 Spec 的 SetByCaller（Damage.Critical），这里只读不掷，
+					// 因此「伤害被乘了暴击倍率」和「飘字是红色」必然是同一次判定。
+					const bool bCritical = Data.EffectSpec.GetSetByCallerMagnitude(
+						FAuraGameplayTags::Get().Damage_Critical, false, 0.f) > 0.f;
+					PC->ShowFloatingText(
+						FText::AsNumber(FMath::RoundToInt(LocalIncomingDamage)),EffectProperties.TargetCharacter,
+						bCritical ? FLinearColor::Red : FLinearColor::Yellow,
+						bCritical ? 60 : 40);
 				}
 			}
 			UE_LOG(LogTemp, Log, TEXT("%s 生命值受到伤害 %f， 当前生命值%f"), *EffectProperties.TargetAvatarActor->GetName(), LocalIncomingDamage, GetHealth());

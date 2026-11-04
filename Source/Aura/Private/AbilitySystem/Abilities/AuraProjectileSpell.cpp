@@ -18,6 +18,8 @@
 #include "AbilitySystem/Abilities/AuraProjectileSpell.h"
 
 #include "Actor/AuraProjectile.h"
+#include "AbilitySystem/AuraAttributeSet.h"
+#include "AuraGamepalyTags.h"
 #include "Interface/CombatInterface.h"
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
@@ -106,14 +108,17 @@ void UAuraProjectileSpell::SpawnProjectile(const FVector& ProjectileTargetLocati
 	// 根据技能等级计算实际伤害
 	const float ScaledDamage = Damage.GetValueAtLevel(AbilityLevel);
 
-	// 诊断日志：等级变没变、曲线有没有配，一眼就能看出是哪一环没生效
-	const FString CurveName = Damage.Curve.CurveTable ? Damage.Curve.CurveTable->GetName() : TEXT("未配置");
-	UE_LOG(LogTemp, Log, TEXT("%s 施法：角色等级=%d 基础伤害=%.2f（CurveTable=%s 行=%s）"),
-		*GetNameSafe(GetAvatarActorFromActorInfo()), AbilityLevel, ScaledDamage,
-		*CurveName, *Damage.Curve.RowName.ToString());
-
 	// 向一个已经创建的 FGameplayEffectSpec（效果规格）中“写入”一个与 GameplayTag 绑定的浮点数值
 	UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(SpecHandle, DamageType, ScaledDamage);
+
+	// 得到暴击率
+	const float CriticalChance = SourceASC->GetNumericAttribute(UAuraAttributeSet::GetCriticalChanceAttribute());
+	// 暴击判定
+	const bool bCritical = FMath::FRandRange(0.f, 100.f) < CriticalChance;
+	// 写入暴击标签
+	UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(
+		SpecHandle, FAuraGameplayTags::Get().Damage_Critical, bCritical ? 1.f : 0.f);
+
 	Projectile->DamageEffectSpecHandle = SpecHandle;
 	
 	// FinishSpawning 才真正把 Actor 放进世界并跑 BeginPlay；上面赋的 SpecHandle 已经就位。
