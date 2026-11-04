@@ -16,6 +16,7 @@
 #include "AuraPlayerController.generated.h"
 
 class UFloatingTextWidgetComponent;
+class ACharacter;
 class UAuraAbilitySystemComponent;
 struct FGameplayTag;
 class UAuraInputConfig;
@@ -39,8 +40,31 @@ public:
 
 	/** 每帧驱动 CursorTrace 以更新光标下方目标的高亮状态 */
 	virtual void PlayerTick(float DeltaTime) override;
-	
-	void ShowFloatingText(const FText& Text, ACharacter* TargetCharacter, const FLinearColor& Color = FLinearColor::Yellow, const float FontSize = 40.f) const;
+
+	/**
+	 * 伤害飘字 —— 只在本机客户端创建，服务器与其它玩家都不显示。
+	 *
+	 * 为什么必须声明成 Client RPC：
+	 *  - 调用点（UAuraAttributeSet::PostGameplayEffectExecute、
+	 *    UExecutionCalculation_Damage::Execute_Implementation）只在服务器执行，
+	 *    服务器只负责"算伤害 / 判定暴击闪避"，不负责"画字"；
+	 *  - 普通 C++ 函数会在服务器进程里 NewObject，组件只存在于服务器世界，
+	 *    远端客户端的屏幕层永远收不到——这就是"listen host 正常、客户端没有"的根因；
+	 *  - 改成 Client RPC 后，网络层只把这次调用发给该 PlayerController 的拥有者客户端，
+	 *    真正的 NewObject 发生在"这次攻击所属的那个客户端"，因此每个玩家只在自己屏幕上
+	 *    看到自己造成的伤害，专用服务器上一个飘字都不会创建。
+	 *
+	 * 注意：listen host 调用 Client RPC 时 Callspace 为 Local，会就地执行 _Implementation，
+	 * 所以 host 作为玩家仍能看到自己的伤害数字；但不会再看到远端玩家的伤害数字。
+	 * 本函数只能由服务器调用：客户端没有权威的伤害数值，也不该主动调它。
+	 *
+	 * @param Text            飘字内容（伤害数字 / "未命中"）
+	 * @param TargetCharacter 飘字挂载的目标角色（被打的敌人），同时作为组件 Outer
+	 * @param Color           文字颜色（暴击红、普通黄、未命中白）
+	 * @param FontSize        字号
+	 */
+	UFUNCTION(Client, Reliable)
+	void ShowFloatingText(const FText& Text, ACharacter* TargetCharacter, FLinearColor Color, float FontSize);
 protected:
 	
 	/** 配置鼠标光标、输入模式（Game & UI）、注册 AuraContext 映射上下文 */

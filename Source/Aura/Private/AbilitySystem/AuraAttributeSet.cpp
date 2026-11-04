@@ -5,7 +5,6 @@
 #include "AuraGamepalyTags.h"
 #include "GameplayEffectExtension.h"
 #include "GameFramework/Character.h"
-#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "Player/AuraPlayerController.h"
 
@@ -262,7 +261,7 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const struct FGameplayEffectMo
 	if (Data.EvaluatedData.Attribute == GetHealthAttribute())
 	{
 		SetHealth(FMath::Clamp(GetHealth(), 0.f, GetMaxHealth()));
-		UE_LOG(LogTemp, Warning, TEXT("%s 初始生命值：%f"), *EffectProperties.TargetAvatarActor->GetName(), GetHealth());
+		UE_LOG(LogTemp, Warning, TEXT("%s 当前生命值：%f"), *EffectProperties.TargetAvatarActor->GetName(), GetHealth());
 	}
 	if (Data.EvaluatedData.Attribute == GetManaAttribute())
 	{
@@ -296,22 +295,45 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const struct FGameplayEffectMo
 		{
 			const float NewHealth = GetHealth() - LocalIncomingDamage;
 			SetHealth(FMath::Clamp(NewHealth, 0.f, GetMaxHealth()));
-			// 伤害数字：只有「施法者 ≠ 受击者」才飘字，避免自己打自己刷屏
+			// 伤害数字：只在「本地客户端」创建，服务器与其它玩家都不显示。
+			// 飘字的调用点只在服务器跑，ShowFloatingText 是 Client RPC，
+			// 网络层会把这次调用送到「对应 PlayerController 的拥有者客户端」上执行 NewObject。
+			// 因此取 PC 必须走 Actor 自己的 Controller，不能再用
+			// UGameplayStatics::GetPlayerController(SourceCharacter, 0) —— 那取的是本机 0 号玩家的 PC，
+			// PIE / 联机下恒为 listen host，远端攻击者的客户端永远收不到这次 RPC。
 			if (EffectProperties.SourceCharacter != EffectProperties.TargetCharacter)
 			{
-				if (const AAuraPlayerController* PC = Cast<AAuraPlayerController>(UGameplayStatics::GetPlayerController(EffectProperties.SourceCharacter, 0)))
+				// 暴击标记是施法时掷好写进 Spec 的 SetByCaller（Damage.Critical），这里只读不掷，
+				// 因此「伤害被乘了暴击倍率」和「飘字是红色」必然是同一次判定。
+				const bool bCritical = Data.EffectSpec.GetSetByCallerMagnitude(
+					FAuraGameplayTags::Get().Damage_Critical, false, 0.f) > 0.f;
+				const FText DamageText = FText::AsNumber(FMath::RoundToInt(LocalIncomingDamage));
+				const FLinearColor TextColor = bCritical ? FLinearColor::Red : FLinearColor::Yellow;
+				const float FontSize = bCritical ? 60.f : 40.f;
+
+				// ① 施法者是玩家 → 在「造成这次伤害的那个人」的客户端上飘字。
+				//    AI 施法者没有 PlayerController（SourceController 为空），这里自然跳过。
+				AAuraPlayerController* const SourcePC = Cast<AAuraPlayerController>(EffectProperties.SourceController);
+
+				// ② 受击者也是玩家 → 在「挨打的那个人」的客户端上飘字。
+				//    没有这一份，单机 / 被 AI 打时就完全看不到伤害数字（回退旧行为）；
+				//    两个玩家互打时则各自在自己屏幕上看到一份，不会重复发给同一个人。
+				AAuraPlayerController* TargetPC = nullptr;
+				if (EffectProperties.TargetCharacter)
 				{
-					// 暴击标记是施法时掷好写进 Spec 的 SetByCaller（Damage.Critical），这里只读不掷，
-					// 因此「伤害被乘了暴击倍率」和「飘字是红色」必然是同一次判定。
-					const bool bCritical = Data.EffectSpec.GetSetByCallerMagnitude(
-						FAuraGameplayTags::Get().Damage_Critical, false, 0.f) > 0.f;
-					PC->ShowFloatingText(
-						FText::AsNumber(FMath::RoundToInt(LocalIncomingDamage)),EffectProperties.TargetCharacter,
-						bCritical ? FLinearColor::Red : FLinearColor::Yellow,
-						bCritical ? 60 : 40);
+					TargetPC = Cast<AAuraPlayerController>(EffectProperties.TargetCharacter->GetController<APlayerController>());
+				}
+
+				if (SourcePC)
+				{
+					SourcePC->ShowFloatingText(DamageText, EffectProperties.TargetCharacter, TextColor, FontSize);
+				}
+				if (TargetPC && TargetPC != SourcePC)
+				{
+					TargetPC->ShowFloatingText(DamageText, EffectProperties.TargetCharacter, TextColor, FontSize);
 				}
 			}
-			UE_LOG(LogTemp, Log, TEXT("%s 生命值受到伤害 %f， 当前生命值%f"), *EffectProperties.TargetAvatarActor->GetName(), LocalIncomingDamage, GetHealth());
+			UE_LOG(LogTemp, Log, TEXT("%s 受到伤害 %f， 当前生命值%f"), *EffectProperties.TargetAvatarActor->GetName(), LocalIncomingDamage, GetHealth());
 			//是否致命
 			const bool bFatal = NewHealth <= 0.f;
 			FGameplayTagContainer TagContainer;
