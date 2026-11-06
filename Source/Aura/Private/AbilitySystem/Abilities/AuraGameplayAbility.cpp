@@ -19,7 +19,7 @@
 #include "GameFramework/Actor.h"
 #include "Interface/CombatInterface.h"
 
-int32 UAuraGameplayAbility::SetAbilityLevel() const
+int32 UAuraGameplayAbility::GetCharacterLevel() const
 {
 	// 角色等级与 MMC、初始 GE 走同一来源（玩家在 AuraPlayerState::Level，敌人在 AuraCharacterBase::Level），
 	// 这样「技能等级」和「属性成长用的等级」永远指同一件事，不会出现两套等级各长各的。

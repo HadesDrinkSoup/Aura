@@ -374,7 +374,7 @@ public:
 	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, MoveSpeed)
 	
 	// ============================================================================
-	//  Meta Attributes（元属性）
+	//  Meta Attributes（元属性） 将结果传递给目标，不需要网络复制
 	// ============================================================================
 	UPROPERTY(BlueprintReadOnly, Category="Meta Attributes")
 	FGameplayAttributeData IncomingDamage;

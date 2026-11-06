@@ -155,10 +155,12 @@ void UExecutionCalculation_Damage::Execute_Implementation(
 		FinalDamage += CalculateFinalDamage(RawMagical, MagicResistance);
 	}
 	
-	// 暴击：已在施法时生成判定过一次并写进 Spec
-	// 保证「乘了暴击倍率的这一下」和「属性集里飘红字的那一下」是同一次判定。
-	const bool bCritical = Spec.GetSetByCallerMagnitude(Tags.Damage_Critical, false, 0.f) > 0.f;
-	if (bCritical)
+	// 暴击：在本类掷一次骰子，掷中就乘暴击倍率。
+	// 骰子只在这里掷，下游（属性集的飘字）不再重复判定，避免「伤害没翻倍却飘红字」这类对不上的表现。
+	float CriticalChance = 0.f;
+	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().CriticalChanceDef, EvaluateParameters, CriticalChance);
+	CriticalChance = FMath::Max(CriticalChance, 0.f);
+	if (FMath::RandRange(0.f, 100.f) < CriticalChance)
 	{
 		FinalDamage *= CriticalAttackConstant;
 	}

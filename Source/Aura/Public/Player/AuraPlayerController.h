@@ -64,7 +64,7 @@ public:
 	 * @param FontSize        字号
 	 */
 	UFUNCTION(Client, Reliable)
-	void ShowFloatingText(const FText& Text, ACharacter* TargetCharacter, FLinearColor Color, float FontSize);
+	void ShowFloatingText(const FText& Text, ACharacter* TargetCharacter, FLinearColor Color = FColor::Yellow, float FontSize = 40.f);
 protected:
 	
 	/** 配置鼠标光标、输入模式（Game & UI）、注册 AuraContext 映射上下文 */

@@ -18,8 +18,6 @@
 #include "AbilitySystem/Abilities/AuraProjectileSpell.h"
 
 #include "Actor/AuraProjectile.h"
-#include "AbilitySystem/AuraAttributeSet.h"
-#include "AuraGamepalyTags.h"
 #include "Interface/CombatInterface.h"
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
@@ -99,25 +97,24 @@ void UAuraProjectileSpell::SpawnProjectile(const FVector& ProjectileTargetLocati
 
 	// 获取施法者的能力组件
 	const UAbilitySystemComponent* SourceASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetAvatarActorFromActorInfo());
-	// 技能等级 = 施法者角色等级（UAuraGameplayAbility::SetAbilityLevel）。
-	// 取一次存下来，保证「查 CurveTable 的等级」和「写进 Spec 的等级」是同一个数，
-	// 不会出现基础伤害按 10 级算、而 GE 等级还是 1 的错配。
-	const int32 AbilityLevel = SetAbilityLevel();
+	FGameplayEffectContextHandle EffectContextHandle = SourceASC->MakeEffectContext();
+	EffectContextHandle.SetAbility(this);
+	EffectContextHandle.AddSourceObject(Projectile);
+	TArray<TWeakObjectPtr<AActor>> Actors;
+	Actors.Add(Projectile);
+	EffectContextHandle.AddActors(Actors);
+	FHitResult HitResult;
+	HitResult.Location = ProjectileTargetLocation;
+	EffectContextHandle.AddHitResult(HitResult);
+	
+	const int32 AbilityLevel = GetCharacterLevel();
 	// 创建伤害效果的 Spec
-	const FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, static_cast<float>(AbilityLevel), SourceASC->MakeEffectContext());
+	const FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, AbilityLevel, EffectContextHandle);
 	// 根据技能等级计算实际伤害
 	const float ScaledDamage = Damage.GetValueAtLevel(AbilityLevel);
 
 	// 向一个已经创建的 FGameplayEffectSpec（效果规格）中“写入”一个与 GameplayTag 绑定的浮点数值
 	UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(SpecHandle, DamageType, ScaledDamage);
-
-	// 得到暴击率
-	const float CriticalChance = SourceASC->GetNumericAttribute(UAuraAttributeSet::GetCriticalChanceAttribute());
-	// 暴击判定
-	const bool bCritical = FMath::FRandRange(0.f, 100.f) < CriticalChance;
-	// 写入暴击标签
-	UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(
-		SpecHandle, FAuraGameplayTags::Get().Damage_Critical, bCritical ? 1.f : 0.f);
 
 	Projectile->DamageEffectSpecHandle = SpecHandle;
 	

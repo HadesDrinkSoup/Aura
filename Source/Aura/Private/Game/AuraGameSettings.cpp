@@ -11,9 +11,6 @@
 #include "AbilitySystem/Data/CharacterClassInfo.h"
 #include "Game/AuraCharacterRoster.h"
 
-// 独立日志分类：只在缺失关键配置时输出 Warning，便于在日志里单独过滤 Aura 配置问题
-DEFINE_LOG_CATEGORY_STATIC(LogAuraSettings, Warning, All);
-
 /**
  * 取 CDO（Class Default Object）。
  * 用 GetDefault 而不是 GetMutableDefault：拿到的是 const 指针，从类型层面阻止下游修改配置。
@@ -36,7 +33,7 @@ const UCharacterClassInfo* UAuraGameSettings::GetCharacterClassInfo() const
 	const UCharacterClassInfo* ClassInfo = CharacterClassInfo.LoadSynchronous();
 	if (!ClassInfo)
 	{
-		UE_LOG(LogAuraSettings, Warning,
+		UE_LOG(LogTemp, Warning,
 			TEXT("[Aura] UAuraGameSettings::CharacterClassInfo 未配置。")
 			TEXT("请在 Project Settings → Game → Aura Game Settings 里指向 DA_CharacterClassInfo，")
 			TEXT("否则所有角色都不会获得默认属性与技能。"));

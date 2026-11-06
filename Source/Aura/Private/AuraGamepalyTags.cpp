@@ -173,17 +173,16 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 	GameplayTags.Damage_Type_Physical = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Damage.Type.Physical"),
 		FString(TEXT("物理伤害")));
+	// 魔法伤害
 	GameplayTags.Damage_Type_Magical = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Damage.Type.Magical"),
 		FString(TEXT("魔法伤害")));
-	// 本次伤害是否暴击：SetByCaller 的 key，值 1 = 暴击，0 = 普通
-	GameplayTags.Damage_Critical = UGameplayTagsManager::Get().AddNativeGameplayTag(
-		FName("Damage.Critical"),
-		FString(TEXT("暴击标记")));
+	
 	
 	// =========================================================================
 	// 攻击反馈
 	// =========================================================================
+	
 	// 攻击命中反馈
 	GameplayTags.Effects_HitReact = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Effects.HitReact"),

@@ -72,13 +72,6 @@ struct FAuraGameplayTags
 	FGameplayTag Damage_Type_Physical;	//物理攻击
 	FGameplayTag Damage_Type_Magical;	//物理攻击
 	
-	/**
-	 * 本次伤害是否暴击（SetByCaller：1 = 暴击，0 = 普通）。
-	 * 骰子在施法时（UAuraProjectileSpell::SpawnProjectile）掷一次写进 Spec，
-	 * 执行计算读它决定是否乘暴击倍率，属性集读它决定飘字颜色 —— 同一个标记，保证两处不打架。
-	 */
-	FGameplayTag Damage_Critical;
-	
 	/** 命中反馈 */
 	FGameplayTag Effects_HitReact;				//攻击命中反馈
 	FGameplayTag Effects_Death;					//角色死亡

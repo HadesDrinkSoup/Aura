@@ -49,16 +49,7 @@ public:
 	/**
 	 * 本次施法使用的技能等级：直接取施法者的角色等级（ICombatInterface::GetCharacterLevel），
 	 * 也就是「技能等级 = 角色等级」——角色一升级，下一次施法立刻按新等级去查 CurveTable。
-	 *
-	 * 为什么不在授予技能时把 Spec 的 Level 写成角色等级：
-	 * Spec 的 Level 是 GiveAbility 那一刻的一次性快照（AuraAbilitySystemComponent.cpp 里写死 1），
-	 * 角色升级后不会自动刷新，还得另写一套升级回调去 SetLevel；而本项目里升级只体现为
-	 * PlayerState::Level 的变化，实时读取最省事，也不会留下「技能等级落后于角色等级」的脏数据。
-	 *
-	 * 回退语义：Avatar 没实现 ICombatInterface（例如将来由道具/陷阱施法）时退回 GetAbilityLevel()，
-	 * 即 Spec 的授予等级，保证永远不会拿 0 去查 CurveTable。
-	 * @return 恒 >= 1 的技能等级
 	 */
 	UFUNCTION(BlueprintPure, Category="Ability")
-	int32 SetAbilityLevel() const;
+	int32 GetCharacterLevel() const;
 };

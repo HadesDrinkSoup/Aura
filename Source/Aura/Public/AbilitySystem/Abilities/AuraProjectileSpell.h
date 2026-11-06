@@ -58,9 +58,9 @@ protected:
 	
 	/**
 	 * 命中时施加的伤害 GE 类（Instant / Duration 由 GE 资产自己决定）。
-	 * 用法：SpawnProjectileOnServer 里 MakeOutgoingSpec(DamageEffectClass, SetAbilityLevel(), ...)，
+	 * 用法：SpawnProjectileOnServer 里 MakeOutgoingSpec(DamageEffectClass, GetCharacterLevel(), ...)，
 	 * 得到的 Spec 句柄被塞给投射物，由投射物命中目标时 Apply。
-	 * 等级取 UAuraGameplayAbility::SetAbilityLevel()——即施法者的角色等级实时值，
+	 * 等级取 UAuraGameplayAbility::GetCharacterLevel()——即施法者的角色等级实时值，
 	 * 所以角色升级后伤害会立刻按 CT_Damage 的新档位结算（Spec 里授予时写的 Level=1 只作兜底）。
 	 *
 	 * 注：Category 与 ProjectileClass 同名（编辑器里两者会挤在同一分组），

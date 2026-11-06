@@ -303,13 +303,11 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const struct FGameplayEffectMo
 			// PIE / 联机下恒为 listen host，远端攻击者的客户端永远收不到这次 RPC。
 			if (EffectProperties.SourceCharacter != EffectProperties.TargetCharacter)
 			{
-				// 暴击标记是施法时掷好写进 Spec 的 SetByCaller（Damage.Critical），这里只读不掷，
-				// 因此「伤害被乘了暴击倍率」和「飘字是红色」必然是同一次判定。
-				const bool bCritical = Data.EffectSpec.GetSetByCallerMagnitude(
-					FAuraGameplayTags::Get().Damage_Critical, false, 0.f) > 0.f;
+				// 暴击倍率由 ExecutionCalculation_Damage 在结算时直接乘进最终伤害，
+				// 这里只把最终伤害飘出来（Damage_Critical 的 SetByCaller 方案已移除，不再区分飘字颜色）。
 				const FText DamageText = FText::AsNumber(FMath::RoundToInt(LocalIncomingDamage));
-				const FLinearColor TextColor = bCritical ? FLinearColor::Red : FLinearColor::Yellow;
-				const float FontSize = bCritical ? 60.f : 40.f;
+				const FLinearColor TextColor = FLinearColor::Yellow;
+				const float FontSize = 40.f;
 
 				// ① 施法者是玩家 → 在「造成这次伤害的那个人」的客户端上飘字。
 				//    AI 施法者没有 PlayerController（SourceController 为空），这里自然跳过。
