@@ -37,7 +37,7 @@ struct FAuraInputAction
  *
  * 使用方式：在编辑器里基于本类创建 DataAsset（例如 DA_InputConfig），
  * 填好 AbilityInputActions 后，由 AAuraPlayerController::BeginPlay 通过
- * AuraGameSettings 取到同一份实例；整个项目只维护这一处映射，
+ * PlayerController 上的 `Input Config` 属性取到同一份实例；整个项目只维护这一处映射，
  * 新增技能时只需在这里加一条，不用改 C++ 绑定代码。
  */
 UCLASS()

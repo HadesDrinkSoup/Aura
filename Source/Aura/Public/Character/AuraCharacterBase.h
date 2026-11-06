@@ -53,10 +53,6 @@ public:
 	/** 死亡逻辑 */
 	virtual void Death_Implementation() override;
 
-	/** 职业的读写：BP 里配的是默认值，战斗关由 GameMode 在 Possess 之前按选人结果覆盖 */
-	void SetCharacterClass(ECharacterClass InClass) { CharacterClass = InClass; }
-	ECharacterClass GetCharacterClass() const { return CharacterClass; }
-	
 protected:
 	/**
 	 * 初始化 ASC 的 ActorInfo（子类实现）。
@@ -125,7 +121,7 @@ protected:
 
 	/**
 	 * 职业：决定使用哪套属性 GE 与默认技能。
-	 * 属性 GE 本身在 Project Settings → Game → Aura Game Settings 的 DA_CharacterClassInfo 里配置。
+	 * 属性 GE 本身在 GameMode 上配置的 DA_CharacterClassInfo 里（见 AAuraGameModeBase）。
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Character Class")
 	ECharacterClass CharacterClass = ECharacterClass::Elementalist;

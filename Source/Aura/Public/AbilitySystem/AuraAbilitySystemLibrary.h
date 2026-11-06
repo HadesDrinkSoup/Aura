@@ -9,7 +9,7 @@
 class UOverlayWidgetController;
 class UAttributesMenuController;
 class UCharacterClassInfo;
-class UAuraCharacterRoster;
+
 /**
  * GAS 相关的全局查询库（C++ 与蓝图共用）
  *
@@ -18,7 +18,7 @@ class UAuraCharacterRoster;
  *
  * 覆盖两类查询：
  *  1. UI 层：取本地 0 号玩家的 Overlay / 属性菜单 WidgetController（Widget 的数据源）；
- *  2. 数据层：取 Project Settings 里配置的职业配置表与可选角色名单。
+ *  2. 数据层：从 GameMode 上取职业配置表（仅服务器有效）。
  *
  * 注意：
  *  - 全部是读操作，不要求服务器执行；但 UI 相关函数的返回值只在「有本地玩家」的端存在
@@ -69,35 +69,20 @@ public:
 	static UAttributesMenuController* GetAttributesMenuController(const UObject* WorldContextObject);
 
 	/**
-	 * 取全局职业配置表（UAuraGameSettings 上配置的 DA_CharacterClassInfo）。
-	 * 配置是进程级静态数据，不按世界查找；WorldContextObject 只用于 BP 侧自动填上下文。
+	 * 取全局职业配置表（AAuraGameModeBase 上配置的 DA_CharacterClassInfo）。
+	 * 数据源是当前世界的 GameMode，所以**只在服务器上有效**：
+	 * `UGameplayStatics::GetGameMode` 在客户端返回 nullptr，客户端调用只会拿到 nullptr。
 	 *
-	 * 内部实现：UAuraGameSettings::Get()（CDO，只读）→ 对 TSoftObjectPtr 调 LoadSynchronous()，
+	 * 内部实现：Cast<AAuraGameModeBase>(GetGameMode(WorldContextObject)) → GetCharacterClassInfo()，
 	 * 即首次调用会同步加载该 DataAsset（阻塞主线程），所以应只在初始化期调用，不要放进 Tick。
 	 *
-	 * 调用方：AAuraCharacterBase::FindClassDefaultInfo（解析职业默认的 Primary/Derived/Pool GE 与默认技能）、
-	 *        UPlayerCharacterDefinition（读职业的展示信息）。
+	 * 调用方：AAuraCharacterBase::FindClassDefaultInfo（解析职业默认的 Primary/Derived/Pool GE 与默认技能）。
 	 *
-	 * 失败返回：未配置或软引用加载失败时返回 nullptr，并在 AuraGameSettings 里打一条 Warning；
+	 * 失败返回：GameMode 为空（客户端）或未配置时返回 nullptr，后者会在 GameMode 里打一条 Warning；
 	 * 此时整条属性/技能下发链都会空转（角色不会获得任何属性），调用方必须判空。
-	 * 无需服务器执行：纯静态配置读取，客户端读到的也是同一份资产。
 	 *
-	 * @param WorldContextObject 未参与查找，仅为蓝图节点的世界上下文占位。
+	 * @param WorldContextObject 用于定位当前世界的 GameMode。
 	 */
 	UFUNCTION(BlueprintPure, Category = "Aura|Character", meta = (WorldContext = "WorldContextObject"))
 	static const UCharacterClassInfo* GetCharacterClassInfo(const UObject* WorldContextObject);
-
-	/**
-	 * 取可选角色名单（UAuraGameSettings 上配置的 DA_CharacterRoster）；选人界面用。
-	 *
-	 * 同样走 CDO + LoadSynchronous，属于同步加载的静态配置。
-	 * C++ 侧目前没有调用点（UAuraCharacterRoster 自己的接口先留好），预期由选人界面的蓝图调用。
-	 *
-	 * 失败返回：未配置或加载失败时返回 nullptr，且**不打警告**（名单是可选的，缺了不影响战斗）。
-	 *          注意「没配」和「配了但列表为空」都体现为 nullptr / Num()==0，调用方两者都要能处理。
-	 *
-	 * @param WorldContextObject 未参与查找，仅为蓝图节点的世界上下文占位。
-	 */
-	UFUNCTION(BlueprintPure, Category = "Aura|Character", meta = (WorldContext = "WorldContextObject"))
-	static const UAuraCharacterRoster* GetCharacterRoster(const UObject* WorldContextObject);
 };

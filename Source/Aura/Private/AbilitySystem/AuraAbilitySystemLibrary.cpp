@@ -2,18 +2,18 @@
 
 /**
  * @file AuraAbilitySystemLibrary.cpp
- * @brief 全局查询库实现：职业配置表 / 角色名单的取用，以及本地玩家的 UI WidgetController 获取。
+ * @brief 全局查询库实现：职业配置表的取用，以及本地玩家的 UI WidgetController 获取。
  *
  * 要点：
- *  - 四个函数都是「查一下、返回指针」，不改任何状态，因此不需要复制、不需要广播，也没有服务器限制；
- *  - 配置类函数把数据源固定为 UAuraGameSettings（Project Settings 里的进程级配置），
- *    这样菜单关、战斗关、客户端读到的是同一份资产，不随关卡切换丢失；
+ *  - 三个函数都是「查一下、返回指针」，不改任何状态，因此不需要复制、不需要广播，也没有服务器限制；
+ *  - 配置类函数的数据源是 AAuraGameModeBase：职业表挂在 GameMode 的 BP 默认值上。
+ *    因此**只在服务器有效**——`UGameplayStatics::GetGameMode` 在客户端返回 nullptr（见各函数注释）；
  *  - UI 类函数的链路是「0 号 PC → HUD → 组装 FWidgetControllerParams → HUD 的懒加载单例」，
  *    只在有本地玩家的端有效，专用服务器上返回 nullptr。
  */
 
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
-#include "Game/AuraGameSettings.h"
+#include "Game/AuraGameModeBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "Player/AuraPlayerController.h"
 #include "Player/AuraPlayerState.h"
@@ -22,27 +22,15 @@
 
 /**
  * 返回职业配置表。
- * 供角色初始化（属性 GE / 默认技能）、角色定义资产查询职业信息时调用。
- * WorldContextObject 在实现里完全没用——保留它只是为了蓝图的 World Context 自动注入，
- * 配置本身挂在 UAuraGameSettings 的 CDO 上（Project Settings → Game → Aura Game Settings），
- * 与当前是哪个世界、哪个 GameMode 无关。所以这里的签名参数被刻意忽略，不是遗漏。
- * 失败（未配置）时由 UAuraGameSettings 打 Warning 并返回 nullptr。
+ * 供角色初始化（属性 GE / 默认技能）时调用。
+ * WorldContextObject 用来定位当前世界的 GameMode：配置挂在 GameMode 的 BP 默认值上。
+ * 失败（GameMode 为空 / 未配置）时返回 nullptr：前者发生在客户端，后者的 Warning 在 GameMode 里打。
  */
 const UCharacterClassInfo* UAuraAbilitySystemLibrary::GetCharacterClassInfo(const UObject* WorldContextObject)
 {
-	// 唯一读取点：数据源在 Project Settings，而不是某个关卡的 GameMode。
-	// WorldContextObject 只服务 BP 的隐式上下文（meta = WorldContext），配置本身是进程级的。
-	return UAuraGameSettings::Get()->GetCharacterClassInfo();
-}
-
-/**
- * 返回可选角色名单。
- * 与 GetCharacterClassInfo 同一套机制（CDO + 同步加载），但更"轻"：未配置时静默返回 nullptr，
- * 因为名单只服务选人界面，缺了不影响战斗流程。
- */
-const UAuraCharacterRoster* UAuraAbilitySystemLibrary::GetCharacterRoster(const UObject* WorldContextObject)
-{
-	return UAuraGameSettings::Get()->GetCharacterRoster();
+	// 客户端没有 GameMode，GetGameMode 会返回 nullptr，这里必须判空
+	const AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(WorldContextObject));
+	return AuraGameMode ? AuraGameMode->GetCharacterClassInfo() : nullptr;
 }
 
 /**

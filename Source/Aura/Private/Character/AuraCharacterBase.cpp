@@ -88,7 +88,7 @@ void AAuraCharacterBase::MulticastHandleDeath_Implementation()
 
 /**
  * 从全局职业配置表（DA_CharacterClassInfo）取本角色职业的默认配置。
- * 通过 UAuraAbilitySystemLibrary::GetCharacterClassInfo(this) 读取 GameSettings 中的表；
+ * 通过 UAuraAbilitySystemLibrary::GetCharacterClassInfo(this) 读取 GameMode 上的表；
  * 表或职业项缺失时返回 nullptr，调用方需按"无职业配置"降级处理。
  */
 const FCharacterClassDefaultInfo* AAuraCharacterBase::FindClassDefaultInfo() const
