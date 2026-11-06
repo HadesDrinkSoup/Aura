@@ -13,6 +13,9 @@
 # Claude Code local settings
 .claude/
 
+# Local design docs (kept on disk, not tracked)
+Docs/
+
 # Compiled Object files
 *.slo
 *.lo
