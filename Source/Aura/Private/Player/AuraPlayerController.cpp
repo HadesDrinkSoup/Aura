@@ -41,7 +41,7 @@ void AAuraPlayerController::PlayerTick(const float DeltaTime)
 	CursorTrace();
 }
 
-void AAuraPlayerController::ShowFloatingText_Implementation(const FText& Text, ACharacter* TargetCharacter, FLinearColor Color, float FontSize)
+void AAuraPlayerController::ShowFloatingText_Implementation(const float InDamage, ACharacter* TargetCharacter, const bool bIsDodge, const bool bIsCriticalHit)
 {
 	// Client RPC 只会到拥有者客户端；这里再守一道，避免误用或重复创建
 	if (!IsLocalController() || !FloatingTextWidgetClass || !IsValid(TargetCharacter)) return;
@@ -50,7 +50,9 @@ void AAuraPlayerController::ShowFloatingText_Implementation(const FText& Text, A
 	UFloatingTextWidgetComponent* FloatingText = NewObject<UFloatingTextWidgetComponent>(TargetCharacter, FloatingTextWidgetClass);
 	FloatingText->RegisterComponent();
 	FloatingText->AttachToComponent(TargetCharacter->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
-	FloatingText->SetFloatingText(Text, Color, FontSize);
+	
+
+	FloatingText->SetFloatingText(InDamage, bIsDodge, bIsCriticalHit);
 }
 
 void AAuraPlayerController::BeginPlay()

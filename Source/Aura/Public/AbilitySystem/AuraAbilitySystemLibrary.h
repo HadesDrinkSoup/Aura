@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayEffectTypes.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "AuraAbilitySystemLibrary.generated.h"
 
@@ -50,7 +51,7 @@ public:
 	 *
 	 * @param WorldContextObject 仅用于蓝图侧隐式注入世界上下文，函数内部固定取玩家索引 0，不参与查找。
 	 */
-	UFUNCTION(BlueprintPure, meta = (WorldContext = "WorldContextObject"))
+	UFUNCTION(BlueprintPure, Category = "AuraAbilitySystemLibrary|Widget", meta = (WorldContext = "WorldContextObject"))
 	static UOverlayWidgetController* GetOverlayWidgetController(const UObject* WorldContextObject);
 
 	/**
@@ -65,7 +66,7 @@ public:
 	 *
 	 * @param WorldContextObject 仅用于蓝图侧隐式注入世界上下文，玩家索引固定为 0。
 	 */
-	UFUNCTION(BlueprintPure, meta = (WorldContext = "WorldContextObject"))
+	UFUNCTION(BlueprintPure, Category = "AuraAbilitySystemLibrary|Character", meta = (WorldContext = "WorldContextObject"))
 	static UAttributesMenuController* GetAttributesMenuController(const UObject* WorldContextObject);
 
 	/**
@@ -83,6 +84,18 @@ public:
 	 *
 	 * @param WorldContextObject 用于定位当前世界的 GameMode。
 	 */
-	UFUNCTION(BlueprintPure, Category = "Aura|Character", meta = (WorldContext = "WorldContextObject"))
+	UFUNCTION(BlueprintPure, Category = "AuraAbilitySystemLibrary|Character", meta = (WorldContext = "WorldContextObject"))
 	static const UCharacterClassInfo* GetCharacterClassInfo(const UObject* WorldContextObject);
+	
+	UFUNCTION(BlueprintPure, Category = "AuraAbilitySystemLibrary|GameplayEffects")
+	static bool IsDodge (const FGameplayEffectContextHandle EffectContextHandle);
+	
+	UFUNCTION(BlueprintPure, Category = "AuraAbilitySystemLibrary|GameplayEffects")
+	static bool IsCriticalHit (const FGameplayEffectContextHandle EffectContextHandle);
+	
+	UFUNCTION(BlueprintCallable, Category = "AuraAbilitySystemLibrary|GameplayEffects")
+	static void SetIsDodge(FGameplayEffectContextHandle EffectContextHandle, bool bIsDodge);
+	
+	UFUNCTION(BlueprintCallable, Category = "AuraAbilitySystemLibrary|GameplayEffects")
+	static void SetIsCriticalHit(FGameplayEffectContextHandle EffectContextHandle, bool bIsCritical);
 };

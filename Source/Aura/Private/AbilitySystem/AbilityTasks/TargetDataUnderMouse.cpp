@@ -3,11 +3,12 @@
 /**
  * @file TargetDataUnderMouse.cpp
  * @brief AbilityTask 实现：本地控制端采集鼠标光标下的命中结果，同步给服务器并在两端广播 ValidData。
+ *        光标命中角色时，落点会被收敛到该角色的中心点（胶囊体中心），而不是鼠标在模型表面上的命中位置。
  *
  * 三条执行阶段（与文件内编号一致）：
  *   第 0 步 CreateTargetDataUnderMouse：只 new 出 Task 并挂到技能上；
  *   第 1 步 Activate：按"是否本地控制"分流——本地采集，远程注册回调；
- *   第 2 步 SendMouseCursorData：开预测窗口 → 射线检测 → 本地广播 → Server RPC 同步；
+ *   第 2 步 SendMouseCursorData：开预测窗口 → 射线检测 →（命中角色则换算成角色中心）→ 本地广播 → Server RPC 同步；
  *   第 3 步 OnTargetDataReplicatedCallback：远程端收到数据后清缓存并广播。
  *
  * 本 Task 不主动 EndTask()：它只产出一次目标数据，生命周期跟着技能走
@@ -19,6 +20,7 @@
 #include "AbilitySystemComponent.h"	// ServerSetReplicatedTargetData / 复制数据缓存 / 目标数据委托都在这里
 // 备注：FGameplayAbilityTargetData_SingleTargetHit、FGameplayAbilityTargetDataHandle 等类型来自
 //       Abilities/GameplayAbilityTargetTypes.h，由 AbilityTask.h 间接包含，无需再写 include。
+#include "GameFramework/Character.h"	// ACharacter：判断光标命中的是不是"角色"，并取它的中心点
 
 // ═════════════════════════════════════════════════════════════════════════════
 // 第 0 步：工厂函数 —— 只做"创建对象 + 注册进技能"，不做任何业务逻辑
@@ -102,7 +104,9 @@ void UTargetDataUnderMouse::SendMouseCursorData() const
 	FScopedPredictionWindow ScopedPrediction(AbilitySystemComponent.Get());
 	
 	// 2.2 取当前角色信息里的玩家控制器；再用它把"鼠标屏幕坐标"反投影到世界里做射线检测。
-	//     ECC_Visibility = 只检测对 Visibility 通道有响应的物体（默认的地面/角色都会挡光）；
+	//     ECC_Visibility = 只检测对 Visibility 通道有响应的物体：地面默认 Block，会挡住射线；
+	//     但角色的 Pawn / CharacterMesh 碰撞配置默认忽略 Visibility（见 AuraCharacterBase 构造函数），
+	//     必须显式把角色碰撞体对 Visibility 的响应设为 Block，否则射线会直接穿过角色打到地面；
 	//     bTraceComplex=false 用简单碰撞，性能更好；
 	//     命中结果全部写进 CursorHit（HitActor、ImpactPoint、Trace Start/End、骨骼名等）。
 	//     注意：这里没有判空 PC。LocalController 路径通常一定带有效 PlayerController
@@ -112,7 +116,28 @@ void UTargetDataUnderMouse::SendMouseCursorData() const
 	FHitResult CursorHit;
 	PC->GetHitResultUnderCursor(ECC_Visibility, false, CursorHit);
 	
-	// 2.3 把命中结果包成 GAS 的目标数据结构：
+	// 2.3 命中角色时把落点收敛到角色中心点。
+	//     鼠标射线命中角色时，ImpactPoint/Location 落在"模型朝向摄像机那一侧的表面"上；
+	//     俯视角下那往往就是脚下或身体边缘，直接把鼠标位置当落点，投射物容易打在角色脚边，
+	//     或者贴着模型擦过去而打不中。这里把落点换成角色的中心点（Actor 原点 = 胶囊体中心，
+	//     位于身体中段），让"瞄准谁"等价于"打向谁的身体中心"。
+	//     只改 Location 与 ImpactPoint：
+	//       - HitActor 必须原样保留，蓝图还要靠它判断"这次选中的是不是角色/敌人"；
+	//       - TraceStart / TraceEnd / ImpactNormal 描述的是射线本身的几何关系，保持原样，
+	//         不伪造出一个"不存在的命中"。
+	//     不需要先判 bBlockingHit：没命中时 GetActor() 就是 nullptr，Cast 会直接失败。
+	//     命中时 Location 与 ImpactPoint 本来就是同一个点，两个都写，蓝图取哪个字段都正确。
+	if (const ACharacter* HitCharacter = Cast<ACharacter>(CursorHit.GetActor()))
+	{
+		// 默认 Character 的 Capsule 是根组件且位于 Actor 原点，因此 GetActorLocation()
+		// 就是胶囊体中心（身体中段）。即使某个 BP 改了网格偏移，取的仍然是"身体中心"；
+		// 比网格体包围盒中心更稳定——包围盒会随动画和武器摆动而漂移。
+		const FVector CharacterCenter = HitCharacter->GetActorLocation();
+		CursorHit.Location = CharacterCenter;
+		CursorHit.ImpactPoint = CharacterCenter;
+	}
+	
+	// 2.4 把命中结果包成 GAS 的目标数据结构：
 	//     先用 new 造一个 FGameplayAbilityTargetData_SingleTargetHit（它带虚函数、要被 TSharedPtr 托管），
 	//     填好 HitResult 后交给 DataHandle::Add()，所有权随即转交给句柄，不需要我们 delete。
 	FGameplayAbilityTargetDataHandle DataHandle;
@@ -121,7 +146,7 @@ void UTargetDataUnderMouse::SendMouseCursorData() const
 	Data->HitResult = CursorHit;
 	DataHandle.Add(Data);
 	
-	// 2.4 把目标数据同步给服务器。
+	// 2.5 把目标数据同步给服务器。
 	//     ServerSetReplicatedTargetData 是一个 UFUNCTION(Server, reliable, WithValidation) 的 RPC
 	//     （AbilitySystemComponent.h:1572），只在客户端拥有该 ASC 时才会真正发网络包；
 	//     参数依次是：
@@ -141,7 +166,7 @@ void UTargetDataUnderMouse::SendMouseCursorData() const
 		FGameplayTag(),
 		AbilitySystemComponent->ScopedPredictionKey);
 	
-	// 2.5 本地立刻广播 ValidData：这样技能在客户端"当场"就能拿到目标数据，
+	// 2.6 本地立刻广播 ValidData：这样技能在客户端"当场"就能拿到目标数据，
 	//     不必等服务器 RPC 往返，这就是 GAS 的预测手感。
 	//     ShouldBroadcastAbilityTaskDelegates() 会检查 Ability && Ability->IsActive()
 	//     （AbilityTask.cpp:197-207）：技能已经结束就不再广播，避免往已销毁的蓝图图里回调。

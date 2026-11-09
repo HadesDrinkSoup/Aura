@@ -22,10 +22,10 @@ struct FAuraGameplayEffectContext : public FGameplayEffectContext
 {
 	GENERATED_BODY()
 public:
-	bool IsMiss() const {return bIsMiss;}
+	bool IsDodge() const {return bIsDodge;}
 	bool IsCriticalHit() const {return bIsCriticalHit;}
 
-	void SetIsMiss(const bool bInIsMiss) {bIsMiss = bInIsMiss;}
+	void SetIsDodge(const bool bInIsDodge) {bIsDodge = bInIsDodge;}
 	void SetIsCriticalHit(const bool bInIsCriticalHit) {bIsCriticalHit = bInIsCriticalHit;}
 
 	/**
@@ -60,7 +60,7 @@ public:
 
 protected:
 	UPROPERTY()
-	bool bIsMiss = false;
+	bool bIsDodge = false;
 
 	UPROPERTY()
 	bool bIsCriticalHit = false;

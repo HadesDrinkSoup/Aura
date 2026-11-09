@@ -28,9 +28,8 @@
 
 #include "AbilitySystemComponent.h"
 #include "AuraGamepalyTags.h"
+#include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "GameFramework/Actor.h"
-#include "GameFramework/Character.h"
-#include "Player/AuraPlayerController.h"
 
 const AuraDamageStatics& DamageStatics()
 {
@@ -60,6 +59,7 @@ void UExecutionCalculation_Damage::Execute_Implementation(
 	if (!SourceASC || !TargetASC) return;
 
 	const FGameplayEffectSpec& Spec = ExecutionParams.GetOwningSpec();
+	const FGameplayEffectContextHandle EffectContextHandle = Spec.GetContext();
 	const FAuraGameplayTags& Tags = FAuraGameplayTags::Get();
 
 	const FGameplayTagContainer* SourceTags = Spec.CapturedSourceTags.GetAggregatedTags();
@@ -85,43 +85,9 @@ void UExecutionCalculation_Damage::Execute_Implementation(
 	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().DodgeChanceDef, EvaluateParameters, DodgeChance);
 	const float FinalHitChance = FMath::Clamp(HitChance - DodgeChance, 0.f, 100.f);
 	// 用 [0,100) 的浮点骰子：100% 命中必定命中，0% 命中必定未命中
-	if (FMath::FRandRange(0.f, 100.f) >= FinalHitChance)
-	{
-		// 未命中飘字同样只在本机客户端显示：本函数只在服务器执行，
-		// ShowFloatingText 是 Client RPC，网络层会把它送到对应 PlayerController 的拥有者客户端。
-		// 取 PC 走 AbilityActorInfo（玩家 ASC 的 PlayerController），不能再用
-		// UGameplayStatics::GetPlayerController(SourceCharacter, 0)：那恒为 listen host。
-		APlayerController* SourcePC = nullptr;
-		if (SourceASC->AbilityActorInfo.IsValid())
-		{
-			SourcePC = SourceASC->AbilityActorInfo->PlayerController.Get();
-		}
-		// AbilityActorInfo 还没初始化时，从 Avatar 的 Controller 取
-		if (SourcePC == nullptr)
-		{
-			if (const ACharacter* SourceCharacter = Cast<ACharacter>(SourceASC->GetAvatarActor()))
-			{
-				SourcePC = SourceCharacter->GetController<APlayerController>();
-			}
-		}
-		AAuraPlayerController* const SourceAuraPC = Cast<AAuraPlayerController>(SourcePC);
-
-		// 受击者若也是玩家，也在他自己的客户端上提示一次（单机 / 被 AI 打时就是这一份）
-		ACharacter* const TargetCharacter = Cast<ACharacter>(TargetASC->GetAvatarActor());
-		APlayerController* TargetPC = TargetCharacter ? TargetCharacter->GetController<APlayerController>() : nullptr;
-		AAuraPlayerController* const TargetAuraPC = Cast<AAuraPlayerController>(TargetPC);
-
-		const FText MissText = FText::FromString(TEXT("未命中"));
-		if (SourceAuraPC)
-		{
-			SourceAuraPC->ShowFloatingText(MissText, TargetCharacter, FLinearColor::White, 40.f);
-		}
-		if (TargetAuraPC && TargetAuraPC != SourceAuraPC)
-		{
-			TargetAuraPC->ShowFloatingText(MissText, TargetCharacter, FLinearColor::White, 40.f);
-		}
-		return;
-	}
+	const bool bIsDodge = FMath::FRandRange(0.f, 100.f) >= FinalHitChance;
+	UAuraAbilitySystemLibrary::SetIsDodge(EffectContextHandle, bIsDodge);
+	if (bIsDodge) return;
 	
 	// 施法者攻击力加成
 	float PhysicalAttack = 0.f;
@@ -156,11 +122,12 @@ void UExecutionCalculation_Damage::Execute_Implementation(
 	}
 	
 	// 暴击：在本类掷一次骰子，掷中就乘暴击倍率。
-	// 骰子只在这里掷，下游（属性集的飘字）不再重复判定，避免「伤害没翻倍却飘红字」这类对不上的表现。
 	float CriticalChance = 0.f;
 	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().CriticalChanceDef, EvaluateParameters, CriticalChance);
 	CriticalChance = FMath::Max(CriticalChance, 0.f);
-	if (FMath::RandRange(0.f, 100.f) < CriticalChance)
+	const bool bIsCriticalHit = FMath::RandRange(0.f, 100.f) < CriticalChance;
+	UAuraAbilitySystemLibrary::SetIsCriticalHit(EffectContextHandle, bIsCriticalHit);
+	if (bIsCriticalHit)
 	{
 		FinalDamage *= CriticalAttackConstant;
 	}

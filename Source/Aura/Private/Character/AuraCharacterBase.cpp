@@ -34,6 +34,17 @@ AAuraCharacterBase::AAuraCharacterBase()
 	GetCapsuleComponent()->SetGenerateOverlapEvents(false);
 	// 相机通道忽略胶囊体，防止俯视角下相机贴到角色身上
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+
+	// 光标射线（GetHitResultUnderCursor(ECC_Visibility)）只能命中对 Visibility 通道 Block 的物体，
+	// 而引擎默认的 Pawn / CharacterMesh 碰撞配置都把 Visibility 设为 Ignore
+	// （见 Config/DefaultEngine.ini:115 的 Pawn、:117 的 CharacterMesh），
+	// 结果就是所有角色对光标射线都是"透明"的。敌人此前在 AuraEnemy 构造函数里单独打开了
+	// 网格体的 Visibility 响应，玩家角色却没有：瞄准另一个玩家时射线会直接穿过对方身体打中地面，
+	// 落点自然变成他脚下的地板。
+	// 这里在基类统一打开：胶囊体保证"点到即选中"（简单碰撞始终存在，不依赖网格体的 PhysicsAsset），
+	// 网格体保证身体边缘、四肢等超出胶囊体的部分也能命中。
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+	GetMesh()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 	
 	// 网格体承担射线检测（敌人高亮用 ECC_Visibility）与投射物命中（ECC_Projectile Overlap）
 	GetMesh()->SetGenerateOverlapEvents(true);

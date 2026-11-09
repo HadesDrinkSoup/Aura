@@ -48,7 +48,7 @@ bool FAuraGameplayEffectContext::NetSerialize(FArchive& Ar, class UPackageMap* M
 	uint8 RepBits = 0;
 	if (Ar.IsSaving())
 	{
-		if (bIsMiss)
+		if (bIsDodge)
 		{
 			RepBits |= 1 << 0;
 		}
@@ -62,7 +62,7 @@ bool FAuraGameplayEffectContext::NetSerialize(FArchive& Ar, class UPackageMap* M
 
 	if (Ar.IsLoading())
 	{
-		bIsMiss = (RepBits & (1 << 0)) != 0;
+		bIsDodge = (RepBits & (1 << 0)) != 0;
 		bIsCriticalHit = (RepBits & (1 << 1)) != 0;
 	}
 

@@ -58,13 +58,18 @@ public:
 	 * 所以 host 作为玩家仍能看到自己的伤害数字；但不会再看到远端玩家的伤害数字。
 	 * 本函数只能由服务器调用：客户端没有权威的伤害数值，也不该主动调它。
 	 *
-	 * @param Text            飘字内容（伤害数字 / "未命中"）
+	 * @param InDamage        本次伤害的最终数值（暴击倍率已乘好；闪避时为 0）
 	 * @param TargetCharacter 飘字挂载的目标角色（被打的敌人），同时作为组件 Outer
-	 * @param Color           文字颜色（暴击红、普通黄、未命中白）
-	 * @param FontSize        字号
+	 * @param bIsDodge		  攻击是否被闪避
+	 * @param bIsCriticalHit  攻击是否暴击
+	 *
+	 * 注意：这里刻意只传 float + 两个 bool，不再传 FText / 颜色 / 字号 ——
+	 * 文案、颜色、字号、动画都属于纯表现，统一交给蓝图的 SetFloatingText 事件处理；
+	 * 参数全是 POD，RPC 序列化最省，也顺带避开了 UHT 的一个坑：RPC 的 exec thunk
+	 * 形参会被改写成 `const T&`，声明里写 `FText Text`（按值）会生成对不上的 thunk，报 C2511。
 	 */
 	UFUNCTION(Client, Reliable)
-	void ShowFloatingText(const FText& Text, ACharacter* TargetCharacter, FLinearColor Color = FColor::Yellow, float FontSize = 40.f);
+	void ShowFloatingText(float InDamage, ACharacter* TargetCharacter, bool bIsDodge = false, bool bIsCriticalHit = false);
 protected:
 	
 	/** 配置鼠标光标、输入模式（Game & UI）、注册 AuraContext 映射上下文 */

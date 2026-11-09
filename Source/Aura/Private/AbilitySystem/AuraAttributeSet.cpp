@@ -4,6 +4,7 @@
 
 #include "AuraGamepalyTags.h"
 #include "GameplayEffectExtension.h"
+#include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "GameFramework/Character.h"
 #include "Net/UnrealNetwork.h"
 #include "Player/AuraPlayerController.h"
@@ -295,19 +296,12 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const struct FGameplayEffectMo
 		{
 			const float NewHealth = GetHealth() - LocalIncomingDamage;
 			SetHealth(FMath::Clamp(NewHealth, 0.f, GetMaxHealth()));
-			// 伤害数字：只在「本地客户端」创建，服务器与其它玩家都不显示。
-			// 飘字的调用点只在服务器跑，ShowFloatingText 是 Client RPC，
-			// 网络层会把这次调用送到「对应 PlayerController 的拥有者客户端」上执行 NewObject。
-			// 因此取 PC 必须走 Actor 自己的 Controller，不能再用
-			// UGameplayStatics::GetPlayerController(SourceCharacter, 0) —— 那取的是本机 0 号玩家的 PC，
-			// PIE / 联机下恒为 listen host，远端攻击者的客户端永远收不到这次 RPC。
+			
 			if (EffectProperties.SourceCharacter != EffectProperties.TargetCharacter)
 			{
 				// 暴击倍率由 ExecutionCalculation_Damage 在结算时直接乘进最终伤害，
 				// 这里只把最终伤害飘出来（Damage_Critical 的 SetByCaller 方案已移除，不再区分飘字颜色）。
-				const FText DamageText = FText::AsNumber(FMath::RoundToInt(LocalIncomingDamage));
-				const FLinearColor TextColor = FLinearColor::Yellow;
-				const float FontSize = 40.f;
+				const float Damage = LocalIncomingDamage;
 
 				// ① 施法者是玩家 → 在「造成这次伤害的那个人」的客户端上飘字。
 				//    AI 施法者没有 PlayerController（SourceController 为空），这里自然跳过。
@@ -321,14 +315,15 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const struct FGameplayEffectMo
 				{
 					TargetPC = Cast<AAuraPlayerController>(EffectProperties.TargetCharacter->GetController<APlayerController>());
 				}
-
+				const bool bIsDodge = UAuraAbilitySystemLibrary::IsDodge(EffectProperties.EffectContextHandle);
+				const bool bIsCriticalHit = UAuraAbilitySystemLibrary::IsCriticalHit(EffectProperties.EffectContextHandle);
 				if (SourcePC)
 				{
-					SourcePC->ShowFloatingText(DamageText, EffectProperties.TargetCharacter, TextColor, FontSize);
+					SourcePC->ShowFloatingText(Damage, EffectProperties.TargetCharacter, bIsDodge, bIsCriticalHit);
 				}
 				if (TargetPC && TargetPC != SourcePC)
 				{
-					TargetPC->ShowFloatingText(DamageText, EffectProperties.TargetCharacter, TextColor, FontSize);
+					TargetPC->ShowFloatingText(Damage, EffectProperties.TargetCharacter, bIsDodge, bIsCriticalHit);
 				}
 			}
 			UE_LOG(LogTemp, Log, TEXT("%s 受到伤害 %f， 当前生命值%f"), *EffectProperties.TargetAvatarActor->GetName(), LocalIncomingDamage, GetHealth());

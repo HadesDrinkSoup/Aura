@@ -13,6 +13,8 @@
  */
 
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
+
+#include "AuraGameplayEffectContext.h"
 #include "Game/AuraGameModeBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "Player/AuraPlayerController.h"
@@ -31,6 +33,40 @@ const UCharacterClassInfo* UAuraAbilitySystemLibrary::GetCharacterClassInfo(cons
 	// 客户端没有 GameMode，GetGameMode 会返回 nullptr，这里必须判空
 	const AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(WorldContextObject));
 	return AuraGameMode ? AuraGameMode->GetCharacterClassInfo() : nullptr;
+}
+
+bool UAuraAbilitySystemLibrary::IsDodge(const FGameplayEffectContextHandle EffectContextHandle)
+{
+	if (const FAuraGameplayEffectContext* EffectContext = static_cast<const FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
+	{
+		return EffectContext->IsDodge();
+	}
+	return false;
+}
+
+bool UAuraAbilitySystemLibrary::IsCriticalHit(const FGameplayEffectContextHandle EffectContextHandle)
+{
+	if (const FAuraGameplayEffectContext* EffectContext = static_cast<const FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
+	{
+		return EffectContext->IsCriticalHit();
+	}
+	return false;
+}
+
+void UAuraAbilitySystemLibrary::SetIsDodge(FGameplayEffectContextHandle EffectContextHandle, const bool bIsDodge)
+{
+	if (FAuraGameplayEffectContext* EffectContext = static_cast<FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
+	{
+		EffectContext->SetIsDodge(bIsDodge);
+	}
+}
+
+void UAuraAbilitySystemLibrary::SetIsCriticalHit(FGameplayEffectContextHandle EffectContextHandle, const bool bIsCritical)
+{
+	if (FAuraGameplayEffectContext* EffectContext = static_cast<FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
+	{
+		EffectContext->SetIsCriticalHit(bIsCritical);
+	}
 }
 
 /**

@@ -72,10 +72,8 @@ void UAuraProjectileSpell::SpawnProjectile(const FVector& ProjectileTargetLocati
 	if (!CombatInterface) return;
 
 	const FVector SpawnLocation = CombatInterface->GetCombatSocketLocation();
-	// 朝向 = 出生点指向目标点。若目标点与出生点重合，该向量为零向量，
-	// Rotation() 会得到全零旋转（投射物朝 +X 飞），属于极端情况，调用方保证目标点有效。
 	const FRotator SpawnRotation = (ProjectileTargetLocation - SpawnLocation).Rotation();
-
+	
 	FTransform SpawnTransform;
 	SpawnTransform.SetLocation(SpawnLocation);
 	SpawnTransform.SetRotation(SpawnRotation.Quaternion());

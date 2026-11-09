@@ -10,6 +10,7 @@
  * 任务的"输出口"：动态多播委托（蓝图可绑定的动态委托，参数必须用 USTRUCT/UObject 类型）。
  * FGameplayAbilityTargetDataHandle 定义在 Abilities/GameplayAbilityTargetTypes.h:202。
  *   - 本地控制端：SendMouseCursorData() 采集完数据后立刻广播（预测，零延迟手感）。
+ *     若光标命中的是角色，落点改用该角色的中心点（胶囊体中心），而不是模型表面的命中位置。
  *   - 服务器/代理端：OnTargetDataReplicatedCallback() 收到客户端 RPC 后广播。
  * 蓝图里在节点的 "Assign Valid Data" 引脚上绑定事件，就能拿到鼠标指向的目标数据。
  */
@@ -55,7 +56,7 @@ protected:
 	
 private:
 	
-	/** 本地控制端：用鼠标光标下的命中结果构造目标数据，广播给技能，并同步给服务器。 */
+	/** 本地控制端：用鼠标光标下的命中结果构造目标数据（命中角色时落点取角色中心点），广播给技能，并同步给服务器。 */
 	void SendMouseCursorData() const;
 	/** 服务器/代理端：客户端的复制数据到达时回调；也用于处理"数据先到、任务后激活"的竞态。 */
 	void OnTargetDataReplicatedCallback(const FGameplayAbilityTargetDataHandle& DataHandle, FGameplayTag ActivationTag) const;

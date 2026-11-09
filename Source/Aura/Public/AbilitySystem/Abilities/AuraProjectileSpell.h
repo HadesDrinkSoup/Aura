@@ -43,6 +43,9 @@ protected:
 	 * - 服务器：立即生成；
 	 * - 客户端：直接返回（不生成、也不发额外请求）；落点由 TargetDataUnderMouse 同步到服务器，
 	 *   服务器端那份技能实例会再执行一次本函数并在那里生成。
+	 *
+	 * 朝向：只使用目标点相对发射点的水平分量（Z 清 0），目标是"投射物始终在发射点所在平面内飞行"；
+	 * 目标点的 Z 不参与朝向计算。若目标点与发射点水平重合，则退化到施法者的水平朝向。
 	 */
 	UFUNCTION(BlueprintCallable, Category="ProjectileSpell")
 	void SpawnProjectile(const FVector& ProjectileTargetLocation);
