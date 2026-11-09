@@ -69,7 +69,7 @@ public:
 	 * 形参会被改写成 `const T&`，声明里写 `FText Text`（按值）会生成对不上的 thunk，报 C2511。
 	 */
 	UFUNCTION(Client, Reliable)
-	void ShowFloatingText(float InDamage, ACharacter* TargetCharacter, bool bIsDodge = false, bool bIsCriticalHit = false);
+	void ShowFloatingText(float InDamage, ACharacter* TargetCharacter, const bool bIsDodge, const bool bIsCriticalHit);
 protected:
 	
 	/** 配置鼠标光标、输入模式（Game & UI）、注册 AuraContext 映射上下文 */

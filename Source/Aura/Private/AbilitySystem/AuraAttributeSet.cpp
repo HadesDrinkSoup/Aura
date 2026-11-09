@@ -230,25 +230,9 @@ void UAuraAttributeSet::PostAttributeChange(const FGameplayAttribute& Attribute,
 }
 
 /**
- * GE 执行完毕后的收尾（只在服务器、且只对 Instant GE 调用）。
- *
- * 时序：一次 Instant GE 的所有 Modifier 已经结算完、聚合器已刷新，
- * 所以这里 GetMaxHealth()/GetMaxMana() 一定是最终值——这正是"最终钳制"该放的位置。
- * Duration/Infinite GE 不会走到这里（它们的属性修改是持续的，靠 Pre/PostAttributeChange 约束）。
- *
- * 四个分支分别处理：
- *  1) Health 变化：钳到 [0, MaxHealth]（伤害/治疗的最终结果可能越界）；
- *  2) Mana 变化 ：钳到 [0, MaxMana]；
- *  3) MaxHealth 变化：把当前 Health 压到新上限以下（例如"减最大生命的诅咒"结算后）；
- *  4) MaxMana 变化 ：同理把 Mana 压到新上限以下。
- *
- * 关于 Meta 属性：本项目没有 Damage 之类的 Meta 属性，也就没有"Meta 结算 → 扣 Health → 清零 Meta"
- * 这一段，伤害 GE 是直接对 Health 做加法（负数即扣血），所以这里只有钳制。
- *
- * 注意：Health 分支里的 UE_LOG 直接解引用 EffectProperties.TargetAvatarActor，
- * 没有判空——若目标 ASC 没有有效的 AvatarActor，这一行会崩。此处只描述现状，未改动行为。
+ * GE 执行完毕后的收尾（只在服务器、且只对 Instant GE 调用）
  */
-void UAuraAttributeSet::PostGameplayEffectExecute(const struct FGameplayEffectModCallbackData& Data)
+void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
 {
 	Super::PostGameplayEffectExecute(Data);
 
@@ -283,57 +267,57 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const struct FGameplayEffectMo
 	{
 		const float LocalIncomingDamage = GetIncomingDamage();
 		SetIncomingDamage(0.f);
-		// 只处理正伤害；治疗请走独立的 IncomingHealing
-		if (LocalIncomingDamage <= 0.f) return;
-		// 已死则忽略后续伤害，防止重复触发死亡
-		if (GetHealth() <= 0.f)
+		// 闪避与正常伤害共用同一条飘字路径：区别只在「伤害值取 0」和「不扣血」
+		const bool bIsDodge = UAuraAbilitySystemLibrary::IsDodge(EffectProperties.EffectContextHandle);
+		// 扣血前的血量；闪避时不扣血，保持当前值，供下面的致命判定使用
+		float NewHealth = GetHealth();
+
+		if (!bIsDodge)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s 已死亡"), *EffectProperties.TargetAvatarActor->GetName());
-			return;
-		}
-		
-		if (LocalIncomingDamage > 0.f)
-		{
-			const float NewHealth = GetHealth() - LocalIncomingDamage;
-			SetHealth(FMath::Clamp(NewHealth, 0.f, GetMaxHealth()));
-			
-			if (EffectProperties.SourceCharacter != EffectProperties.TargetCharacter)
+			// 只处理正伤害；治疗请走独立的 IncomingHealing
+			if (LocalIncomingDamage <= 0.f) return;
+			// 已死则忽略后续伤害，防止重复触发死亡
+			if (GetHealth() <= 0.f)
 			{
-				// 暴击倍率由 ExecutionCalculation_Damage 在结算时直接乘进最终伤害，
-				// 这里只把最终伤害飘出来（Damage_Critical 的 SetByCaller 方案已移除，不再区分飘字颜色）。
-				const float Damage = LocalIncomingDamage;
-
-				// ① 施法者是玩家 → 在「造成这次伤害的那个人」的客户端上飘字。
-				//    AI 施法者没有 PlayerController（SourceController 为空），这里自然跳过。
-				AAuraPlayerController* const SourcePC = Cast<AAuraPlayerController>(EffectProperties.SourceController);
-
-				// ② 受击者也是玩家 → 在「挨打的那个人」的客户端上飘字。
-				//    没有这一份，单机 / 被 AI 打时就完全看不到伤害数字（回退旧行为）；
-				//    两个玩家互打时则各自在自己屏幕上看到一份，不会重复发给同一个人。
-				AAuraPlayerController* TargetPC = nullptr;
-				if (EffectProperties.TargetCharacter)
-				{
-					TargetPC = Cast<AAuraPlayerController>(EffectProperties.TargetCharacter->GetController<APlayerController>());
-				}
-				const bool bIsDodge = UAuraAbilitySystemLibrary::IsDodge(EffectProperties.EffectContextHandle);
-				const bool bIsCriticalHit = UAuraAbilitySystemLibrary::IsCriticalHit(EffectProperties.EffectContextHandle);
-				if (SourcePC)
-				{
-					SourcePC->ShowFloatingText(Damage, EffectProperties.TargetCharacter, bIsDodge, bIsCriticalHit);
-				}
-				if (TargetPC && TargetPC != SourcePC)
-				{
-					TargetPC->ShowFloatingText(Damage, EffectProperties.TargetCharacter, bIsDodge, bIsCriticalHit);
-				}
+				UE_LOG(LogTemp, Warning, TEXT("%s 已死亡"), *EffectProperties.TargetAvatarActor->GetName());
+				return;
 			}
-			UE_LOG(LogTemp, Log, TEXT("%s 受到伤害 %f， 当前生命值%f"), *EffectProperties.TargetAvatarActor->GetName(), LocalIncomingDamage, GetHealth());
-			//是否致命
-			const bool bFatal = NewHealth <= 0.f;
-			FGameplayTagContainer TagContainer;
-			const FGameplayTag EffectTag = bFatal ? FAuraGameplayTags::Get().Effects_Death : FAuraGameplayTags::Get().Effects_HitReact;
-			TagContainer.AddTag(EffectTag);
-			EffectProperties.TargetASC->TryActivateAbilitiesByTag(TagContainer);
+
+			NewHealth = GetHealth() - LocalIncomingDamage;
+			SetHealth(FMath::Clamp(NewHealth, 0.f, GetMaxHealth()));
 		}
+
+		// 自己打自己（自伤 / 环境伤害落到自己）不飘字；双方都是玩家时各飘一份，TargetPC == SourcePC 不重复发
+		if (EffectProperties.SourceCharacter != EffectProperties.TargetCharacter)
+		{
+			// 闪避时伤害值按 0 飘，正常伤害飘最终值；暴击倍率已由 ExecutionCalculation_Damage 乘进最终伤害
+			const float Damage = bIsDodge ? 0.f : LocalIncomingDamage;
+			const bool bIsCriticalHit = !bIsDodge && UAuraAbilitySystemLibrary::IsCriticalHit(EffectProperties.EffectContextHandle);
+			AAuraPlayerController* SourcePC = Cast<AAuraPlayerController>(EffectProperties.SourceController);
+			AAuraPlayerController* TargetPC = Cast<AAuraPlayerController>(EffectProperties.TargetController);
+
+			// ① 施法者是玩家 → 在「造成这次伤害的那个人」的客户端上飘字；AI 施法者没有 PlayerController，自然跳过
+			if (SourcePC)
+			{
+				SourcePC->ShowFloatingText(Damage, EffectProperties.TargetCharacter, bIsDodge, bIsCriticalHit);
+			}
+			// ② 受击者也是玩家 → 在「挨打的那个人」的客户端上飘字；没有这一份，单机 / 被 AI 打时就看不到伤害数字
+			if (TargetPC && TargetPC != SourcePC)
+			{
+				TargetPC->ShowFloatingText(Damage, EffectProperties.TargetCharacter, bIsDodge, bIsCriticalHit);
+			}
+		}
+
+		// 闪避到此为止：本次没有扣血，也不触发受击/死亡表现
+		if (bIsDodge) return;
+
+		UE_LOG(LogTemp, Log, TEXT("%s 受到伤害 %f， 当前生命值%f"), *EffectProperties.TargetAvatarActor->GetName(), LocalIncomingDamage, GetHealth());
+		//是否致命
+		const bool bFatal = NewHealth <= 0.f;
+		FGameplayTagContainer TagContainer;
+		const FGameplayTag EffectTag = bFatal ? FAuraGameplayTags::Get().Effects_Death : FAuraGameplayTags::Get().Effects_HitReact;
+		TagContainer.AddTag(EffectTag);
+		EffectProperties.TargetASC->TryActivateAbilitiesByTag(TagContainer);
 	}
 }
 

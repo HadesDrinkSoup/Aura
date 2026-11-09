@@ -51,7 +51,6 @@ void AAuraPlayerController::ShowFloatingText_Implementation(const float InDamage
 	FloatingText->RegisterComponent();
 	FloatingText->AttachToComponent(TargetCharacter->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
 	
-
 	FloatingText->SetFloatingText(InDamage, bIsDodge, bIsCriticalHit);
 }
 

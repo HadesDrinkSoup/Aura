@@ -87,7 +87,11 @@ void UExecutionCalculation_Damage::Execute_Implementation(
 	// 用 [0,100) 的浮点骰子：100% 命中必定命中，0% 命中必定未命中
 	const bool bIsDodge = FMath::FRandRange(0.f, 100.f) >= FinalHitChance;
 	UAuraAbilitySystemLibrary::SetIsDodge(EffectContextHandle, bIsDodge);
-	if (bIsDodge) return;
+	if (bIsDodge)
+	{
+		OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(UAuraAttributeSet::GetIncomingDamageAttribute(), EGameplayModOp::Additive, 0.f));
+		return;
+	}
 	
 	// 施法者攻击力加成
 	float PhysicalAttack = 0.f;
