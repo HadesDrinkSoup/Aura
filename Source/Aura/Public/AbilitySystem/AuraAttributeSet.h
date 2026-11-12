@@ -373,6 +373,31 @@ public:
 	/** 生成访问器；值与 MMC 结果一致 */
 	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, MoveSpeed)
 	
+	UPROPERTY(ReplicatedUsing = OnRep_Wood, BlueprintReadOnly, Category = "Affinity Attributes")
+	FGameplayAttributeData Wood;
+	/** 生成访问器；值与 MMC 结果一致 */
+	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, Wood)
+	
+	UPROPERTY(ReplicatedUsing = OnRep_Earth, BlueprintReadOnly, Category = "Affinity Attributes")
+	FGameplayAttributeData Earth;
+	/** 生成访问器；值与 MMC 结果一致 */
+	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, Earth)
+	
+	UPROPERTY(ReplicatedUsing = OnRep_Lightning, BlueprintReadOnly, Category = "Affinity Attributes")
+	FGameplayAttributeData Lightning;
+	/** 生成访问器；值与 MMC 结果一致 */
+	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, Lightning)
+	
+	UPROPERTY(ReplicatedUsing = OnRep_Water, BlueprintReadOnly, Category = "Affinity Attributes")
+	FGameplayAttributeData Water;
+	/** 生成访问器；值与 MMC 结果一致 */
+	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, Water)
+	
+	UPROPERTY(ReplicatedUsing = OnRep_Fire, BlueprintReadOnly, Category = "Affinity Attributes")
+	FGameplayAttributeData Fire;
+	/** 生成访问器；值与 MMC 结果一致 */
+	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, Fire)
+	
 	// ============================================================================
 	//  Meta Attributes（元属性） 将结果传递给目标，不需要网络复制
 	// ============================================================================
@@ -485,6 +510,21 @@ public:
 	UFUNCTION()
 	void OnRep_MoveSpeed(const FGameplayAttributeData& OldMoveSpeed) const;
 
+	UFUNCTION()
+	void OnRep_Wood(const FGameplayAttributeData& OldWood) const;
+	
+	UFUNCTION()
+	void OnRep_Earth(const FGameplayAttributeData& OldEarth) const;
+	
+	UFUNCTION()
+	void OnRep_Lightning(const FGameplayAttributeData& OldLightning) const;
+	
+	UFUNCTION()
+	void OnRep_Water(const FGameplayAttributeData& OldWater) const;
+	
+	UFUNCTION()
+	void OnRep_Fire(const FGameplayAttributeData& OldFire) const;
+	
 private:
 	/**
 	 * 从 GE 的 ModCallbackData 解析出「施法者 / 受击者」双方快照，填入传入的结构体。

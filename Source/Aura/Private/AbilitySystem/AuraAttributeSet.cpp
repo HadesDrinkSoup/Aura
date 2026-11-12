@@ -170,6 +170,12 @@ void UAuraAttributeSet::GetLifetimeReplicatedProps(TArray<class FLifetimePropert
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, HealthRegen, COND_None, REPNOTIFY_OnChanged);
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, ManaRegen, COND_None, REPNOTIFY_OnChanged);
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, MoveSpeed, COND_None, REPNOTIFY_OnChanged);
+	
+	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, Wood, COND_None, REPNOTIFY_OnChanged);
+	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, Earth, COND_None, REPNOTIFY_OnChanged);
+	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, Lightning, COND_None, REPNOTIFY_OnChanged);
+	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, Water, COND_None, REPNOTIFY_OnChanged);
+	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, Fire, COND_None, REPNOTIFY_OnChanged);
 }
 
 /**
@@ -452,6 +458,31 @@ void UAuraAttributeSet::OnRep_ManaRegen(const FGameplayAttributeData& OldManaReg
 void UAuraAttributeSet::OnRep_MoveSpeed(const FGameplayAttributeData& OldMoveSpeed) const
 {
 	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, MoveSpeed, OldMoveSpeed);
+}
+
+void UAuraAttributeSet::OnRep_Wood(const FGameplayAttributeData& OldWood) const
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, Wood, OldWood);
+}
+
+void UAuraAttributeSet::OnRep_Earth(const FGameplayAttributeData& OldEarth) const
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, Earth, OldEarth);
+}
+
+void UAuraAttributeSet::OnRep_Lightning(const FGameplayAttributeData& OldLightning) const
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, Lightning, OldLightning);
+}
+
+void UAuraAttributeSet::OnRep_Water(const FGameplayAttributeData& OldWater) const
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, Water, OldWater);
+}
+
+void UAuraAttributeSet::OnRep_Fire(const FGameplayAttributeData& OldFire) const
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, Fire, OldFire);
 }
 
 /**

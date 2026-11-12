@@ -165,19 +165,64 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 		FName("Attributes.Derived.MoveSpeed"),
 		FString(TEXT("移动速度，角色移动速率。影响走位/风筝/追击/逃跑效率。来源：Agility")));
 	
+	
 	// =========================================================================
-	// 攻击类型
+	// 灵属，属性克制关系木 → 土 → 雷 → 水 → 火 → 木
+	// =========================================================================
+	GameplayTags.Attributes_Affinity_Wood= UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Attributes.Affinity.Wood"),
+		FString(TEXT("木属性亲和力，抵抗土属性攻击")));
+	GameplayTags.Attributes_Affinity_Earth= UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Attributes.Affinity.Earth"),
+		FString(TEXT("土属性亲和力，抵抗雷属性攻击")));
+	GameplayTags.Attributes_Affinity_Lightning= UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Attributes.Affinity.Lightning"),
+		FString(TEXT("雷属性亲和力，抵抗水属性攻击")));
+	GameplayTags.Attributes_Affinity_Water= UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Attributes.Affinity.Water"),
+		FString(TEXT("水属性亲和力，抵抗火属性攻击")));
+	GameplayTags.Attributes_Affinity_Fire= UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Attributes.Affinity.Fire"),
+		FString(TEXT("火属性亲和力，抵抗木属性攻击")));
+	
+	GameplayTags.DamageTypesToResistances.Add(GameplayTags.Damage_Element_Wood, GameplayTags.Attributes_Affinity_Earth);
+	GameplayTags.DamageTypesToResistances.Add(GameplayTags.Damage_Element_Earth, GameplayTags.Attributes_Affinity_Lightning);
+	GameplayTags.DamageTypesToResistances.Add(GameplayTags.Damage_Element_Lightning, GameplayTags.Attributes_Affinity_Water);
+	GameplayTags.DamageTypesToResistances.Add(GameplayTags.Damage_Element_Water, GameplayTags.Attributes_Affinity_Fire);
+	GameplayTags.DamageTypesToResistances.Add(GameplayTags.Damage_Element_Fire, GameplayTags.Attributes_Affinity_Wood);
+	
+	
+	// =========================================================================
+	// 加成类型
 	// =========================================================================
 	
 	// 物理伤害
-	GameplayTags.Damage_Type_Physical = UGameplayTagsManager::Get().AddNativeGameplayTag(
-		FName("Damage.Type.Physical"),
-		FString(TEXT("物理伤害")));
+	GameplayTags.Bonus_Physical = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Bonus.Physical"),
+		FString(TEXT("物理加成")));
 	// 魔法伤害
-	GameplayTags.Damage_Type_Magical = UGameplayTagsManager::Get().AddNativeGameplayTag(
-		FName("Damage.Type.Magical"),
-		FString(TEXT("魔法伤害")));
+	GameplayTags.Bonus_Magical = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Bonus.Magical"),
+		FString(TEXT("魔法加成")));
 	
+	// =========================================================================
+	// 伤害类型
+	// =========================================================================
+	GameplayTags.Damage_Element_Wood= UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Damage.Element.Wood"),
+	FString(TEXT("木属性伤害，克制土，被火抵抗")));
+	GameplayTags.Damage_Element_Earth= UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Damage.Element.Earth"),
+		FString(TEXT("土属性伤害，克制雷，被木抵抗")));
+	GameplayTags.Damage_Element_Lightning= UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Damage.Element.Lightning"),
+		FString(TEXT("雷属性伤害，克制水，被土抵抗")));
+	GameplayTags.Damage_Element_Water= UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Damage.Element.Water"),
+		FString(TEXT("水属性伤害，克制火，被雷抵抗")));
+	GameplayTags.Damage_Element_Fire= UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Damage.Element.Fire"),
+		FString(TEXT("火属性伤害，克制木，被水抵抗")));
 	
 	// =========================================================================
 	// 攻击反馈
@@ -187,7 +232,7 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 	GameplayTags.Effects_HitReact = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Effects.HitReact"),
 		FString(TEXT("命中反馈")));
-	// 攻击命中反馈
+	// 死亡反馈
 	GameplayTags.Effects_Death = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Effects.Death"),
 		FString(TEXT("死亡")));

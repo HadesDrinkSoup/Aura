@@ -108,12 +108,13 @@ void UAuraProjectileSpell::SpawnProjectile(const FVector& ProjectileTargetLocati
 	const int32 AbilityLevel = GetCharacterLevel();
 	// 创建伤害效果的 Spec
 	const FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, AbilityLevel, EffectContextHandle);
-	// 根据技能等级计算实际伤害
-	const float ScaledDamage = Damage.GetValueAtLevel(AbilityLevel);
-
-	// 向一个已经创建的 FGameplayEffectSpec（效果规格）中“写入”一个与 GameplayTag 绑定的浮点数值
-	UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(SpecHandle, DamageType, ScaledDamage);
-
+	// 根据伤害加成类型添加不同的浮点值
+	for (TTuple<FGameplayTag, FScalableFloat>& Pair : DamageBonusTypes)
+	{
+		const float ScaledDamage = Pair.Value.GetValueAtLevel(AbilityLevel);
+		// 向一个已经创建的 FGameplayEffectSpec（效果规格）中“写入”一个与 GameplayTag 绑定的浮点数值
+		UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(SpecHandle, Pair.Key, ScaledDamage);
+	}
 	Projectile->DamageEffectSpecHandle = SpecHandle;
 	
 	// FinishSpawning 才真正把 Actor 放进世界并跑 BeginPlay；上面赋的 SpecHandle 已经就位。

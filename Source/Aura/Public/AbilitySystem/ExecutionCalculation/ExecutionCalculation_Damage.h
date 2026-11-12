@@ -45,7 +45,9 @@ static const AuraDamageStatics& DamageStatics();
 /**
  * 伤害结算 ExecutionCalculation：挂在「伤害 GE」的 Execution 上，每次施加对每个目标执行一次。
  * 公式（物理/魔法两段独立计算，可叠加成混合伤害）：
- *   RawDamage   = 技能基础伤害 + 施法者攻击力 × AttackScaling
+ *   物理段 RawDamage   = Damage.Physical.* 的基础伤害合计 + PhysicalAttack × AttackScaling
+ *   魔法段 RawDamage   = Damage.Magical.*  的基础伤害合计 + MagicalAttack  × AttackScaling
+ *   两段分别按各自防御减伤后相加：
  *   Defense     = 防御 / (防御 + 防御常量)
  *   FinalDamage = RawDamage × (1 - Defense)
  */

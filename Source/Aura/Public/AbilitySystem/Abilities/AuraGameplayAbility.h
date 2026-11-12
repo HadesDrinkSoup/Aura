@@ -40,11 +40,8 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category="AbilityInput")
 	FGameplayTag AbilityInputTag;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Damage")
-	FScalableFloat Damage;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Damage", meta = (Categories = "Damage.Type"))
-	FGameplayTag DamageType;
+	UPROPERTY(EditDefaultsOnly, Category = "Damage|Bonus")
+	TMap<FGameplayTag, FScalableFloat> DamageBonusTypes;
 
 	/**
 	 * 本次施法使用的技能等级：直接取施法者的角色等级（ICombatInterface::GetCharacterLevel），

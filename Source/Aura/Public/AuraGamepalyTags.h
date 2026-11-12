@@ -68,9 +68,25 @@ struct FAuraGameplayTags
 	FGameplayTag Attributes_Derived_HealthRegen;       // 生命恢复 — 受 Vigor + 等级 影响，决定每秒自动恢复的生命值
 	FGameplayTag Attributes_Derived_ManaRegen;         // 法力恢复 — 受 Intelligence + 等级 影响，决定每秒自动恢复的法力值
 	
-	/** 攻击类型 */
-	FGameplayTag Damage_Type_Physical;	//物理攻击
-	FGameplayTag Damage_Type_Magical;	//物理攻击
+	/*** 灵属 */
+	//属性克制关系木 → 土 → 雷 → 水 → 火 → 木
+	FGameplayTag Attributes_Affinity_Wood;
+	FGameplayTag Attributes_Affinity_Earth;
+	FGameplayTag Attributes_Affinity_Lightning;
+	FGameplayTag Attributes_Affinity_Water;
+	FGameplayTag Attributes_Affinity_Fire;
+	TMap<FGameplayTag,FGameplayTag> DamageTypesToResistances;
+	
+	/** 加成类型 */
+	FGameplayTag Bonus_Physical;	//物理加成
+	FGameplayTag Bonus_Magical;		//魔法加成
+	
+	/** 伤害类型 */
+	FGameplayTag Damage_Element_Wood;
+	FGameplayTag Damage_Element_Earth;
+	FGameplayTag Damage_Element_Lightning;
+	FGameplayTag Damage_Element_Water;
+	FGameplayTag Damage_Element_Fire;
 	
 	/** 命中反馈 */
 	FGameplayTag Effects_HitReact;				//攻击命中反馈

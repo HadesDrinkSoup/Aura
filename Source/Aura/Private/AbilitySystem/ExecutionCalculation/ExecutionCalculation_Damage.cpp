@@ -6,13 +6,13 @@
  *
  * 数据流（谁提供什么）：
  *  - 技能（UAuraProjectileSpell::SpawnProjectile）在 Spec 上用 SetByCaller 写入两样东西：
- *    攻击类型 tag（Damage.Type.Physical / Damage.Type.Magical）作为 key，技能基础伤害作为 magnitude。
+ *    攻击类型 tag（Damage.Physical / Damage.Magical / Damage.Magical.Fire …）作为 key，技能基础伤害作为 magnitude。
  *    同一个 Spec 可以同时写物理与魔法，构成混合伤害；
- *  - 本类负责把「基础伤害 + 施法者攻击力」算成原始伤害，再按受击者的护甲/魔抗减伤；
+ *  - 本类负责按 tag 把基础伤害分流：物理标签吃 PhysicalAttack，魔法标签吃 MagicalAttack，
+ *    各自算成原始伤害，再按受击者的护甲/魔抗分别减伤后相加；
  *  - 结果只写入 IncomingDamage（Meta 属性），扣血、飘字、受击、死亡动画全部交给
  *    UAuraAttributeSet::PostGameplayEffectExecute，这里不直接改 Health；
- *  - 减伤曲线、防御刻度 K、等级反解都是纯函数，以 inline 形式放在
- *    ExecutionCalculation_Damage.h 的 AuraDamageMath namespace 里，本类直接调用。
+ *  - 防御减伤是纯函数：CalculateFinalDamage 是本类的成员函数，本类直接调用。
  *
  * 为什么用 Meta 属性中转，而不是直接对 Health 做 Additive：
  *  - 伤害需要先算清楚、再一次性结算：写 Health 时想再叠暴击/固伤/护盾就没地方挂了；
@@ -60,7 +60,6 @@ void UExecutionCalculation_Damage::Execute_Implementation(
 
 	const FGameplayEffectSpec& Spec = ExecutionParams.GetOwningSpec();
 	const FGameplayEffectContextHandle EffectContextHandle = Spec.GetContext();
-	const FAuraGameplayTags& Tags = FAuraGameplayTags::Get();
 
 	const FGameplayTagContainer* SourceTags = Spec.CapturedSourceTags.GetAggregatedTags();
 	const FGameplayTagContainer* TargetTags = Spec.CapturedTargetTags.GetAggregatedTags();
@@ -69,15 +68,32 @@ void UExecutionCalculation_Damage::Execute_Implementation(
 	EvaluateParameters.SourceTags = SourceTags;
 	EvaluateParameters.TargetTags = TargetTags;
 	
-	// 判定攻击类型， 取技能基础伤害
-	const float PhysicalBase = FMath::Max(Spec.GetSetByCallerMagnitude(Tags.Damage_Type_Physical, false, 0.f), 0.f);
-	const float MagicalBase  = FMath::Max(Spec.GetSetByCallerMagnitude(Tags.Damage_Type_Magical,  false, 0.f), 0.f);
+	// 按伤害类型标签把「技能基础伤害」分成物理/魔法两段：
+	// 物理标签吃 PhysicalAttack 加成，魔法标签吃 MagicalAttack 加成，混合伤害两段各自结算。
+	// 直接遍历 Spec 上的 SetByCaller 表，而不是遍历固定的 tag 列表：以后新增伤害子标签
+	// （Damage.Magical.Ice 之类）这里不用改；MatchesTag 是父级匹配，Fire 会归到 Magical。
+	float PhysicalBase = 0.f;
+	float MagicalBase = 0.f;
+	for (const TPair<FGameplayTag, float>& Pair : Spec.SetByCallerTagMagnitudes)
+	{
+		const float BaseDamage = FMath::Max(Pair.Value, 0.f);
+		if (BaseDamage <= 0.f) continue;
+		
+		if (Pair.Key.MatchesTag(FAuraGameplayTags::Get().Bonus_Physical))
+		{
+			PhysicalBase += BaseDamage;
+		}
+		if (Pair.Key.MatchesTag(FAuraGameplayTags::Get().Bonus_Magical))
+		{
+			MagicalBase += BaseDamage;
+		}
+	}
 
 	const bool bHasPhysical = PhysicalBase > 0.f;
-	const bool bHasMagical  = MagicalBase  > 0.f;
-	
+	const bool bHasMagical = MagicalBase > 0.f;
+	// 一个伤害类型的 base 都没写：这张 GE 不是伤害，直接不输出
 	if (!bHasPhysical && !bHasMagical) return;
-	
+
 	// 判断是否命中
 	float HitChance = 0.f;
 	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().HitChanceDef, EvaluateParameters, HitChance);
@@ -93,14 +109,20 @@ void UExecutionCalculation_Damage::Execute_Implementation(
 		return;
 	}
 	
-	// 施法者攻击力加成
+	// 施法者攻击力加成：只取与伤害类型对应的那一项，另一项保持 0，避免物理技能吃到魔法攻击
 	float PhysicalAttack = 0.f;
 	float MagicalAttack = 0.f;
-	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().PhysicalAttackDef, EvaluateParameters, PhysicalAttack);
-	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().MagicalAttackDef, EvaluateParameters, MagicalAttack);
-	PhysicalAttack = FMath::Max(PhysicalAttack, 0.f);
-	MagicalAttack = FMath::Max(MagicalAttack, 0.f);
-
+	if (bHasPhysical)
+	{
+		ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().PhysicalAttackDef, EvaluateParameters, PhysicalAttack);
+		PhysicalAttack = FMath::Max(PhysicalAttack, 0.f);
+	}
+	if (bHasMagical)
+	{
+		ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().MagicalAttackDef, EvaluateParameters, MagicalAttack);
+		MagicalAttack = FMath::Max(MagicalAttack, 0.f);
+	}
+	
 	// 原始伤害，未计算防御
 	const float RawPhysical = PhysicalBase + PhysicalAttack * AttackScaling;
 	const float RawMagical  = MagicalBase + MagicalAttack * AttackScaling;
