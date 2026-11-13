@@ -17,7 +17,7 @@ void UAttributesMenuController::BroadCastInitialValues()
 		return;
 	}
 
-	for (const TTuple<FGameplayTag, TDelegate<FGameplayAttribute()>>& Pair : AuraAttributeSet->TagsToAttributesMap)
+	for (TPair<FGameplayTag, TStaticFuncPtr<FGameplayAttribute()>>& Pair : AuraAttributeSet->TagsToAttributesMap)
 	{
 		BroadcastAttributeInfo(Pair.Key);
 	}
@@ -26,9 +26,9 @@ void UAttributesMenuController::BroadCastInitialValues()
 void UAttributesMenuController::BindCallbacksToDependencies()
 {
 	if (bCallbacksBound) return;
-	for (TTuple<FGameplayTag, TDelegate<FGameplayAttribute()>>& Pair : AuraAttributeSet->TagsToAttributesMap)
+	for (TPair<FGameplayTag, TStaticFuncPtr<FGameplayAttribute()>>& Pair : AuraAttributeSet->TagsToAttributesMap)
 	{
-		AuraAbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(Pair.Value.Execute()).AddLambda(
+		AuraAbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(Pair.Value()).AddLambda(
 			[this, AttributeTag = Pair.Key](const FOnAttributeChangeData& Data)
 			{
 				BroadcastAttributeInfo(AttributeTag);
@@ -55,12 +55,13 @@ void UAttributesMenuController::BroadcastAttributeInfo(const FGameplayTag& Attri
 		return;
 	}
 
-	const FAttributeDelegate* AttributeDelegate = AuraAttributeSet->TagsToAttributesMap.Find(AttributeTag);
+	// Value 是 GetXxxAttribute 的函数指针：Find 得到的是"函数指针的指针"，解引用后调用
+	const TStaticFuncPtr<FGameplayAttribute()>* AttributeDelegate = AuraAttributeSet->TagsToAttributesMap.Find(AttributeTag);
 	if (!AttributeDelegate)
 	{
 		return;
 	}
 
-	Info->AttributeValue = AttributeDelegate->Execute().GetNumericValue(AuraAttributeSet);
+	Info->AttributeValue = (*AttributeDelegate)().GetNumericValue(AuraAttributeSet);
 	AttributeInfoChanged.Broadcast(*Info);
 }

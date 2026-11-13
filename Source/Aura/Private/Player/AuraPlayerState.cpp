@@ -24,17 +24,17 @@ AAuraPlayerState::AAuraPlayerState()
 	SetNetUpdateFrequency(100.f);
 	
 	// 创建技能系统组件（ASC），这是 GAS 的核心，所有 GameplayAbility 和 GameplayEffect 都依赖它
-	AuraAbilitySystemComponent = CreateDefaultSubobject<UAuraAbilitySystemComponent>("AbilitySystemComponent");
+	AbilitySystemComponent = CreateDefaultSubobject<UAuraAbilitySystemComponent>("AbilitySystemComponent");
 	// 将 ASC 标记为可复制，使其在网络中同步
-	AuraAbilitySystemComponent->SetIsReplicated(true);
+	AbilitySystemComponent->SetIsReplicated(true);
 	// 使用 Mixed 复制模式：
 	// - GameplayEffect 对所有玩家复制（用于 UI 显示如血量条）
 	// - GameplayTag 只对拥有者复制（减少带宽）
 	// - 这是多人 ARPG 推荐使用的模式
-	AuraAbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
+	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
 	
 	// 创建属性集，存储所有 GameplayAttribute（生命值、魔力值、攻击力等）
-	AuraAttributeSet = CreateDefaultSubobject<UAuraAttributeSet>("AttributeSet");
+	AttributeSet = CreateDefaultSubobject<UAuraAttributeSet>("AttributeSet");
 }
 
 void AAuraPlayerState::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const

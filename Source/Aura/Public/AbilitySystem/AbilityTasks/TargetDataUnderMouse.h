@@ -47,7 +47,7 @@ public:
 	static UTargetDataUnderMouse* CreateTargetDataUnderMouse(UGameplayAbility* OwningAbility);
 	
 	/** 任务的输出：拿到有效目标数据时广播（蓝图 "Assign Valid Data" 绑定到这里）。 */
-	UPROPERTY(BlueprintAssignable)
+	UPROPERTY(BlueprintAssignable, Category = "Aura|Ability|TargetData", meta = (DisplayName = "鼠标目标数据有效委托"))
 	FMouseTargetDataDelegate ValidData;
 	
 protected:

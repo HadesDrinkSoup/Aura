@@ -133,7 +133,7 @@ protected:
 	 * GetEffectLevel 都会受它影响。对只配了 SetByCaller 数值的 GE 则没有作用。
 	 * ClampMin=1 只是编辑器输入限制，运行时不做钳制，代码/BP 里可以写入更小的值。
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Applied Effects", meta=(ClampMin="1"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|EffectActor", meta = (DisplayName = "效果等级", ClampMin="1"))
 	float ActorLevel = 1.f;
 
 	/**
@@ -142,7 +142,7 @@ protected:
 	 * Instant 不产生 ActiveEffect，施加完立即结束，因此不会被句柄追踪；
 	 * 每个目标每次进入都会生效一次（反复进出即可反复获得）。
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Applied Effects|On Enter")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|EffectActor|OnEnter", meta = (DisplayName = "进入时立即效果"))
 	TArray<TSubclassOf<UGameplayEffect>> OnEnterInstantEffects;
 
 	/**
@@ -151,7 +151,7 @@ protected:
 	 * 本类不追踪它的句柄，所以离开区域不会自动停止——要让 DoT 提前结束时，
 	 * 需改为 Infinite + bRemoveOnExit，或依赖 GE 自身的时长。
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Applied Effects|On Enter")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|EffectActor|OnEnter", meta = (DisplayName = "进入时持续效果"))
 	TArray<TSubclassOf<UGameplayEffect>> OnEnterDurationEffects;
 
 	/**
@@ -160,7 +160,7 @@ protected:
 	 * 这类 GE 施加成功后会把句柄登记到 ActiveEffectsMap，由 bRemoveOnExit 负责移除；
 	 * 若不设 bRemoveOnExit，效果会一直留在目标身上（本类没有其它清理入口）。
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Applied Effects|On Enter")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|EffectActor|OnEnter", meta = (DisplayName = "进入时无限效果"))
 	TArray<TSubclassOf<UGameplayEffect>> OnEnterInfiniteEffects;
 
 	/**
@@ -169,14 +169,14 @@ protected:
 	 * 注意它只在"先进入过并触发了 OnEndOverlap"时才会执行；
 	 * 若进入时 bDestroy 已销毁本 Actor，则永远不会触发。
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Applied Effects|On Exit")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|EffectActor|OnExit", meta = (DisplayName = "离开时立即效果"))
 	TArray<TSubclassOf<UGameplayEffect>> OnExitInstantEffects;
 
 	/**
 	 * 离开区域（EndOverlap）时施加的 Duration 效果（有时长，如 DoT、Hot）
 	 * 何时用："离开后仍被诅咒一段时间"这类离场惩罚。同样不追踪句柄，时长由 GE 自己决定。
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Applied Effects|On Exit")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|EffectActor|OnExit", meta = (DisplayName = "离开时持续效果"))
 	TArray<TSubclassOf<UGameplayEffect>> OnExitDurationEffects;
 
 	/**
@@ -184,7 +184,7 @@ protected:
 	 * 何时用：离开安全区后获得永久 Debuff。这些新效果同样会登记句柄，
 	 * 但与刚被 bRemoveOnExit 清掉的那批不在同一次调用里，因此不会被误删。
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Applied Effects|On Exit")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|EffectActor|OnExit", meta = (DisplayName = "离开时无限效果"))
 	TArray<TSubclassOf<UGameplayEffect>> OnExitInfiniteEffects;
 
 	/**
@@ -193,7 +193,7 @@ protected:
 	 * 只想给一次性增益、希望效果永久保留时保持关闭。
 	 * 移除粒度由 bRemovalAllStacks / RemovalStackNumber 决定。
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Applied Effects|Remove")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|EffectActor|Remove", meta = (DisplayName = "离开时移除效果"))
 	bool bRemoveOnExit = false;
 
 	/**
@@ -202,7 +202,7 @@ protected:
 	 * 副作用：进入即销毁的拾取物不会再产生 OnEndOverlap，且它身上登记的
 	 * Infinite 句柄会随 Actor 一起消失（目标身上残留的效果将无法再由本 Actor 移除）。
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Applied Effects")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|EffectActor", meta = (DisplayName = "效果施加后销毁"))
 	bool bDestroy = false;
 
 	/**
@@ -210,7 +210,7 @@ protected:
 	 * 打开后调用 RemoveActiveGameplayEffect(Handle, -1)，即整条效果连同全部层数一起清掉；
 	 * 关闭时按 RemovalStackNumber 逐层剥离。只有配了 Stacking 的 GE 才会体现差别。
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Applied Effects|Remove")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|EffectActor|Remove", meta = (DisplayName = "移除所有层数"))
 	bool bRemovalAllStacks = false;
 
 	/**
@@ -219,7 +219,7 @@ protected:
 	 * 注意：剥层后面本 Actor 会把句柄从 ActiveEffectsMap 中删掉，
 	 * 若效果还剩层数，剩余层数就不再受本 Actor 管理（见 cpp 中 RemoveStoredEffects 的说明）。
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Applied Effects|Remove", meta=(ClampMin="1"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|EffectActor|Remove", meta = (DisplayName = "移除层数", ClampMin="1"))
 	int32 RemovalStackNumber = 1;
 
 private:

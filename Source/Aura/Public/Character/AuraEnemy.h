@@ -55,7 +55,7 @@ public:
 	
 	void HitReactTagChanged(const FGameplayTag CallbackTag, int32 NewCount);
 	
-	UPROPERTY(BlueprintReadOnly, Category= "Combat")
+	UPROPERTY(BlueprintReadOnly, Category = "Aura|Enemy|Combat", meta = (DisplayName = "是否受击"))
 	bool bHitReact = false;
 	
 protected:
@@ -70,23 +70,23 @@ protected:
 	virtual void InitHealthBar();
 	
 	/** 敌人等级：参与 GE 等级与 MMC 等级系数，不同敌人直接在 BP 里改 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "Class Default ")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|Enemy|Defaults", meta = (DisplayName = "敌人等级"))
 	int32 Level = 1;
 	
 	/** 基础移动速度 */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= "Class Default ")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Aura|Enemy|Defaults", meta = (DisplayName = "基础行走速度"))
 	float BaseWalkSpeed = 250.f;
 	
 	/** 死亡后的存在时间 */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= "Class Default ")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Aura|Enemy|Defaults", meta = (DisplayName = "死亡后存活时间"))
 	float LifeSpan = 5.f;
 	
 	/** 头顶血条的 WidgetComponent；构造时挂到根组件上，由蓝图指定 WidgetClass 与显示参数 */
-	UPROPERTY(EditDefaultsOnly, Category= "Class Default ")
+	UPROPERTY(EditDefaultsOnly, Category = "Aura|Enemy|Defaults", meta = (DisplayName = "血条组件"))
 	TObjectPtr<UWidgetComponent> HealthBar;
 	
 	/** 血条控制器类（TSubclassOf 是"类"不是实例，运行时需 NewObject 才能拿到对象） */
-	UPROPERTY(EditDefaultsOnly, Category= "Class Default ")
+	UPROPERTY(EditDefaultsOnly, Category = "Aura|Enemy|Defaults", meta = (DisplayName = "血条控制器类"))
 	TSubclassOf<UEnemyHealthBarWidgetController> HealthBarControllerClass;
 	
 	/** 本敌人血条的 WidgetController 实例（缓存引用防止被 GC 回收） */

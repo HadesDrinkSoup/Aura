@@ -22,11 +22,11 @@ struct FAuraInputAction
 	GENERATED_BODY()
 	
 	// 实际绑定的输入动作（例如 IA_Fire、IA_Jump 等）
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category = "Aura|Input|Data", meta = (DisplayName = "输入动作"))
 	TObjectPtr<UInputAction> InputAction = nullptr;
 	
 	// 该输入动作对应的 GameplayTag（用于标识触发的能力）
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category = "Aura|Input|Data", meta = (DisplayName = "输入标签"))
 	FGameplayTag InputTag = FGameplayTag();
 };
 
@@ -55,6 +55,6 @@ public:
 	const UInputAction* FindInputActionForTag(const FGameplayTag& InputTag, bool bLogFound = false) const;
 	
 	// 所有可用的输入动作映射（在编辑器 DataAsset 中配置）
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Aura|Input|Data", meta = (DisplayName = "技能输入动作列表"))
 	TArray<FAuraInputAction> AbilityInputActions;
 };

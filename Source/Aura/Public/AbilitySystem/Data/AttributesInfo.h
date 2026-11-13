@@ -30,20 +30,20 @@ struct FAuraAttributeInfo
 	 * 只写 Attributes.Primary 不会命中任何一条记录。
 	 * 默认值 FGameplayTag()（空标签）：未配置的项会被 FindAttributeInfoForTag 当作"找不到"处理。
 	 */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Aura|Data|AttributeInfo", meta = (DisplayName = "属性标签"))
 	FGameplayTag AttributeTag = FGameplayTag();
 	
 	/**
 	 * 显示给玩家的属性名称（如"力量"），纯文案，不参与任何逻辑判断。
 	 * FText 而非 FString：支持本地化（本地化收集器会提取本字符串）。
 	 */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Aura|Data|AttributeInfo", meta = (DisplayName = "属性名称"))
 	FText AttributeName = FText();
 	
 	/**
 	 * 显示给玩家的属性说明（tooltip 用），同样只是文案、支持本地化。
 	 */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Aura|Data|AttributeInfo", meta = (DisplayName = "属性描述"))
 	FText AttributeDescription = FText();
 	
 	/**
@@ -53,7 +53,7 @@ struct FAuraAttributeInfo
 	 * 在 DataAsset 里手填没有意义，而且会被第一次刷新覆盖。
 	 * 初值 0.f 只用于"还没刷新过"的瞬间，UI 拿到 0 说明初始化流程没跑到。
 	 */
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly, Category = "Aura|Data|AttributeInfo", meta = (DisplayName = "属性当前值"))
 	float AttributeValue = 0.f;
 };
 
@@ -90,6 +90,6 @@ public:
 	 * 全部属性的登记列表，顺序即 UI 显示顺序（想调整界面顺序就调数组顺序）。
 	 * 每一项的 AttributeTag 必须唯一，否则只有数组里靠前的那条会被 Find 命中（线性遍历先到先得）。
 	 */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Aura|Data|AttributeInfo", meta = (DisplayName = "属性信息列表"))
 	TArray<FAuraAttributeInfo> AttributeInfo;
 };

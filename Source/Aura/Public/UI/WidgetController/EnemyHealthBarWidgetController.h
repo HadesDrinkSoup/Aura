@@ -22,10 +22,10 @@ public:
 	
 	virtual void BindCallbacksToDependencies() override;
 	
-	UPROPERTY(BlueprintAssignable, Category="GAS|Attributes")
+	UPROPERTY(BlueprintAssignable, Category = "Aura|UI|Delegate", meta = (DisplayName = "生命值变化委托"))
 	FOnAttributeValueChangedDelegate OnHealthChanged;
 	
-	UPROPERTY(BlueprintAssignable, Category="GAS|Attributes")
+	UPROPERTY(BlueprintAssignable, Category = "Aura|UI|Delegate", meta = (DisplayName = "最大生命值变化委托"))
 	FOnAttributeValueChangedDelegate OnMaxHealthChanged;
 	
 private:

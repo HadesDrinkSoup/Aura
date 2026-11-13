@@ -6,7 +6,7 @@
  *
  * 要点：
  *  - 初始属性只在服务器施加（GAS 的属性由服务器权威写入再复制给客户端）；
- *  - Primary → Derived → 个体差异 → Pool 的顺序不可随意调换，否则会出现
+ *  - Primary → Derived → Affinity（灵属）→ 个体差异 → Pool 的顺序不可随意调换，否则会出现
  *    "满血上限变高但血条不满" 之类的取值问题；
  *  - 重复初始化（重生、重新 Possess）时必须先清掉旧的 Derived 实例，避免修正叠加。
  */
@@ -55,7 +55,7 @@ AAuraCharacterBase::AAuraCharacterBase()
 /** 返回 GAS 使用的 ASC；玩家侧来自 PlayerState，敌人侧自建，未初始化时返回 nullptr */
 UAbilitySystemComponent* AAuraCharacterBase::GetAbilitySystemComponent() const
 {
-	return AuraAbilitySystemComponent;
+	return AbilitySystemComponent;
 }
 
 /** 取武器骨骼网格上插槽的世界坐标，作为近战判定/特效生成的原点 */
@@ -171,12 +171,14 @@ void AAuraCharacterBase::Dissolve()
 /**
  * 施加角色的初始属性 GE（仅在服务器执行）。
  * 解析优先级：本 BP 显式配置的 GE（个体覆盖） > 职业配置表中的默认 GE。
- * 四类 GE 的施加顺序及原因：
+ * 施加顺序及原因：
  *   1) Primary   ：写入力量/智力/敏捷/活力等主属性；
  *   2) Derived   ：由主属性经 MMC 算出派生属性，必须在 Primary 之后；
- *   3) Additional：个体差异（精英加成、装备、诅咒），放在 Pool 之前，
+ *   3) Affinity  ：灵属（元素亲和力）通用 GE（表上的 CommonElementAffinity，五项各 +10），
+ *                  再加 BP 上的 AdditionalElementAffinityEffects 个体差异；
+ *   4) Additional：个体差异（精英加成、装备、诅咒），放在 Pool 之前，
  *                  这样池属性 GE 能读到最终的 MaxHealth/MaxMana；
- *   4) Pool      ：最后按最终上限把 Health/Mana 填满。
+ *   5) Pool      ：最后按最终上限把 Health/Mana 填满。
  */
 void AAuraCharacterBase::InitDefaultAttributes()
 {
@@ -186,20 +188,25 @@ void AAuraCharacterBase::InitDefaultAttributes()
 
 	// 解析顺序：本 BP 显式配置的 GE（个体覆盖） > 职业配置表中的默认 GE
 	const FCharacterClassDefaultInfo* ClassDefaults = FindClassDefaultInfo();
-	const TSubclassOf<UGameplayEffect> PrimaryEffect =
+	const TSubclassOf<UGameplayEffect> PrimaryAttributeEffect =
 		PrimaryAttributes ? PrimaryAttributes : (ClassDefaults ? ClassDefaults->PrimaryAttributes : nullptr);
-	const TSubclassOf<UGameplayEffect> DerivedEffect =
+	const TSubclassOf<UGameplayEffect> DerivedAttributeEffect =
 		DerivedAttributes ? DerivedAttributes : (ClassDefaults ? ClassDefaults->DerivedAttributes : nullptr);
-	const TSubclassOf<UGameplayEffect> PoolEffect =
+	const TSubclassOf<UGameplayEffect> PoolAttributeEffect =
 		PoolAttributes ? PoolAttributes : (ClassDefaults ? ClassDefaults->PoolAttributes : nullptr);
 
-	// 四类 GE 一个都没配：没有任何属性可施加，直接返回（避免白建上下文）
-	if (!PrimaryEffect && !DerivedEffect && !PoolEffect && AdditionalInitialEffects.IsEmpty())
+	// 灵属通用 GE 挂在表本身（所有职业共用），不随职业变化
+	const UCharacterClassInfo* ClassInfo = UAuraAbilitySystemLibrary::GetCharacterClassInfo(this);
+	const TSubclassOf<UGameplayEffect> CommonElementAffinity = ClassInfo ? ClassInfo->CommonElementAffinity : nullptr;
+
+	// 各类 GE 一个都没配：没有任何属性可施加，直接返回（避免白建上下文）
+	if (!PrimaryAttributeEffect && !DerivedAttributeEffect && !CommonElementAffinity
+		 && !PoolAttributeEffect && !AdditionalEffect)
 	{
 		return;
 	}
 
-	// 上下文只构建一次，三个 GE 共享，保证 Instigator/SourceObject 一致（MMC 与日志都依赖它）
+	// 上下文只构建一次，所有 GE 共享，保证 Instigator/SourceObject 一致（MMC 与日志都依赖它）
 	FGameplayEffectContextHandle EffectContextHandle = ASC->MakeEffectContext();
 	if (EffectContextHandle.IsValid() && EffectContextHandle.Get())
 	{
@@ -214,37 +221,42 @@ void AAuraCharacterBase::InitDefaultAttributes()
 	const int32 EffectLevel = FMath::Max(GetCharacterLevel(), 1);
 
 	// Apply Primary attributes (if present)
-	if (PrimaryEffect)
+	if (PrimaryAttributeEffect)
 	{
-		ApplyEffectToSelf(PrimaryEffect, ASC, EffectContextHandle, EffectLevel);
+		ApplyEffectToSelf(PrimaryAttributeEffect, ASC, EffectContextHandle, EffectLevel);
 	}
 	
-	if (DerivedEffect)
+	if (DerivedAttributeEffect)
 	{
 		// 派生属性 GE 是 Infinite（主属性变化时由 GAS 自动重算），
 		// 重复初始化（例如重生）时先移除旧实例，否则修正会叠加。
 		FGameplayEffectQuery Query;
-		Query.EffectDefinition = DerivedEffect;
+		Query.EffectDefinition = DerivedAttributeEffect;
 		for (const FActiveGameplayEffectHandle& Handle : ASC->GetActiveEffects(Query))
 		{
 			ASC->RemoveActiveGameplayEffect(Handle);
 		}
 
-		ApplyEffectToSelf(DerivedEffect, ASC, EffectContextHandle, EffectLevel);
+		ApplyEffectToSelf(DerivedAttributeEffect, ASC, EffectContextHandle, EffectLevel);
+	}
+
+	// 灵属通用基础值：表上的 CommonElementAffinity（Instant，五项各 Add 10），与职业无关。
+	// 未配置则跳过，灵属保持 0；持续型加成请放 AdditionalElementAffinityEffects。
+	if (CommonElementAffinity)
+	{
+		ApplyEffectToSelf(CommonElementAffinity, ASC, EffectContextHandle, EffectLevel);
 	}
 	
-	// 个体差异（精英加成、装备、诅咒等）：在 Derived 之后、Pool 之前施加。
-	// 放在 Pool 之前的原因：个体 GE 常常会改主要属性 / MaxHealth，
-	// 这样池属性 GE 才能用最终的 MaxHealth/MaxMana 把生命/法力填满（否则会出现"满血上限变高但血条不满"）。
-	for (const TSubclassOf<UGameplayEffect>& ExtraEffect : AdditionalInitialEffects)
+	// 个体差异（精英加成、装备、诅咒等）：在 Derived / 灵属之后、Pool 之前施加。。
+	if (AdditionalEffect)
 	{
-		ApplyEffectToSelf(ExtraEffect, ASC, EffectContextHandle, EffectLevel);
+		ApplyEffectToSelf(AdditionalEffect, ASC, EffectContextHandle, EffectLevel);
 	}
 
 	// Apply Pool attributes (if present)：最后按最终的 MaxHealth/MaxMana 填满池属性
-	if (PoolEffect)
+	if (PoolAttributeEffect)
 	{
-		ApplyEffectToSelf(PoolEffect, ASC, EffectContextHandle, EffectLevel);
+		ApplyEffectToSelf(PoolAttributeEffect, ASC, EffectContextHandle, EffectLevel);
 	}
 }
 
@@ -271,6 +283,6 @@ void AAuraCharacterBase::ApplyEffectToSelf(const TSubclassOf<UGameplayEffect> Ef
  */
 void AAuraCharacterBase::AddCharacterAbilities() const
 {
-	if (!HasAuthority() || !AuraAbilitySystemComponent) return;
-	AuraAbilitySystemComponent->AddCharacterAbilities(GetCombinedStartupAbilities());
+	if (!HasAuthority() || !AbilitySystemComponent) return;
+	AbilitySystemComponent->AddCharacterAbilities(GetCombinedStartupAbilities());
 }

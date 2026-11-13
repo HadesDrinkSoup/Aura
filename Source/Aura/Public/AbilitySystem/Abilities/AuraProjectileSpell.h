@@ -56,6 +56,6 @@ protected:
 	 * 但仍属于"类默认值"层面，不是每个投射物实例单独传参。
 	 * 未配置时 SpawnProjectileOnServer 会打 Warning 并放弃生成，不会崩（见实现处分支）。
 	 */
-	UPROPERTY(EditAnywhere, BluePrintReadOnly, Category="ProjectileClass")
+	UPROPERTY(EditAnywhere, BluePrintReadOnly, Category = "Aura|Ability|Projectile", meta = (DisplayName = "投射物类"))
 	TSubclassOf<AAuraProjectile> ProjectileClass;
 };

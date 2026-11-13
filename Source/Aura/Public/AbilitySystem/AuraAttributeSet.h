@@ -10,13 +10,6 @@
 class ACharacter;
 
 /**
- * 属性标签 -> 属性访问器的委托类型（返回 FGameplayAttribute，不是属性值）。
- * 用途见 UAuraAttributeSet::TagsToAttributesMap：给 UI 提供「标签 ↔ 属性定义」的运行时映射，
- * UAttributesMenuController 遍历它给每个属性挂变更回调，再按标签回查属性当前值。
- */
-DECLARE_DELEGATE_RetVal(FGameplayAttribute, FAttributeDelegate);
-
-/**
  * 一次 GE 执行所涉及的「施法者 / 受击者」双方信息快照。
  *
  * 由 UAuraAttributeSet::SetEffectProperties 从 FGameplayEffectModCallbackData 里拆出来：
@@ -111,8 +104,21 @@ struct FEffectProperties
  *    因此 PostGameplayEffectExecute 里只有钳制，没有 Meta → Health 的结算；
  *  - Infinite 派生 GE 改写 MaxHealth/MaxMana 时不走 PostGameplayEffectExecute，
  *    Health/Mana 的重新钳制必须在 PostAttributeChange 里补（否则上限变小时血条会超上限）；
- *  - TagsToAttributesMap 在构造函数里静态绑定，供 UI 层按标签取属性定义与值。
+ *  - TagsToAttributesMap 在构造函数里一次登记全部静态访问器（GetXxxAttribute 的函数指针），
+ *    供 UI 层按标签取属性定义与值。
  */
+
+/**
+ * 属性标签 -> 属性访问器的函数指针类型：T 是函数签名，展开后是裸函数指针。
+ * TStaticFuncPtr<FGameplayAttribute()> 就是 FGameplayAttribute(*)(void)，直接指向静态成员函数，
+ * 不需要构造委托对象，调用写 Pair.Value()（见 UAttributesMenuController）。
+ * 能这样用的原因：ATTRIBUTE_ACCESSORS_BASIC 生成的 GetXxxAttribute 是静态函数，
+ * 写在构造函数表达式里会隐式退化成该函数的指针，直接 Add 进表即可，不必 BindStatic。
+ * 注意：FFuncPtr 是"依赖类型"，模板里必须加 typename，否则 MSVC 报 C7510。
+ */
+template<class T>
+using TStaticFuncPtr = TBaseStaticDelegateInstance<T, FDefaultDelegateUserPolicy>::FFuncPtr;
+
 UCLASS()
 class AURA_API UAuraAttributeSet : public UAttributeSet
 {
@@ -167,11 +173,11 @@ public:
 	/**
 	 * 属性标签 → 属性访问器（GetXxxAttribute）的映射，构造函数中一次性填好。
 	 * Key 是 AuraGameplayTags 里的 Attributes_Pool_* / Attributes_Primary_* / Attributes_Derived_* 标签，
-	 * Value 是返回 FGameplayAttribute 的静态方法委托。
+	 * Value 是 GetXxxAttribute 的函数指针（FGameplayAttribute(*)(void)），调用 Value() 得到 FGameplayAttribute。
 	 * 目前消费者是 UAttributesMenuController：遍历它给每个属性挂 FOnAttributeChangeData 回调，
 	 * 再通过 DA_AttributesInfo 里的同标签行显示名称/描述/当前数值。
 	 */
-	TMap<FGameplayTag, FAttributeDelegate> TagsToAttributesMap;
+	TMap<FGameplayTag, TStaticFuncPtr<FGameplayAttribute()>> TagsToAttributesMap;
 
 	// ============================================================================
 	//  Pool Attributes（池属性）
@@ -183,7 +189,7 @@ public:
 	 * 取值被钳制在 [0, MaxHealth]：PreAttributeChange 与 PostGameplayEffectExecute 各管一层，
 	 * 上限变小时由 PostAttributeChange 兜底。UI 血条读的就是它。
 	 */
-	UPROPERTY(ReplicatedUsing = OnRep_Health, BlueprintReadOnly, Category = "Pool Attributes")
+	UPROPERTY(ReplicatedUsing = OnRep_Health, BlueprintReadOnly, Category = "Aura|Attributes|Pool", meta = (DisplayName = "生命值"))
 	FGameplayAttributeData Health;
 	/** 生成 Get/Set/Init 与 FGameplayAttribute 访问器；SetHealth 走聚合器，会先命中 PreAttributeChange 的 [0, MaxHealth] 钳制 */
 	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, Health)
@@ -193,7 +199,7 @@ public:
 	 * 由技能消耗/回复 GE 改写，复制规则与 Health 相同（COND_None + REPNOTIFY_OnChanged）。
 	 * 钳制范围 [0, MaxMana]，钳制点与 Health 完全对称（Pre/PostAttributeChange + PostGameplayEffectExecute）。
 	 */
-	UPROPERTY(ReplicatedUsing = OnRep_Mana, BlueprintReadOnly, Category = "Pool Attributes")
+	UPROPERTY(ReplicatedUsing = OnRep_Mana, BlueprintReadOnly, Category = "Aura|Attributes|Pool", meta = (DisplayName = "法力值"))
 	FGameplayAttributeData Mana;
 	/** 生成访问器；SetMana 走聚合器，会先命中 PreAttributeChange 的 [0, MaxMana] 钳制 */
 	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, Mana)
@@ -208,7 +214,7 @@ public:
 	 * MMC 读取时由 UAuraMMCBase::GetCapturedMagnitude 统一按 0 兜底）。
 	 * 复制方式同其它属性：COND_None + REPNOTIFY_OnChanged。
 	 */
-	UPROPERTY(ReplicatedUsing = OnRep_Strength, BlueprintReadOnly, Category = "Primary Attributes")
+	UPROPERTY(ReplicatedUsing = OnRep_Strength, BlueprintReadOnly, Category = "Aura|Attributes|Primary", meta = (DisplayName = "力量"))
 	FGameplayAttributeData Strength;
 	/** 生成访问器；SetStrength 走聚合器，会触发依赖它的派生属性 MMC 重算 */
 	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, Strength)
@@ -217,7 +223,7 @@ public:
 	 * 主属性 · 智力：影响魔法攻击、最大法力、魔法抗性、暴击率、冷却缩减、法力恢复。
 	 * 由 Primary GE 加法写入，本类不钳制（MMC 侧按非负读取）。复制：COND_None + REPNOTIFY_OnChanged。
 	 */
-	UPROPERTY(ReplicatedUsing = OnRep_Intelligence, BlueprintReadOnly, Category = "Primary Attributes")
+	UPROPERTY(ReplicatedUsing = OnRep_Intelligence, BlueprintReadOnly, Category = "Aura|Attributes|Primary", meta = (DisplayName = "智力"))
 	FGameplayAttributeData Intelligence;
 	/** 生成访问器；SetIntelligence 走聚合器，会触发依赖它的派生属性 MMC 重算 */
 	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, Intelligence)
@@ -226,7 +232,7 @@ public:
 	 * 主属性 · 敏捷：影响物理攻击、暴击率、命中、闪避、攻击速度、移动速度。
 	 * 由 Primary GE 加法写入，本类不钳制（MMC 侧按非负读取）。复制：COND_None + REPNOTIFY_OnChanged。
 	 */
-	UPROPERTY(ReplicatedUsing = OnRep_Agility, BlueprintReadOnly, Category = "Primary Attributes")
+	UPROPERTY(ReplicatedUsing = OnRep_Agility, BlueprintReadOnly, Category = "Aura|Attributes|Primary", meta = (DisplayName = "敏捷"))
 	FGameplayAttributeData Agility;
 	/** 生成访问器；SetAgility 走聚合器，会触发依赖它的派生属性 MMC 重算 */
 	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, Agility)
@@ -235,7 +241,7 @@ public:
 	 * 主属性 · 活力：影响最大生命、最大法力、护甲、魔法抗性、生命恢复。
 	 * 由 Primary GE 加法写入，本类不钳制（MMC 侧按非负读取）。复制：COND_None + REPNOTIFY_OnChanged。
 	 */
-	UPROPERTY(ReplicatedUsing = OnRep_Vigor, BlueprintReadOnly, Category = "Primary Attributes")
+	UPROPERTY(ReplicatedUsing = OnRep_Vigor, BlueprintReadOnly, Category = "Aura|Attributes|Primary", meta = (DisplayName = "活力"))
 	FGameplayAttributeData Vigor;
 	/** 生成访问器；SetVigor 走聚合器，会触发依赖它的派生属性 MMC 重算 */
 	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, Vigor)
@@ -250,7 +256,7 @@ public:
 	 * 其它职业用各自的 MMC（同目录 Warrior/Ranger/Tank），系数不同。
 	 * 本类不钳制它，但它在 PostAttributeChange / PostGameplayEffectExecute 里是 Health 的钳制上限。
 	 */
-	UPROPERTY(ReplicatedUsing = OnRep_MaxHealth, BlueprintReadOnly, Category = "Derived Attributes")
+	UPROPERTY(ReplicatedUsing = OnRep_MaxHealth, BlueprintReadOnly, Category = "Aura|Attributes|Derived", meta = (DisplayName = "最大生命值"))
 	FGameplayAttributeData MaxHealth;
 	/** 生成访问器；由派生 GE 的 MMC 结果写入，不要用它手动改上限（会被聚合器覆盖） */
 	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, MaxHealth)
@@ -259,7 +265,7 @@ public:
 	 * 派生属性 · 最大法力值。元素法师 MMC：120 + 智力 × 15 + 活力 × 2 + 等级 × 9，下限 0；
 	 * 与 MaxHealth 一样经 Infinite 派生 GE 写入，并作为 Mana 的钳制上限。
 	 */
-	UPROPERTY(ReplicatedUsing = OnRep_MaxMana, BlueprintReadOnly, Category = "Derived Attributes")
+	UPROPERTY(ReplicatedUsing = OnRep_MaxMana, BlueprintReadOnly, Category = "Aura|Attributes|Derived", meta = (DisplayName = "最大法力值"))
 	FGameplayAttributeData MaxMana;
 	/** 生成访问器；由派生 GE 的 MMC 结果写入 */
 	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, MaxMana)
@@ -268,7 +274,7 @@ public:
 	 * 派生属性 · 物理攻击力。元素法师 MMC：3 + 力量 × 1 + 敏捷 × 0.3 + 等级 × 0.6，下限 0。
 	 * 供物理伤害类 GE/技能读取，本类不钳制（下限由 MMC 保证）。
 	 */
-	UPROPERTY(ReplicatedUsing = OnRep_PhysicalAttack, BlueprintReadOnly, Category = "Derived Attributes")
+	UPROPERTY(ReplicatedUsing = OnRep_PhysicalAttack, BlueprintReadOnly, Category = "Aura|Attributes|Derived", meta = (DisplayName = "物理攻击"))
 	FGameplayAttributeData PhysicalAttack;
 	/** 生成访问器；值与 MMC 结果一致，不参与池属性钳制 */
 	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, PhysicalAttack)
@@ -277,7 +283,7 @@ public:
 	 * 派生属性 · 魔法攻击力。元素法师 MMC：12 + 智力 × 3.4 + 等级 × 1.5，下限 0。
 	 * 供法术伤害类 GE/技能读取，本类不钳制。
 	 */
-	UPROPERTY(ReplicatedUsing = OnRep_MagicalAttack, BlueprintReadOnly, Category = "Derived Attributes")
+	UPROPERTY(ReplicatedUsing = OnRep_MagicalAttack, BlueprintReadOnly, Category = "Aura|Attributes|Derived", meta = (DisplayName = "魔法攻击"))
 	FGameplayAttributeData MagicalAttack;
 	/** 生成访问器；值与 MMC 结果一致，不参与池属性钳制 */
 	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, MagicalAttack)
@@ -286,7 +292,7 @@ public:
 	 * 派生属性 · 护甲（减免物理伤害）。元素法师 MMC：0 + 活力 × 0.8 + 力量 × 0.2 + 等级 × 0.15，下限 0。
 	 * 注意这是"护甲值"而非百分比减伤，减伤公式在伤害计算侧，本类不钳制。
 	 */
-	UPROPERTY(ReplicatedUsing = OnRep_Armor, BlueprintReadOnly, Category = "Derived Attributes")
+	UPROPERTY(ReplicatedUsing = OnRep_Armor, BlueprintReadOnly, Category = "Aura|Attributes|Derived", meta = (DisplayName = "护甲"))
 	FGameplayAttributeData Armor;
 	/** 生成访问器；值与 MMC 结果一致，不参与池属性钳制 */
 	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, Armor)
@@ -295,7 +301,7 @@ public:
 	 * 派生属性 · 魔法抗性（减免魔法伤害）。
 	 * 元素法师 MMC：3 + 活力 × 0.45 + 智力 × 0.35 + 等级 × 0.4，下限 0。本类不钳制。
 	 */
-	UPROPERTY(ReplicatedUsing = OnRep_MagicResistance, BlueprintReadOnly, Category = "Derived Attributes")
+	UPROPERTY(ReplicatedUsing = OnRep_MagicResistance, BlueprintReadOnly, Category = "Aura|Attributes|Derived", meta = (DisplayName = "魔法抗性"))
 	FGameplayAttributeData MagicResistance;
 	/** 生成访问器；值与 MMC 结果一致，不参与池属性钳制 */
 	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, MagicResistance)
@@ -304,7 +310,7 @@ public:
 	 * 派生属性 · 暴击几率（百分比，100 = 必暴）。
 	 * 元素法师 MMC：4 + 智力 × 0.05 + 敏捷 × 0.04，钳制在 [0, 75]（上限由 MMC 保证，本类不重复钳制）。
 	 */
-	UPROPERTY(ReplicatedUsing = OnRep_CriticalChance, BlueprintReadOnly, Category = "Derived Attributes")
+	UPROPERTY(ReplicatedUsing = OnRep_CriticalChance, BlueprintReadOnly, Category = "Aura|Attributes|Derived", meta = (DisplayName = "暴击率"))
 	FGameplayAttributeData CriticalChance;
 	/** 生成访问器；值域由 MMC 钳制，UI 直接按百分比显示 */
 	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, CriticalChance)
@@ -313,7 +319,7 @@ public:
 	 * 派生属性 · 命中几率（百分比）。
 	 * 元素法师 MMC：80 + 敏捷 × 0.06 + 智力 × 0.05 + 等级 × 0.1，钳制在 [0, 100]。
 	 */
-	UPROPERTY(ReplicatedUsing = OnRep_HitChance, BlueprintReadOnly, Category = "Derived Attributes")
+	UPROPERTY(ReplicatedUsing = OnRep_HitChance, BlueprintReadOnly, Category = "Aura|Attributes|Derived", meta = (DisplayName = "命中率"))
 	FGameplayAttributeData HitChance;
 	/** 生成访问器；百分比属性，值域由 MMC 钳制 */
 	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, HitChance)
@@ -322,7 +328,7 @@ public:
 	 * 派生属性 · 闪避几率（百分比）。
 	 * 元素法师 MMC：2 + 敏捷 × 0.08，钳制在 [0, 60]（刻意不让闪避堆到无敌）。
 	 */
-	UPROPERTY(ReplicatedUsing = OnRep_DodgeChance, BlueprintReadOnly, Category = "Derived Attributes")
+	UPROPERTY(ReplicatedUsing = OnRep_DodgeChance, BlueprintReadOnly, Category = "Aura|Attributes|Derived", meta = (DisplayName = "闪避率"))
 	FGameplayAttributeData DodgeChance;
 	/** 生成访问器；百分比属性，值域由 MMC 钳制 */
 	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, DodgeChance)
@@ -331,7 +337,7 @@ public:
 	 * 派生属性 · 攻击速度（以 100 为基准的倍率刻度，不是秒数）。
 	 * 元素法师 MMC：95 + 敏捷 × 0.15 + 等级 × 0.1，钳制在 [50, 250]（下限防止慢到无法出手）。
 	 */
-	UPROPERTY(ReplicatedUsing = OnRep_AttackSpeed, BlueprintReadOnly, Category = "Derived Attributes")
+	UPROPERTY(ReplicatedUsing = OnRep_AttackSpeed, BlueprintReadOnly, Category = "Aura|Attributes|Derived", meta = (DisplayName = "攻击速度"))
 	FGameplayAttributeData AttackSpeed;
 	/** 生成访问器；值域由 MMC 钳制在 [50, 250] */
 	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, AttackSpeed)
@@ -340,7 +346,7 @@ public:
 	 * 派生属性 · 冷却缩减（百分比）。
 	 * 元素法师 MMC：3 + 智力 × 0.25 + 等级 × 0.1，钳制在 [0, 40]（上限 40% 防止冷却归零）。
 	 */
-	UPROPERTY(ReplicatedUsing = OnRep_CooldownReduction, BlueprintReadOnly, Category = "Derived Attributes")
+	UPROPERTY(ReplicatedUsing = OnRep_CooldownReduction, BlueprintReadOnly, Category = "Aura|Attributes|Derived", meta = (DisplayName = "冷却缩减"))
 	FGameplayAttributeData 	CooldownReduction;
 	/** 生成访问器；值域由 MMC 钳制在 [0, 40] */
 	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, CooldownReduction)
@@ -350,7 +356,7 @@ public:
 	 * 元素法师 MMC：0.5 + 活力 × 0.08 + 等级 × 0.03，下限 0。
 	 * 这里只是"恢复速率"数值，实际的周期回复由对应的 Infinite GE（Period）施加。
 	 */
-	UPROPERTY(ReplicatedUsing = OnRep_HealthRegen, BlueprintReadOnly, Category = "Derived Attributes")
+	UPROPERTY(ReplicatedUsing = OnRep_HealthRegen, BlueprintReadOnly, Category = "Aura|Attributes|Derived", meta = (DisplayName = "生命回复"))
 	FGameplayAttributeData 	HealthRegen;
 	/** 生成访问器；值与 MMC 结果一致，下限由 MMC 保证 */
 	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, HealthRegen)
@@ -359,7 +365,7 @@ public:
 	 * 派生属性 · 法力恢复（每秒回复量）。
 	 * 元素法师 MMC：3 + 智力 × 0.3 + 等级 × 0.1，下限 0；实际回复同样由周期型 Infinite GE 施加。
 	 */
-	UPROPERTY(ReplicatedUsing = OnRep_ManaRegen, BlueprintReadOnly, Category = "Derived Attributes")
+	UPROPERTY(ReplicatedUsing = OnRep_ManaRegen, BlueprintReadOnly, Category = "Aura|Attributes|Derived", meta = (DisplayName = "法力回复"))
 	FGameplayAttributeData 	ManaRegen;
 	/** 生成访问器；值与 MMC 结果一致，下限由 MMC 保证 */
 	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, ManaRegen)
@@ -368,32 +374,32 @@ public:
 	 * 派生属性 · 移动速度（UE 单位/秒，供 CharacterMovement 读取）。
 	 * 元素法师 MMC：380 + 敏捷 × 0.25，下限 0；本类不钳制上限。
 	 */
-	UPROPERTY(ReplicatedUsing = OnRep_MoveSpeed, BlueprintReadOnly, Category = "Derived Attributes")
+	UPROPERTY(ReplicatedUsing = OnRep_MoveSpeed, BlueprintReadOnly, Category = "Aura|Attributes|Derived", meta = (DisplayName = "移动速度"))
 	FGameplayAttributeData MoveSpeed;
 	/** 生成访问器；值与 MMC 结果一致 */
 	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, MoveSpeed)
 	
-	UPROPERTY(ReplicatedUsing = OnRep_Wood, BlueprintReadOnly, Category = "Affinity Attributes")
+	UPROPERTY(ReplicatedUsing = OnRep_Wood, BlueprintReadOnly, Category = "Aura|Attributes|Affinity", meta = (DisplayName = "木元素亲和"))
 	FGameplayAttributeData Wood;
 	/** 生成访问器；值与 MMC 结果一致 */
 	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, Wood)
 	
-	UPROPERTY(ReplicatedUsing = OnRep_Earth, BlueprintReadOnly, Category = "Affinity Attributes")
+	UPROPERTY(ReplicatedUsing = OnRep_Earth, BlueprintReadOnly, Category = "Aura|Attributes|Affinity", meta = (DisplayName = "土元素亲和"))
 	FGameplayAttributeData Earth;
 	/** 生成访问器；值与 MMC 结果一致 */
 	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, Earth)
 	
-	UPROPERTY(ReplicatedUsing = OnRep_Lightning, BlueprintReadOnly, Category = "Affinity Attributes")
+	UPROPERTY(ReplicatedUsing = OnRep_Lightning, BlueprintReadOnly, Category = "Aura|Attributes|Affinity", meta = (DisplayName = "雷元素亲和"))
 	FGameplayAttributeData Lightning;
 	/** 生成访问器；值与 MMC 结果一致 */
 	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, Lightning)
 	
-	UPROPERTY(ReplicatedUsing = OnRep_Water, BlueprintReadOnly, Category = "Affinity Attributes")
+	UPROPERTY(ReplicatedUsing = OnRep_Water, BlueprintReadOnly, Category = "Aura|Attributes|Affinity", meta = (DisplayName = "水元素亲和"))
 	FGameplayAttributeData Water;
 	/** 生成访问器；值与 MMC 结果一致 */
 	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, Water)
 	
-	UPROPERTY(ReplicatedUsing = OnRep_Fire, BlueprintReadOnly, Category = "Affinity Attributes")
+	UPROPERTY(ReplicatedUsing = OnRep_Fire, BlueprintReadOnly, Category = "Aura|Attributes|Affinity", meta = (DisplayName = "火元素亲和"))
 	FGameplayAttributeData Fire;
 	/** 生成访问器；值与 MMC 结果一致 */
 	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, Fire)
@@ -401,7 +407,7 @@ public:
 	// ============================================================================
 	//  Meta Attributes（元属性） 将结果传递给目标，不需要网络复制
 	// ============================================================================
-	UPROPERTY(BlueprintReadOnly, Category="Meta Attributes")
+	UPROPERTY(BlueprintReadOnly, Category = "Aura|Attributes|Meta", meta = (DisplayName = "受到伤害（元属性）"))
 	FGameplayAttributeData IncomingDamage;
 	ATTRIBUTE_ACCESSORS_BASIC(UAuraAttributeSet, IncomingDamage)
 

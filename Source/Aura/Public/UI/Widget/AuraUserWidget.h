@@ -39,7 +39,7 @@ public:
 	void SetWidgetController(UObject* InWidgetController);
 
 	/** 当前绑定的 WidgetController（只读，供蓝图绑定回调使用） */
-	UPROPERTY(BlueprintReadOnly, Category="WidgetController")
+	UPROPERTY(BlueprintReadOnly, Category = "Aura|UI|Widget", meta = (DisplayName = "控件控制器"))
 	TObjectPtr<UObject> WidgetController;
 
 protected:

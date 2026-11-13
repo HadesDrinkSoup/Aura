@@ -32,21 +32,21 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	
 	// 获取 ASC
-	virtual UAuraAbilitySystemComponent* GetAbilitySystemComponent() const override {return AuraAbilitySystemComponent;}
+	virtual UAuraAbilitySystemComponent* GetAbilitySystemComponent() const override {return AbilitySystemComponent;}
 	// 获取属性集的便捷访问方法
-	UAuraAttributeSet* GetAttributeSet() const {return AuraAttributeSet;}
+	UAuraAttributeSet* GetAttributeSet() const {return AttributeSet;}
 	
 	virtual int32 GetCharacterLevel() const override {return Level;}
 	
 protected:
 	// 技能系统组件 —— GAS 核心，管理技能授予、激活与 GameplayEffect
-	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<UAuraAbilitySystemComponent> AuraAbilitySystemComponent;
+	UPROPERTY(VisibleAnywhere, Category = "Aura|PlayerState|Components", meta = (DisplayName = "技能系统组件"))
+	TObjectPtr<UAuraAbilitySystemComponent> AbilitySystemComponent;
 	// 属性集 —— 存储玩家所有 GameplayAttribute（生命值、魔力值等）
-	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<UAuraAttributeSet> AuraAttributeSet;
+	UPROPERTY(VisibleAnywhere, Category = "Aura|PlayerState|Components", meta = (DisplayName = "属性集"))
+	TObjectPtr<UAuraAttributeSet> AttributeSet;
 	
-	UPROPERTY(EditDefaultsOnly, ReplicatedUsing= OnRep_Level, Category= "Class Default ")
+	UPROPERTY(EditDefaultsOnly, ReplicatedUsing= OnRep_Level, Category = "Aura|PlayerState|Defaults", meta = (DisplayName = "玩家等级"))
 	int32 Level = 1;
 	
 	UFUNCTION()

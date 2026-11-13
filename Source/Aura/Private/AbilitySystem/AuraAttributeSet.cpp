@@ -25,13 +25,15 @@
 /**
  * 构造函数：建立 TagsToAttributesMap（属性标签 → 对应属性的静态访问器）。
  *
- * 为什么用 BindStatic 而不是 BindUObject：GetXxxAttribute 是 ATTRIBUTE_ACCESSORS_BASIC 生成的
- * 静态函数，不需要对象实例即可调用；这样委托不持有 this，CDO 构造期间也安全，
- * 而 UI 侧执行委托时再用 Execute() 得到的 FGameplayAttribute 去 AttributeSet 上取值。
+ * 为什么值类型是裸函数指针（FGameplayAttribute(*)(void)）而不是委托：
+ * GetXxxAttribute 是 ATTRIBUTE_ACCESSORS_BASIC 生成的静态函数，不需要对象实例即可调用；
+ * 静态函数名写在这里会隐式退化成函数指针，所以一条 Add 就能登记完，省掉
+ * BindStatic/CreateStatic 与"每个属性一个委托成员"的样板代码（原先 21 个属性 63 行 → 21 行）。
+ * 指针不持有 this，CDO 构造期间也安全；UI 侧调用 Value() 得到 FGameplayAttribute 再去 AttributeSet 上取值。
  *
- * 三类属性都要登记：池属性（Health/Mana）、主属性（Strength/Intelligence/Agility/Vigor）、
- * 派生属性（MaxHealth…MoveSpeed）。漏登记不会报错，但 UAttributesMenuController 的属性面板
- * 会既列不出该属性、也不会随它刷新——这是本表唯一的消费者。
+ * 四组属性都要登记：池属性（Health/Mana）、主属性（Strength/Intelligence/Agility/Vigor）、
+ * 派生属性（MaxHealth…MoveSpeed）、灵属（Wood/Earth/Lightning/Water/Fire）。漏登记不会报错，
+ * 但 UAttributesMenuController 的属性面板会既列不出该属性、也不会随它刷新——这是本表唯一的消费者。
  *
  * 注意：构造里只登记映射，不写任何初始值。属性的初始数值全部由 Primary/Derived/Pool GE 提供；
  * 若某个角色没有被施加属性 GE，Health 与 MaxHealth 都会是 0，此时 PreAttributeChange 会把
@@ -42,89 +44,37 @@ UAuraAttributeSet::UAuraAttributeSet()
 	const FAuraGameplayTags GameplayTags = FAuraGameplayTags::Get();
 
 	/** 池属性：UI 直接显示的两个数值，对应 Attributes_Pool_* 标签 */
-
-	FAttributeDelegate HealthDelegate;
-	HealthDelegate.BindStatic(GetHealthAttribute);
-	TagsToAttributesMap.Add(GameplayTags.Attributes_Pool_Health, HealthDelegate);
-
-	FAttributeDelegate ManaDelegate;
-	ManaDelegate.BindStatic(GetManaAttribute);
-	TagsToAttributesMap.Add(GameplayTags.Attributes_Pool_Mana, ManaDelegate);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Pool_Health, GetHealthAttribute);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Pool_Mana, GetManaAttribute);
 
 	/** 重要属性：主属性由 Primary GE 加法写入，是派生属性的输入 */
-
-	FAttributeDelegate StrengthDelegate;
-	StrengthDelegate.BindStatic(GetStrengthAttribute);
-	TagsToAttributesMap.Add(GameplayTags.Attributes_Primary_Strength, StrengthDelegate);
-
-	FAttributeDelegate IntelligenceDelegate;
-	IntelligenceDelegate.BindStatic(GetIntelligenceAttribute);
-	TagsToAttributesMap.Add(GameplayTags.Attributes_Primary_Intelligence, IntelligenceDelegate);
-
-	FAttributeDelegate AgilityDelegate;
-	AgilityDelegate.BindStatic(GetAgilityAttribute);
-	TagsToAttributesMap.Add(GameplayTags.Attributes_Primary_Agility, AgilityDelegate);
-
-	FAttributeDelegate VigorDelegate;
-	VigorDelegate.BindStatic(GetVigorAttribute);
-	TagsToAttributesMap.Add(GameplayTags.Attributes_Primary_Vigor, VigorDelegate);
-
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Primary_Strength, GetStrengthAttribute);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Primary_Intelligence, GetIntelligenceAttribute);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Primary_Agility, GetAgilityAttribute);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Primary_Vigor, GetVigorAttribute);
+	
 	/** 派生属性：数值来自各职业 MMC（Infinite 派生 GE 写入），主属性变化时自动重算 */
-	FAttributeDelegate MaxHealthDelegate;
-	MaxHealthDelegate.BindStatic(GetMaxHealthAttribute);
-	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_MaxHealth, MaxHealthDelegate);
-
-	FAttributeDelegate MaxManaDelegate;
-	MaxManaDelegate.BindStatic(GetMaxManaAttribute);
-	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_MaxMana, MaxManaDelegate);
-
-	FAttributeDelegate PhysicalAttackDelegate;
-	PhysicalAttackDelegate.BindStatic(GetPhysicalAttackAttribute);
-	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_PhysicalAttack, PhysicalAttackDelegate);
-
-	FAttributeDelegate MagicalAttackDelegate;
-	MagicalAttackDelegate.BindStatic(GetMagicalAttackAttribute);
-	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_MagicalAttack, MagicalAttackDelegate);
-
-	FAttributeDelegate ArmorDelegate;
-	ArmorDelegate.BindStatic(GetArmorAttribute);
-	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_Armor, ArmorDelegate);
-
-	FAttributeDelegate MagicResistanceDelegate;
-	MagicResistanceDelegate.BindStatic(GetMagicResistanceAttribute);
-	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_MagicResistance, MagicResistanceDelegate);
-
-	FAttributeDelegate CriticalChanceDelegate;
-	CriticalChanceDelegate.BindStatic(GetCriticalChanceAttribute);
-	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_CriticalChance, CriticalChanceDelegate);
-
-	FAttributeDelegate HitChanceDelegate;
-	HitChanceDelegate.BindStatic(GetHitChanceAttribute);
-	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_HitChance, HitChanceDelegate);
-
-	FAttributeDelegate DodgeChanceDelegate;
-	DodgeChanceDelegate.BindStatic(GetDodgeChanceAttribute);
-	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_DodgeChance, DodgeChanceDelegate);
-
-	FAttributeDelegate AttackSpeedDelegate;
-	AttackSpeedDelegate.BindStatic(GetAttackSpeedAttribute);
-	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_AttackSpeed, AttackSpeedDelegate);
-
-	FAttributeDelegate CooldownReductionDelegate;
-	CooldownReductionDelegate.BindStatic(GetCooldownReductionAttribute);
-	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_CooldownReduction, CooldownReductionDelegate);
-
-	FAttributeDelegate HealthRegenDelegate;
-	HealthRegenDelegate.BindStatic(GetHealthRegenAttribute);
-	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_HealthRegen, HealthRegenDelegate);
-
-	FAttributeDelegate ManaRegenDelegate;
-	ManaRegenDelegate.BindStatic(GetManaRegenAttribute);
-	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_ManaRegen, ManaRegenDelegate);
-
-	FAttributeDelegate MoveSpeedDelegate;
-	MoveSpeedDelegate.BindStatic(GetMoveSpeedAttribute);
-	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_MoveSpeed, MoveSpeedDelegate);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_MaxHealth, GetMaxHealthAttribute);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_MaxMana, GetMaxManaAttribute);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_PhysicalAttack, GetPhysicalAttackAttribute);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_MagicalAttack, GetMagicalAttackAttribute);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_Armor, GetArmorAttribute);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_MagicResistance, GetMagicResistanceAttribute);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_CriticalChance, GetCriticalChanceAttribute);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_HitChance, GetHitChanceAttribute);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_DodgeChance, GetDodgeChanceAttribute);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_AttackSpeed, GetAttackSpeedAttribute);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_CooldownReduction, GetCooldownReductionAttribute);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_MoveSpeed, GetMoveSpeedAttribute);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_HealthRegen, GetHealthRegenAttribute);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Derived_ManaRegen, GetManaRegenAttribute);
+	
+	/** 灵属 */
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Affinity_Wood, GetWoodAttribute);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Affinity_Earth, GetEarthAttribute);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Affinity_Lightning, GetLightningAttribute);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Affinity_Water, GetWaterAttribute);
+	TagsToAttributesMap.Add(GameplayTags.Attributes_Affinity_Fire, GetFireAttribute);
 }
 
 /**

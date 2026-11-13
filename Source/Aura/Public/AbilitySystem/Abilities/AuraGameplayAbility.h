@@ -37,10 +37,10 @@ public:
 	 * EditDefaultsOnly：只能在类默认值层面配置（C++ 构造 / 蓝图类默认值），不能在关卡里的单实例上改。
 	 * 留空则该技能永远不会被输入触发，只能由代码或蓝图直接 TryActivateAbility。
 	 */
-	UPROPERTY(EditDefaultsOnly, Category="AbilityInput")
+	UPROPERTY(EditDefaultsOnly, Category = "Aura|Ability|Input", meta = (DisplayName = "技能输入标签"))
 	FGameplayTag AbilityInputTag;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "Damage|Bonus")
+	UPROPERTY(EditDefaultsOnly, Category = "Aura|Ability|Damage", meta = (DisplayName = "伤害加成类型"))
 	TMap<FGameplayTag, FScalableFloat> DamageBonusTypes;
 
 	/**

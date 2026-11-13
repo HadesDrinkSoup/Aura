@@ -19,7 +19,7 @@ public:
 	virtual void BroadCastInitialValues() override;
 	virtual void BindCallbacksToDependencies() override;
 	
-	UPROPERTY(BlueprintAssignable, Category = "GAS|Attributes")
+	UPROPERTY(BlueprintAssignable, Category = "Aura|UI|Attributes", meta = (DisplayName = "属性信息更新委托"))
 	FOnAttributeInfoChangedDelegate AttributeInfoChanged;
 
 protected:
@@ -29,6 +29,6 @@ protected:
 	/** 根据标签查找并广播单个属性信息；数据资产或标签缺失时安全跳过 */
 	void BroadcastAttributeInfo(const FGameplayTag& AttributeTag) const;
 	
-	UPROPERTY(EditDefaultsOnly, Category="Attributes Information")
+	UPROPERTY(EditDefaultsOnly, Category = "Aura|UI|Attributes", meta = (DisplayName = "属性信息资产"))
 	TObjectPtr<UAttributesInfo> AttributeInfo;
 };

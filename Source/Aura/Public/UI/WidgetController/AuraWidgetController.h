@@ -36,16 +36,16 @@ struct FWidgetControllerParams
 		AuraAttributeSet = AS;
 	}
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Aura|UI|WidgetController", meta = (DisplayName = "玩家控制器"))
 	TObjectPtr<AAuraPlayerController> AuraPlayerController;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Aura|UI|WidgetController", meta = (DisplayName = "玩家状态"))
 	TObjectPtr<AAuraPlayerState> AuraPlayerState;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Aura|UI|WidgetController", meta = (DisplayName = "技能系统组件"))
 	TObjectPtr<UAuraAbilitySystemComponent> AuraAbilitySystemComponent;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Aura|UI|WidgetController", meta = (DisplayName = "属性集"))
 	TObjectPtr<UAuraAttributeSet> AuraAttributeSet;
 };
 
@@ -81,18 +81,18 @@ public:
 	
 protected:
 	/** 玩家控制器 */
-	UPROPERTY(BlueprintReadOnly, Category="WidgetController")
+	UPROPERTY(BlueprintReadOnly, Category = "Aura|UI|WidgetController", meta = (DisplayName = "玩家控制器（只读）"))
 	TObjectPtr<AAuraPlayerController> AuraPlayerController;
 
 	/** 玩家状态（网络复制） */
-	UPROPERTY(BlueprintReadOnly, Category="WidgetController")
+	UPROPERTY(BlueprintReadOnly, Category = "Aura|UI|WidgetController", meta = (DisplayName = "玩家状态（只读）"))
 	TObjectPtr<AAuraPlayerState> AuraPlayerState;
 
 	/** 技能系统组件 */
-	UPROPERTY(BlueprintReadOnly, Category="WidgetController")
+	UPROPERTY(BlueprintReadOnly, Category = "Aura|UI|WidgetController", meta = (DisplayName = "技能系统组件（只读）"))
 	TObjectPtr<UAuraAbilitySystemComponent> AuraAbilitySystemComponent;
 
 	/** 属性集（包含 Health, Mana, MaxHealth, MaxMana 等） */
-	UPROPERTY(BlueprintReadOnly, Category="WidgetController")
+	UPROPERTY(BlueprintReadOnly, Category = "Aura|UI|WidgetController", meta = (DisplayName = "属性集（只读）"))
 	TObjectPtr<UAuraAttributeSet> AuraAttributeSet;
 };

@@ -47,19 +47,19 @@ private:
 	TObjectPtr<UOverlayWidgetController> OverlayWidgetController;
 
 	/** 蓝图 OverlayWidget 子类（在 BP_AuraHUD 中配置） */
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category = "Aura|UI|HUD", meta = (DisplayName = "覆盖层控件类"))
 	TSubclassOf<UAuraUserWidget> OverlayWidgetClass;
 	
 	/** 蓝图 OverlayWidgetController 子类（在 BP_AuraHUD 中配置） */
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category = "Aura|UI|HUD", meta = (DisplayName = "覆盖层控制器类"))
 	TSubclassOf<UOverlayWidgetController> OverlayWidgetControllerClass;
 	
 	UPROPERTY()
 	TObjectPtr<UAttributesMenuController> AttributesMenuController;
 	
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category = "Aura|UI|HUD", meta = (DisplayName = "属性菜单控件类"))
 	TSubclassOf<UAuraUserWidget> AttributesMenuClass;
 	
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category = "Aura|UI|HUD", meta = (DisplayName = "属性菜单控制器类"))
 	TSubclassOf<UAttributesMenuController> AttributesMenuControllerClass;
 };

@@ -35,11 +35,12 @@ AAuraEnemy::AAuraEnemy()
 	// 中的 GetHitResultUnderCursor(ECC_Visibility) 能够命中该敌人
 	GetMesh()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 	
-	AuraAbilitySystemComponent = CreateDefaultSubobject<UAuraAbilitySystemComponent>("AbilitySystemComponent");
-	AuraAbilitySystemComponent->SetIsReplicated(true);
-	AuraAbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
+	// 敌人自带 ASC/AttributeSet（玩家侧归 PlayerState 所有），创建后填入基类的缓存指针
+	AbilitySystemComponent = CreateDefaultSubobject<UAuraAbilitySystemComponent>("AbilitySystemComponent");
+	AbilitySystemComponent->SetIsReplicated(true);
+	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
 	
-	AuraAttributeSet = CreateDefaultSubobject<UAuraAttributeSet>("AttributeSet");
+	AttributeSet = CreateDefaultSubobject<UAuraAttributeSet>("AttributeSet");
 	
 	HealthBar = CreateDefaultSubobject<UWidgetComponent>("HealthBar");
 	HealthBar->SetupAttachment(GetRootComponent());
@@ -59,7 +60,7 @@ void AAuraEnemy::BeginPlay()
 	InitActorInfo();
 	
 	// 监听是否被攻击命中
-	AuraAbilitySystemComponent->RegisterGameplayTagEvent(FAuraGameplayTags::Get().Effects_HitReact,
+	AbilitySystemComponent->RegisterGameplayTagEvent(FAuraGameplayTags::Get().Effects_HitReact,
 		EGameplayTagEventType::NewOrRemoved).AddUObject(this,&AAuraEnemy::HitReactTagChanged); 
 }
 
@@ -76,7 +77,7 @@ void AAuraEnemy::BeginPlay()
  */
 void AAuraEnemy::InitActorInfo()
 {
-	AuraAbilitySystemComponent->InitAbilityActorInfo(this, this);
+	AbilitySystemComponent->InitAbilityActorInfo(this, this);
 	InitDefaultAttributes();
 	// 敌人同样需要授予默认技能：受击反应（GA_HitReact）挂在职业表的 CommonAbilities 上，
 	// 不授予的话 PostGameplayEffectExecute 里的 TryActivateAbilitiesByTag 找不到任何可激活技能，
@@ -102,7 +103,7 @@ void AAuraEnemy::InitHealthBar()
 	AAuraPlayerController* PC = GetWorld() ? Cast<AAuraPlayerController>(GetWorld()->GetFirstPlayerController()) : nullptr;
 	AAuraPlayerState* PS = PC ? Cast<AAuraPlayerState>(PC->PlayerState) : nullptr;
 
-	HealthBarController->SetWidgetControllerParams(FWidgetControllerParams(PC, PS, AuraAbilitySystemComponent, AuraAttributeSet));
+	HealthBarController->SetWidgetControllerParams(FWidgetControllerParams(PC, PS, AbilitySystemComponent, AttributeSet));
 
 	// 顺序：先设置参数 → 绑定 Widget → 绑定委托回调 → 广播初始值
 	AuraUserWidget->SetWidgetController(Cast<UObject>(HealthBarController));

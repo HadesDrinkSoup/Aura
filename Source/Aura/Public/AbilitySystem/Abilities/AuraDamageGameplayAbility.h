@@ -15,10 +15,10 @@ class AURA_API UAuraDamageGameplayAbility : public UAuraGameplayAbility
 	GENERATED_BODY()
 	
 protected:
-	UPROPERTY(EditDefaultsOnly, Category = "Damage|Element")
+	UPROPERTY(EditDefaultsOnly, Category = "Aura|Ability|Damage", meta = (DisplayName = "伤害元素类型"))
 	FGameplayTag DamageElementType;
 	
 	//命中时施加的伤害GE类
-	UPROPERTY(EditAnywhere, BluePrintReadOnly, Category="ProjectileClass")
+	UPROPERTY(EditAnywhere, BluePrintReadOnly, Category = "Aura|Ability|Damage", meta = (DisplayName = "伤害效果类"))
 	TSubclassOf<UGameplayEffect> DamageEffectClass;
 };

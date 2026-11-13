@@ -103,21 +103,21 @@ private:
 	
 protected:
 	/** Enhanced Input 映射上下文（含 MoveAction 等输入操作） */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Aura|Player|Input", meta = (DisplayName = "输入映射上下文"))
 	TObjectPtr<UInputMappingContext> AuraContext;
 
 	/** WASD / 摇杆移动输入操作 */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Aura|Player|Input", meta = (DisplayName = "移动输入动作"))
 	TObjectPtr<UInputAction> MoveAction;
 	
 	/** 输入配置数据资产：定义「输入动作 ↔ GameplayTag」映射，供 BindAbilityActions 批量绑定能力输入 */
-	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	UPROPERTY(EditDefaultsOnly, Category = "Aura|Player|Input", meta = (DisplayName = "输入配置"))
 	TObjectPtr<UAuraInputConfig> AuraInputConfig;
 	
 	UPROPERTY()
 	TObjectPtr<UAuraAbilitySystemComponent> AuraAbilitySystemComponent;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "Widgets")
+	UPROPERTY(EditDefaultsOnly, Category = "Aura|Player|UI", meta = (DisplayName = "浮动文字控件类"))
 	TSubclassOf<UFloatingTextWidgetComponent> FloatingTextWidgetClass;
 
 private:

@@ -63,14 +63,14 @@ public:
 	float CalculateFinalDamage(const float Damage, const float Defense) const;
 	
 	// 伤害的转换系数
-	UPROPERTY(EditDefaultsOnly, Category = "Damage|Scaling", meta = (ClampMin = "0.0"))
+	UPROPERTY(EditDefaultsOnly, Category = "Aura|Damage|Scaling", meta = (DisplayName = "攻击力系数", ClampMin = "0.0"))
 	float AttackScaling = 0.6f;
 	
 	// 防御常量
-	UPROPERTY(EditDefaultsOnly, Category = "Damage|Defense", meta = (ClampMin = "1.0"))
+	UPROPERTY(EditDefaultsOnly, Category = "Aura|Damage|Defense", meta = (DisplayName = "防御常数", ClampMin = "1.0"))
 	float DefenseConstant = 50.f;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "Damage|Defense", meta = (ClampMin = "0.0"))
+	UPROPERTY(EditDefaultsOnly, Category = "Aura|Damage|Defense", meta = (DisplayName = "暴击伤害系数", ClampMin = "0.0"))
 	// 暴击常量
 	float CriticalAttackConstant = 1.5f;
 };

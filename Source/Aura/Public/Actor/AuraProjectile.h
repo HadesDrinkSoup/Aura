@@ -77,7 +77,7 @@ public:
 	 *  - 没有标记 Replicated：客户端拿到的是空句柄。命中结算只在服务器发生，所以不需要同步；
 	 *  - 命中处未判空句柄：若生成方忘了赋值，会在这里空指针崩溃（由 UAuraProjectileSpell 保证非空）。
 	 */
-	UPROPERTY(BlueprintReadWrite, meta=(ExposeOnSpawn = true))
+	UPROPERTY(BlueprintReadWrite, Category = "Aura|Projectile", meta = (DisplayName = "伤害效果句柄", ExposeOnSpawn = true))
 	FGameplayEffectSpecHandle DamageEffectSpecHandle;
 protected:
 	/**
@@ -109,7 +109,7 @@ private:
 	 * 所以本类构造函数里先建 SphereComponent、再建它（顺序写反会拿到空的 UpdatedComponent）。
 	 * InitialSpeed/MaxSpeed 在 C++ 里硬编码，蓝图子类仍可在组件面板覆盖（组件模板可编辑）。
 	 */
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Category = "Aura|Projectile|Components", meta = (DisplayName = "投射物移动组件"))
 	TObjectPtr<UProjectileMovementComponent> ProjectileMovementComponent;
 	
 	/**
@@ -117,19 +117,19 @@ private:
 	 * 所以既不会挡住角色，也不会产生 Hit 事件——命中完全由 BeginOverlap 驱动。
 	 * 用球体而不是胶囊/盒子，是为了让"擦过"也能判定命中，且不需要考虑旋转。
 	 */
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Category = "Aura|Projectile|Components", meta = (DisplayName = "碰撞球体组件"))
 	TObjectPtr<USphereComponent> SphereComponent;
 	
 	/** 命中特效（Niagara），在 Multicast_OnHit 里按命中点与法线朝上生成；留空则不播 */
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category = "Aura|Projectile|Effects", meta = (DisplayName = "命中特效"))
 	TObjectPtr<UNiagaraSystem> ImpactEffect;
 	
 	/** 命中音效（单发），Multicast_OnHit 里在命中点播放；留空则不播 */
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category = "Aura|Projectile|Effects", meta = (DisplayName = "命中音效"))
 	TObjectPtr<USoundBase> ImpactSound;
 	
 	/** 飞行期间的循环音效（如呼啸声），BeginPlay 时挂到根组件上，命中/销毁时停止 */
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category = "Aura|Projectile|Effects", meta = (DisplayName = "飞行循环音效"))
 	TObjectPtr<USoundBase> LoopingSound;
 
 	/** 循环飞行音效组件（用于命中/销毁时停止） */

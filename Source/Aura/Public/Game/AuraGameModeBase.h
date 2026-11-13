@@ -21,7 +21,7 @@ class AURA_API AAuraGameModeBase : public AGameModeBase
 
 public:
 	/** 全局职业配置表（DA_CharacterClassInfo） */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character Class Defaults")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Aura|GameMode|Data", meta = (DisplayName = "职业信息资产"))
 	TObjectPtr<UCharacterClassInfo> CharacterClassInfo;
 
 	/** 取职业配置表；未配置时打警告（属性会全部下发失败，必须配） */

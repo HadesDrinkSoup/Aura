@@ -32,6 +32,8 @@ class UAuraAbilitySystemComponent;
  *
  * 本类不直接创建 ASC/AttributeSet：玩家侧的它们归属于 AAuraPlayerState（为了跨死亡保留），
  * 敌人侧则在子类构造函数里直接创建，因此在基类里它们都可能是 nullptr。
+ * 基类这两个成员只是「缓存指针」（*）：真正的所有者是 PlayerState 或敌人自身，
+ * 子类在 InitActorInfo 里把所有权者的实例填进来，基类只借它们实现接口与授予技能。
  */
 UCLASS(Abstract)
 class AURA_API AAuraCharacterBase : public ACharacter, public IAbilitySystemInterface, public ICombatInterface
@@ -63,7 +65,9 @@ protected:
 	/**
 	 * 施加初始属性（武器/职业 GE）。
 	 * 仅在服务器执行，内部会按"职业配置表 → 本 BP 覆盖"的优先级解析出 Primary/Derived/Pool 三个 GE；
-	 * 顺序固定为 Primary → Derived → AdditionalInitialEffects → Pool，原因见实现处注释。
+	 * 灵属（ElementAffinity）走两层：职业表上的通用灵属 GE + 本 BP 的个体差异列表，
+	 * 顺序固定为 Primary → Derived → 通用灵属 → 灵属个体差异 → AdditionalInitialEffects → Pool，
+	 * 原因见实现处注释。
 	 */
 	virtual void InitDefaultAttributes();
 
@@ -71,7 +75,7 @@ protected:
 	/**
 	 * 为自身创建并施加一个 GameplayEffect。
 	 * 同一套样板（MakeOutgoingSpec → 校验句柄 → ApplyGameplayEffectSpecToSelf）
-	 * 被 Primary/Derived/Pool/个体差异四类 GE 复用，因此抽成静态函数。
+	 * 被 Primary/Derived/通用灵属/灵属个体/Pool/个体差异六类 GE 复用，因此抽成静态函数。
 	 * @param EffectClass 要施加的 GE 类，为空时直接返回
 	 * @param ASC         目标 ASC，为空时直接返回
 	 * @param EffectContext 由调用方一次性构建、供所有 GE 共享的上下文（含 Instigator/SourceObject）
@@ -104,52 +108,55 @@ protected:
 	
 	
 	/** 武器网格（手部武器），用于取攻击插槽坐标；不参与碰撞 */
-	UPROPERTY(EditAnywhere, Category="Combat")
+	UPROPERTY(EditAnywhere, Category = "Aura|Character|Combat", meta = (DisplayName = "武器网格"))
 	TObjectPtr<USkeletalMeshComponent> Weapon;
 	
 	/** 武器上作为"打击点/特效起点"的插槽名，必须与骨骼网格上的插槽一致 */
-	UPROPERTY(EditAnywhere, Category="Combat")
+	UPROPERTY(EditAnywhere, Category = "Aura|Character|Combat", meta = (DisplayName = "武器顶端插槽"))
 	FName WeaponTipSocketName;
 	
-	/** GAS 组件：玩家侧来自 PlayerState，敌人侧在构造函数中创建；由子类在 InitActorInfo 中赋值 */
+	/**
+	 * 缓存的 GAS 组件指针：玩家侧来自 PlayerState，敌人侧在构造函数中创建；由子类在 InitActorInfo 中赋值。
+	 * 本类不拥有它，所有权在 AuraPlayerState / AAuraEnemy，因此这里只是引用。
+	 */
 	UPROPERTY()
-	TObjectPtr<UAuraAbilitySystemComponent> AuraAbilitySystemComponent;
+	TObjectPtr<UAuraAbilitySystemComponent> AbilitySystemComponent;
 	
-	/** 属性集：与 ASC 同源（玩家侧来自 PlayerState，敌人侧自建），供 MMC/UI 读取属性定义 */
+	/**
+	 * 缓存的属性集指针：与 ASC 同源（玩家侧来自 PlayerState，敌人侧自建），供 MMC/UI 读取属性定义。
+	 * 同样不拥有所有权，仅作缓存。
+	 */
 	UPROPERTY()
-	TObjectPtr<UAuraAttributeSet> AuraAttributeSet;
+	TObjectPtr<UAuraAttributeSet> AttributeSet;
 
 	/**
 	 * 职业：决定使用哪套属性 GE 与默认技能。
 	 * 属性 GE 本身在 GameMode 上配置的 DA_CharacterClassInfo 里（见 AAuraGameModeBase）。
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Character Class")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|Character|Class", meta = (DisplayName = "角色职业"))
 	ECharacterClass CharacterClass = ECharacterClass::Elementalist;
 
 	/**
 	 * 可选：直接在本 BP 上覆盖职业的属性 GE（留空则使用职业配置表）。
 	 * 通常只在「职业表里没有的特殊个体」上使用。
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Attributes")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|Character|Attributes", meta = (DisplayName = "池属性GE"))
 	TSubclassOf<UGameplayEffect> PoolAttributes;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Attributes")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|Character|Attributes", meta = (DisplayName = "主属性GE"))
 	TSubclassOf<UGameplayEffect> PrimaryAttributes;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Attributes")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|Character|Attributes", meta = (DisplayName = "派生属性GE"))
 	TSubclassOf<UGameplayEffect> DerivedAttributes;
-
-	/**
-	 * 个体差异：在职业 GE 之后追加施加的 GE。
-	 * 例如「精英哥布林」用一个 Multiply MaxHealth 的 GE，而不必复制整套职业 GE。
-	 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Attributes")
-	TArray<TSubclassOf<UGameplayEffect>> AdditionalInitialEffects;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Combat")
+	//个体差异：在职业 GE 之后追加施加的 GE。
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|Character|Attributes", meta = (DisplayName = "个体差异GE"))
+	TSubclassOf<UGameplayEffect> AdditionalEffect;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|Character|Combat", meta = (DisplayName = "角色溶解材质"))
 	TObjectPtr<UMaterialInstance> MeshDissolveMaterialInstance;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Combat")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|Character|Combat", meta = (DisplayName = "武器溶解材质"))
 	TObjectPtr<UMaterialInstance> WeaponDissolveMaterialInstance;
 	
 private:
@@ -161,10 +168,10 @@ private:
 	FTimerHandle DissolveSyncTimerHandle;
 	
 	/** 本 BP 额外配置的起始技能（在职业默认技能之前，最终取并集并去重） */
-	UPROPERTY(EditAnywhere, Category="Abilities")
+	UPROPERTY(EditAnywhere, Category = "Aura|Character|Abilities", meta = (DisplayName = "初始技能"))
 	TArray<TSubclassOf<UAuraGameplayAbility>> StartupAbilities;
 	
 	/** 攻击命中动画蒙太奇 */
-	UPROPERTY(EditAnywhere, Category="Combat")
+	UPROPERTY(EditAnywhere, Category = "Aura|Character|Combat", meta = (DisplayName = "受击动画"))
 	TObjectPtr<UAnimMontage> HitReactMontage;
 };

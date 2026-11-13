@@ -26,19 +26,19 @@ struct FUIWidgetRow : public FTableRowBase
 	GENERATED_BODY()
 
 	/** 消息标签（Message.HealthPotion 等），查表键 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|UI|Message", meta = (DisplayName = "消息标签"))
 	FGameplayTag MessageTag = FGameplayTag();
 
 	/** 提示文本 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|UI|Message", meta = (DisplayName = "消息文本"))
 	FText MessageText = FText();
 
 	/** 消息 Widget 类 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|UI|Message", meta = (DisplayName = "消息控件类"))
 	TSubclassOf<UAuraUserWidget> MessageWidgetClass = nullptr;
 
 	/** 提示图标 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|UI|Message", meta = (DisplayName = "消息图标"))
 	TObjectPtr<UTexture2D> Image = nullptr;
 };
 
