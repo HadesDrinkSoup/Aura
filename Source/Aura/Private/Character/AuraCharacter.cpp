@@ -97,9 +97,9 @@ void AAuraCharacter::InitActorInfo()
 	if (AuraPlayerState == nullptr) return;
 
 	// 从 PlayerState 取 ASC/AS 的实例，填进基类的缓存指针（所有权仍在 PlayerState）
-	CachedAbilitySystemComponent = AuraPlayerState->GetAbilitySystemComponent();
-	CachedAbilitySystemComponent->InitAbilityActorInfo(AuraPlayerState, this);
-	CachedAttributeSet = AuraPlayerState->GetAttributeSet();
+	AbilitySystemComponent = AuraPlayerState->GetAbilitySystemComponent();
+	AbilitySystemComponent->InitAbilityActorInfo(AuraPlayerState, this);
+	AttributeSet = AuraPlayerState->GetAttributeSet();
 	InitDefaultAttributes();
 
 	bActorInfoInitialized = true;
@@ -138,7 +138,7 @@ void AAuraCharacter::InitOverlayWidget() const
 	if (AAuraHUD* HUD = Cast<AAuraHUD>(PC->GetHUD()))
 	{
 		AAuraPlayerState* AuraPlayerState = GetPlayerState<AAuraPlayerState>();
-		const FWidgetControllerParams Params(PC, AuraPlayerState, CachedAbilitySystemComponent, CachedAttributeSet);
+		const FWidgetControllerParams Params(PC, AuraPlayerState, AbilitySystemComponent, AttributeSet);
 		HUD->InitOverlay(Params);
 	}
 }
