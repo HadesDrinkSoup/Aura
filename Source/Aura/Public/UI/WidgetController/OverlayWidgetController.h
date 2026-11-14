@@ -20,25 +20,25 @@ public:
 	virtual void BindCallbacksToDependencies() override;
 
 	/** 生命值变化时广播的委托（蓝图绑定到 HealthGlobe 更新 UI） */
-	UPROPERTY(BlueprintAssignable, Category = "Aura|UI|Delegate", meta = (DisplayName = "生命值变化委托"))
+	UPROPERTY(BlueprintAssignable, Category = "Aura|UI|Delegate")
 	FOnAttributeValueChangedDelegate OnHealthChanged;
 
 	/** 最大生命值变化时广播的委托（蓝图绑定到 HealthGlobe 更新进度条上限） */
-	UPROPERTY(BlueprintAssignable, Category = "Aura|UI|Delegate", meta = (DisplayName = "最大生命值变化委托"))
+	UPROPERTY(BlueprintAssignable, Category = "Aura|UI|Delegate")
 	FOnAttributeValueChangedDelegate OnMaxHealthChanged;
 
 	/** 魔法值变化时广播的委托 */
-	UPROPERTY(BlueprintAssignable, Category = "Aura|UI|Delegate", meta = (DisplayName = "法力值变化委托"))
+	UPROPERTY(BlueprintAssignable, Category = "Aura|UI|Delegate")
 	FOnAttributeValueChangedDelegate OnManaChanged;
 	
-	UPROPERTY(BlueprintAssignable, Category = "Aura|UI|Delegate", meta = (DisplayName = "最大法力值变化委托"))
+	UPROPERTY(BlueprintAssignable, Category = "Aura|UI|Delegate")
 	FOnAttributeValueChangedDelegate OnMaxManaChanged;
 	
-	UPROPERTY(BlueprintAssignable, Category = "Aura|UI|Message", meta = (DisplayName = "消息行广播委托"))
+	UPROPERTY(BlueprintAssignable, Category = "Aura|UI|Message")
 	FMessageWidgetRowDelegate MessageWidgetRow;
 	
 protected:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Aura|UI|Message", meta = (DisplayName = "消息数据表"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Aura|UI|Message")
 	UDataTable* MessageWidgetDataTable;
 	
 	template <typename  T>

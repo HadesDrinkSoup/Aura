@@ -36,16 +36,16 @@ struct FWidgetControllerParams
 		AuraAttributeSet = AS;
 	}
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Aura|UI|WidgetController", meta = (DisplayName = "玩家控制器"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Aura|UI|WidgetController")
 	TObjectPtr<AAuraPlayerController> AuraPlayerController;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Aura|UI|WidgetController", meta = (DisplayName = "玩家状态"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Aura|UI|WidgetController")
 	TObjectPtr<AAuraPlayerState> AuraPlayerState;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Aura|UI|WidgetController", meta = (DisplayName = "技能系统组件"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Aura|UI|WidgetController")
 	TObjectPtr<UAuraAbilitySystemComponent> AuraAbilitySystemComponent;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Aura|UI|WidgetController", meta = (DisplayName = "属性集"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Aura|UI|WidgetController")
 	TObjectPtr<UAuraAttributeSet> AuraAttributeSet;
 };
 
@@ -81,18 +81,18 @@ public:
 	
 protected:
 	/** 玩家控制器 */
-	UPROPERTY(BlueprintReadOnly, Category = "Aura|UI|WidgetController", meta = (DisplayName = "玩家控制器（只读）"))
+	UPROPERTY(BlueprintReadOnly, Category = "Aura|UI|WidgetController")
 	TObjectPtr<AAuraPlayerController> AuraPlayerController;
 
 	/** 玩家状态（网络复制） */
-	UPROPERTY(BlueprintReadOnly, Category = "Aura|UI|WidgetController", meta = (DisplayName = "玩家状态（只读）"))
+	UPROPERTY(BlueprintReadOnly, Category = "Aura|UI|WidgetController")
 	TObjectPtr<AAuraPlayerState> AuraPlayerState;
 
 	/** 技能系统组件 */
-	UPROPERTY(BlueprintReadOnly, Category = "Aura|UI|WidgetController", meta = (DisplayName = "技能系统组件（只读）"))
+	UPROPERTY(BlueprintReadOnly, Category = "Aura|UI|WidgetController")
 	TObjectPtr<UAuraAbilitySystemComponent> AuraAbilitySystemComponent;
 
 	/** 属性集（包含 Health, Mana, MaxHealth, MaxMana 等） */
-	UPROPERTY(BlueprintReadOnly, Category = "Aura|UI|WidgetController", meta = (DisplayName = "属性集（只读）"))
+	UPROPERTY(BlueprintReadOnly, Category = "Aura|UI|WidgetController")
 	TObjectPtr<UAuraAttributeSet> AuraAttributeSet;
 };
