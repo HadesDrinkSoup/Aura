@@ -98,4 +98,22 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "AuraAbilitySystemLibrary|GameplayEffects")
 	static void SetIsCriticalHit(FGameplayEffectContextHandle EffectContextHandle, bool bIsCritical);
+
+	/**
+	 * 取「本次效果是什么元素」的标签（存在 FAuraGameplayEffectContext::DamageType 上）。
+	 *
+	 * 命中阶段（投射物 Overlap、AttributeSet::PostGameplayEffectExecute、Execution）拿到的都是
+	 * FGameplayEffectSpec / FGameplayEffectContextHandle，能力对象此时可能已经结束，
+	 * 所以元素必须从上下文学，而不是回头去问技能。
+	 * 标签为空 = 这次不是元素伤害（物理/魔法/治疗等），调用方要按「无元素」处理。
+	 */
+	UFUNCTION(BlueprintPure, Category = "AuraAbilitySystemLibrary|GameplayEffects")
+	static FGameplayTag GetDamageType(const FGameplayEffectContextHandle& EffectContextHandle);
+
+	/**
+	 * 写「本次效果是什么元素」。只在服务器生成伤害 Spec 时调用一次（SpawnProjectile），
+	 * 之后随 GE 一起复制到客户端；不要在命中的每个端上各写一次。
+	 */
+	UFUNCTION(BlueprintCallable, Category = "AuraAbilitySystemLibrary|GameplayEffects")
+	static void SetDamageType(FGameplayEffectContextHandle EffectContextHandle, const FGameplayTag& InDamageType);
 };

@@ -7,15 +7,15 @@
 
 /**
  * 自定义 GE 上下文：在引擎自带的 Instigator / EffectCauser / HitResult 之外，
- * 额外携带「这一下是否被闪避」「这一下是否暴击」两个布尔标记。
+ * 额外携带「这一下是否被闪避」「这一下是否暴击」两个布尔标记，以及「这一下是什么元素伤害」的标签。
  *
  * 为什么需要它：暴击/闪避是在伤害结算（ExecutionCalculation_Damage）里掷骰得出的，
  * 但真正要用到这两个信息的消费方（飘字的字号/颜色、受击表现、后端的战斗日志）
  * 可能不在同一次函数调用里，甚至不在同一个端上（GE 会随 ActiveGameplayEffect 复制到客户端）。
  * 把结果挂在 EffectContext 上，等于挂在「这一次效果」上，谁拿到 Spec 谁就能读。
  *
- * 两个标记是普通 bool（1 字节），UPROPERTY 保证它们能被结构体资产的属性系统识别；
- * 但网络上走的是本类手写的 NetSerialize（见 .cpp），不是属性自动序列化。
+ * 闪避/暴击是普通 bool（1 字节），元素是 FGameplayTag；UPROPERTY 保证它们能被结构体资产
+ * 的属性系统识别，但网络上走的是本类手写的 NetSerialize（见 .cpp），不是属性自动序列化。
  */
 USTRUCT(BlueprintType)
 struct FAuraGameplayEffectContext : public FGameplayEffectContext
@@ -24,9 +24,11 @@ struct FAuraGameplayEffectContext : public FGameplayEffectContext
 public:
 	bool IsDodge() const {return bIsDodge;}
 	bool IsCriticalHit() const {return bIsCriticalHit;}
+	FGameplayTag GetDamageType() const {return DamageType;}
 
 	void SetIsDodge(const bool bInIsDodge) {bIsDodge = bInIsDodge;}
 	void SetIsCriticalHit(const bool bInIsCriticalHit) {bIsCriticalHit = bInIsCriticalHit;}
+	void SetDamageType(const FGameplayTag& InDamageType) {DamageType = InDamageType;}
 
 	/**
 	 * 必须返回派生类型本身，且必须覆盖的是 GetScriptStruct()（基类里虚函数的真名）。
@@ -64,6 +66,9 @@ protected:
 
 	UPROPERTY()
 	bool bIsCriticalHit = false;
+	
+	UPROPERTY()
+	FGameplayTag DamageType = FGameplayTag();
 };
 
 /**

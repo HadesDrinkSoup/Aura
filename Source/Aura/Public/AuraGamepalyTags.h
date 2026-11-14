@@ -76,6 +76,7 @@ struct FAuraGameplayTags
 	FGameplayTag Attributes_Affinity_Water;
 	FGameplayTag Attributes_Affinity_Fire;
 	TMap<FGameplayTag,FGameplayTag> DamageTypesToResistances;
+	TMap<FGameplayTag, FGameplayTag> ElementAffinityPairs;
 	
 	/** 加成类型 */
 	FGameplayTag Bonus_Physical;	//物理加成

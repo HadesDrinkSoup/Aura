@@ -83,9 +83,8 @@ void AAuraProjectile::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// 忽略 Owner（避免刚生成就与发射者重叠）
-	// 只影响"本组件移动时"的扫掠忽略，不阻止 Owner 自己撞上来，
-	// 所以回调里还保留了一次 OtherActor == GetOwner() 的判断作为兜底。
+	// 只忽略 Owner 这个 Actor（玩家技能下是 AAuraPlayerState），不忽略施法者角色本体：
+	// 攻击允许命中自己，重叠回调里 OtherActor == GetOwner() 的过滤同样只对 Owner 生效。
 	if (AActor* OwnerActor = GetOwner())
 	{
 		SphereComponent->IgnoreActorWhenMoving(OwnerActor, true);
@@ -121,7 +120,7 @@ void AAuraProjectile::BeginPlay()
  *  - 没有 bHit 标志，去重只靠末尾的 Destroy()。Destroy() 是标记待销毁、帧末处理，
  *    同一帧内与多个 Actor 重叠时回调可能被调用多次（可对多个目标结算），
  *    需要严格单次命中时应在函数开头加一个 bool 成员并提前 return。
- *  - DamageEffectSpecHandle 未判空就解引用：若生成方漏赋值，会在此处崩溃。
+ *  - DamageEffectSpecHandle 由生成方注入；这里先判 IsValid 再解引用，无效时报 Warning 并跳过结算。
  */
 void AAuraProjectile::OnSphereComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComponent, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -134,7 +133,7 @@ void AAuraProjectile::OnSphereComponentBeginOverlap(UPrimitiveComponent* Overlap
 		return;
 	}
 
-	// 过滤自身与发射者
+	// 过滤自身与 Owner（不排除施法者角色，允许自伤）
 	// IsValid 兼顾"已标记待销毁"的对象；OtherActor == this 覆盖自身子组件互相重叠的情况
 	if (!IsValid(OtherActor) || OtherActor == this || OtherActor == GetOwner())
 	{
@@ -164,7 +163,17 @@ void AAuraProjectile::OnSphereComponentBeginOverlap(UPrimitiveComponent* Overlap
 	// （UAbilitySystemBlueprintLibrary 未在本文件显式 include，依赖其它头文件间接引入）
 	if (UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OtherActor))
 	{
-		TargetASC->ApplyGameplayEffectSpecToSelf(*DamageEffectSpecHandle.Data.Get());
+		// 生成方（UAuraProjectileSpell）漏赋值时这里曾经直接解引用 Data 崩溃；
+		// 现在改成显式判空并报出来：法术配置错误不应该表现为一次 Source 崩。
+		if (DamageEffectSpecHandle.IsValid())
+		{
+			TargetASC->ApplyGameplayEffectSpecToSelf(*DamageEffectSpecHandle.Data.Get());
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[AuraProjectile] %s 命中 %s，但 DamageEffectSpecHandle 无效（检查技能的 DamageEffectClass 是否为空），本次不结算伤害"),
+				*GetName(), *OtherActor->GetName());
+		}
 	}
 	
 	// 服务端销毁（会复制到客户端销毁 Actor）

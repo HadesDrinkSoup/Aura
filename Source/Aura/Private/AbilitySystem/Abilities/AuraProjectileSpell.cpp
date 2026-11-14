@@ -21,7 +21,9 @@
 #include "Interface/CombatInterface.h"
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
+#include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "Engine/World.h"
+#include "HAL/IConsoleManager.h"
 
 /**
  * 技能激活入口，由 GAS 在 TryActivateAbility 成功、CommitAbility 之后调用。
@@ -81,8 +83,9 @@ void UAuraProjectileSpell::SpawnProjectile(const FVector& ProjectileTargetLocati
 	// 用 Deferred 生成而不是普通 SpawnActor：投射物在 BeginPlay 里就绑定了 Overlap 回调，
 	// 一旦命中就要 Apply DamageEffectSpecHandle；延迟生成让我们能在 BeginPlay 之前把该句柄写好，
 	// 避免"刚生成就撞到东西、句柄还是空"的窗口期。
-	// Owner 传角色本身：AAuraProjectile::BeginPlay 会 IgnoreActorWhenMoving(Owner)，
-	// 防止投射物出生在武器/胶囊里立刻和自己人重叠；SpawnActorDeferred 的 Instigator 形参传 Pawn，供伤害归因使用。
+	// Owner 传 GetOwningActorFromActorInfo()（玩家技能下是 AAuraPlayerState，不是角色本体）。
+	// 刻意不忽略施法者角色：攻击允许命中自己（例如范围伤害/自伤），是否结算由技能与 GE 决定；
+	// Instigator 形参按惯例传 Pawn（玩家技能下为 nullptr）。
 	// AlwaysSpawn：出生点与角色碰撞体重叠，默认的碰撞处理会拒绝生成或把位置挪开。
 	AAuraProjectile* Projectile = GetWorld()->SpawnActorDeferred<AAuraProjectile>(
 		ProjectileClass, 
@@ -104,17 +107,27 @@ void UAuraProjectileSpell::SpawnProjectile(const FVector& ProjectileTargetLocati
 	FHitResult HitResult;
 	HitResult.Location = ProjectileTargetLocation;
 	EffectContextHandle.AddHitResult(HitResult);
+
+	// 把"这一击是什么伤害"写进效果上下文，随 Spec 一起走：投射物真正命中时能力可能已经结束，
+	// 届时无法再访问能力实例上的 DamageType，只能靠上下文携带（GetDamageType 由 UAuraAbilitySystemLibrary 提供）。
+	if (DamageType.IsValid())
+	{
+		UAuraAbilitySystemLibrary::SetDamageType(EffectContextHandle, DamageType);
+	}
 	
 	const int32 AbilityLevel = GetCharacterLevel();
+
 	// 创建伤害效果的 Spec
 	const FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, AbilityLevel, EffectContextHandle);
 	// 根据伤害加成类型添加不同的浮点值
-	for (TTuple<FGameplayTag, FScalableFloat>& Pair : DamageBonusTypes)
+	for (TTuple<FGameplayTag, FScalableFloat>& Pair : DamageTypes)
 	{
 		const float ScaledDamage = Pair.Value.GetValueAtLevel(AbilityLevel);
 		// 向一个已经创建的 FGameplayEffectSpec（效果规格）中“写入”一个与 GameplayTag 绑定的浮点数值
 		UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(SpecHandle, Pair.Key, ScaledDamage);
+		
 	}
+
 	Projectile->DamageEffectSpecHandle = SpecHandle;
 	
 	// FinishSpawning 才真正把 Actor 放进世界并跑 BeginPlay；上面赋的 SpecHandle 已经就位。

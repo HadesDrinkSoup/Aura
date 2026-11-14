@@ -69,6 +69,23 @@ void UAuraAbilitySystemLibrary::SetIsCriticalHit(FGameplayEffectContextHandle Ef
 	}
 }
 
+FGameplayTag UAuraAbilitySystemLibrary::GetDamageType(const FGameplayEffectContextHandle& EffectContextHandle)
+{
+	if (const FAuraGameplayEffectContext* EffectContext = static_cast<const FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
+	{
+		return EffectContext->GetDamageType();
+	}
+	return FGameplayTag();
+}
+
+void UAuraAbilitySystemLibrary::SetDamageType(FGameplayEffectContextHandle EffectContextHandle, const FGameplayTag& InDamageType)
+{
+	if (FAuraGameplayEffectContext* EffectContext = static_cast<FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
+	{
+		EffectContext->SetDamageType(InDamageType);
+	}
+}
+
 /**
  * 取本地 0 号玩家主 HUD 的 WidgetController（血球/蓝球/技能图标的数据源）。
  *

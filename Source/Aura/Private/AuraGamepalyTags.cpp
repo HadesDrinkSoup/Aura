@@ -169,27 +169,26 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 	// =========================================================================
 	// 灵属，属性克制关系木 → 土 → 雷 → 水 → 火 → 木
 	// =========================================================================
+	// 亲和力同时代表「身份」和「抗性」：它抵抗克制链上它克的那一项，也放大了克制它的那一项。
+	// 例：木亲和 → 抵抗土伤害（木克土），但受到火伤害增加（火克木）。
 	GameplayTags.Attributes_Affinity_Wood= UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Attributes.Affinity.Wood"),
-		FString(TEXT("木属性亲和力，抵抗土属性攻击")));
+		FString(TEXT("木属性亲和力，抵抗土属性攻击，被火属性克制（受火伤害增加）")));
 	GameplayTags.Attributes_Affinity_Earth= UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Attributes.Affinity.Earth"),
-		FString(TEXT("土属性亲和力，抵抗雷属性攻击")));
+		FString(TEXT("土属性亲和力，抵抗雷属性攻击，被木属性克制（受木伤害增加）")));
 	GameplayTags.Attributes_Affinity_Lightning= UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Attributes.Affinity.Lightning"),
-		FString(TEXT("雷属性亲和力，抵抗水属性攻击")));
+		FString(TEXT("雷属性亲和力，抵抗水属性攻击，被土属性克制（受土伤害增加）")));
 	GameplayTags.Attributes_Affinity_Water= UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Attributes.Affinity.Water"),
-		FString(TEXT("水属性亲和力，抵抗火属性攻击")));
+		FString(TEXT("水属性亲和力，抵抗火属性攻击，被雷属性克制（受雷伤害增加）")));
 	GameplayTags.Attributes_Affinity_Fire= UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Attributes.Affinity.Fire"),
-		FString(TEXT("火属性亲和力，抵抗木属性攻击")));
+		FString(TEXT("火属性亲和力，抵抗木属性攻击，被水属性克制（受水伤害增加）")));
 	
-	GameplayTags.DamageTypesToResistances.Add(GameplayTags.Damage_Element_Wood, GameplayTags.Attributes_Affinity_Earth);
-	GameplayTags.DamageTypesToResistances.Add(GameplayTags.Damage_Element_Earth, GameplayTags.Attributes_Affinity_Lightning);
-	GameplayTags.DamageTypesToResistances.Add(GameplayTags.Damage_Element_Lightning, GameplayTags.Attributes_Affinity_Water);
-	GameplayTags.DamageTypesToResistances.Add(GameplayTags.Damage_Element_Water, GameplayTags.Attributes_Affinity_Fire);
-	GameplayTags.DamageTypesToResistances.Add(GameplayTags.Damage_Element_Fire, GameplayTags.Attributes_Affinity_Wood);
+	// 属性克制表（DamageTypesToResistances）放在下面 Damage_Element_* 注册之后建立：
+	// 若在这里 Add，5 个伤害类型 tag 还是空 FGameplayTag，后写会覆盖先写，表里只剩 1 条空 key 记录。
 	
 	
 	// =========================================================================
@@ -223,6 +222,28 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 	GameplayTags.Damage_Element_Fire= UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Damage.Element.Fire"),
 		FString(TEXT("火属性伤害，克制木，被水抵抗")));
+	
+	// 属性克制表：key = 伤害类型，value = 抵抗它的那项亲和力属性。
+	// 克制链 木→土→雷→水→火→木 表示「前者克制后者」，所以「被谁抵抗」要反过来取：
+	// 土伤害被木抵抗、雷伤害被土抵抗、水伤害被雷抵抗、火伤害被水抵抗、木伤害被火抵抗。
+	// 结算端两项都用这张表：
+	//  - value（抵抗者）= 受击者的减伤亲和（火伤害 → 水亲和）；
+	//  - key 方向取反（被本元素克制的元素）= 受击者的弱点亲和（火克木 → 木亲和增伤火）。
+	// 必须放在 Damage_Element_* 注册之后：在这里它们才是有效 tag，否则 5 个 key 全是空 tag。
+	GameplayTags.DamageTypesToResistances.Add(GameplayTags.Damage_Element_Wood, GameplayTags.Attributes_Affinity_Fire);
+	GameplayTags.DamageTypesToResistances.Add(GameplayTags.Damage_Element_Earth, GameplayTags.Attributes_Affinity_Wood);
+	GameplayTags.DamageTypesToResistances.Add(GameplayTags.Damage_Element_Lightning, GameplayTags.Attributes_Affinity_Earth);
+	GameplayTags.DamageTypesToResistances.Add(GameplayTags.Damage_Element_Water, GameplayTags.Attributes_Affinity_Lightning);
+	GameplayTags.DamageTypesToResistances.Add(GameplayTags.Damage_Element_Fire, GameplayTags.Attributes_Affinity_Water);
+	
+	// 元素 → 自身亲和（用于「出手增伤」：打什么元素就吃施法者该元素的亲和）。
+	// 注意这里的 value 必须是同一个元素：写成别的元素会让该元素的弱点判定失效、
+	// 并让另一项亲和被同时当成抗性和弱点算两遍。
+	GameplayTags.ElementAffinityPairs.Add(GameplayTags.Damage_Element_Wood, GameplayTags.Attributes_Affinity_Wood);
+	GameplayTags.ElementAffinityPairs.Add(GameplayTags.Damage_Element_Earth, GameplayTags.Attributes_Affinity_Earth);
+	GameplayTags.ElementAffinityPairs.Add(GameplayTags.Damage_Element_Lightning, GameplayTags.Attributes_Affinity_Lightning);
+	GameplayTags.ElementAffinityPairs.Add(GameplayTags.Damage_Element_Water, GameplayTags.Attributes_Affinity_Water);
+	GameplayTags.ElementAffinityPairs.Add(GameplayTags.Damage_Element_Fire, GameplayTags.Attributes_Affinity_Fire);
 	
 	// =========================================================================
 	// 攻击反馈

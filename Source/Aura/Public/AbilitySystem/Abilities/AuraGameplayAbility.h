@@ -39,9 +39,6 @@ public:
 	 */
 	UPROPERTY(EditDefaultsOnly, Category = "Aura|Ability|Input", meta = (DisplayName = "技能输入标签"))
 	FGameplayTag AbilityInputTag;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Aura|Ability|Damage", meta = (DisplayName = "伤害加成类型"))
-	TMap<FGameplayTag, FScalableFloat> DamageBonusTypes;
 
 	/**
 	 * 本次施法使用的技能等级：直接取施法者的角色等级（ICombatInterface::GetCharacterLevel），
