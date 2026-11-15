@@ -18,6 +18,9 @@
 #include "Components/WidgetComponent.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
+#include "AI/AuraAIController.h"
+#include "BehaviorTree/BehaviorTree.h"
+#include "BehaviorTree/BlackboardComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Player/AuraPlayerController.h"
 #include "Player/AuraPlayerState.h"
@@ -62,6 +65,15 @@ void AAuraEnemy::BeginPlay()
 	// 监听是否被攻击命中
 	AbilitySystemComponent->RegisterGameplayTagEvent(FAuraGameplayTags::Get().Effects_HitReact,
 		EGameplayTagEventType::NewOrRemoved).AddUObject(this,&AAuraEnemy::HitReactTagChanged); 
+}
+
+void AAuraEnemy::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+	if (!HasAuthority()) return;
+	AIController = Cast<AAuraAIController>(NewController);
+	AIController->GetBlackboardComponent()->InitializeBlackboard(*BehaviorTree->GetBlackboardAsset());
+	AIController->RunBehaviorTree(BehaviorTree);
 }
 
 // -----------------------------------------------------------------------------

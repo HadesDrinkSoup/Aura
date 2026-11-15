@@ -17,6 +17,8 @@
 #include "Interface/EnemyInterface.h"
 #include "AuraEnemy.generated.h"
 
+class UBehaviorTree;
+class AAuraAIController;
 class UEnemyHealthBarWidgetController;
 class UWidgetComponent;
 /**
@@ -41,6 +43,8 @@ public:
 
 	/** BeginPlay 中只做 ActorInfo 初始化；服务器与客户端都会进入，InitAbilityActorInfo 自身区分职责 */
 	virtual void BeginPlay() override;
+	
+	virtual void PossessedBy(AController* NewController) override;
 	
 	/** 开启 CustomDepth 渲染，设置 Stencil 值为 CUSTOM_DEPTH_RED 以触发红色描边后处理 */
 	virtual void HighlightActor() override;
@@ -92,4 +96,10 @@ protected:
 	/** 本敌人血条的 WidgetController 实例（缓存引用防止被 GC 回收） */
 	UPROPERTY()
 	TObjectPtr<UEnemyHealthBarWidgetController> HealthBarController;
+	
+	UPROPERTY()
+	TObjectPtr<AAuraAIController> AIController;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Aura|AI")
+	TObjectPtr<UBehaviorTree> BehaviorTree;
 };
