@@ -70,6 +70,16 @@ public:
 	 */
 	UFUNCTION(Client, Reliable)
 	void ShowFloatingText(float InDamage, ACharacter* TargetCharacter, const bool bIsDodge, const bool bIsCriticalHit);
+	
+	/**
+	 * 取当前光标下方的敌人 Actor（CursorTrace 每帧维护的 CurrentActor）。
+	 * 对外只暴露成 AActor*：IEnemyInterface 不是 UObject 派生，蓝图侧无法直接持有，
+	 * 调用方需要时自行 Cast 到具体敌人类型（如 AAuraEnemy）再取血条控制器。
+	 * 返回 nullptr 的情形：光标下没有 Actor、命中的 Actor 没有实现 IEnemyInterface，
+	 * 或在本帧的射线没有遮挡命中（CursorTrace 会提前 return，CurrentActor 保持上一帧值）。
+	 */
+	UFUNCTION(BlueprintPure, Category = "Aura|Player|Cursor", meta = (DisplayName = "获取光标下的敌人"))
+	AActor* GetCursorTargetActor() const;
 protected:
 	
 	/** 配置鼠标光标、输入模式（Game & UI）、注册 AuraContext 映射上下文 */

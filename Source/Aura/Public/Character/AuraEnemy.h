@@ -60,7 +60,7 @@ public:
 	void HitReactTagChanged(const FGameplayTag CallbackTag, int32 NewCount);
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Aura|Enemy|Combat", meta = (DisplayName = "是否受击"))
-	bool bHitReact = false;
+	bool bHitReacting = false;
 	
 protected:
 	/**
@@ -86,7 +86,7 @@ protected:
 	float LifeSpan = 5.f;
 	
 	/** 头顶血条的 WidgetComponent；构造时挂到根组件上，由蓝图指定 WidgetClass 与显示参数 */
-	UPROPERTY(EditDefaultsOnly, Category = "Aura|Enemy|Defaults", meta = (DisplayName = "血条组件"))
+	UPROPERTY(EditDefaultsOnly, Category = "Aura|Enemy|Defaults")
 	TObjectPtr<UWidgetComponent> HealthBar;
 	
 	/** 血条控制器类（TSubclassOf 是"类"不是实例，运行时需 NewObject 才能拿到对象） */

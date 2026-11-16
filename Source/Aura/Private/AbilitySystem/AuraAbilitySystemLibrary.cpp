@@ -5,21 +5,27 @@
  * @brief 全局查询库实现：职业配置表的取用，以及本地玩家的 UI WidgetController 获取。
  *
  * 要点：
- *  - 三个函数都是「查一下、返回指针」，不改任何状态，因此不需要复制、不需要广播，也没有服务器限制；
+ *  - 这些函数都是「查一下、返回指针」，不改任何状态，因此不需要复制、不需要广播，也没有服务器限制；
  *  - 配置类函数的数据源是 AAuraGameModeBase：职业表挂在 GameMode 的 BP 默认值上。
  *    因此**只在服务器有效**——`UGameplayStatics::GetGameMode` 在客户端返回 nullptr（见各函数注释）；
  *  - UI 类函数的链路是「0 号 PC → HUD → 组装 FWidgetControllerParams → HUD 的懒加载单例」，
- *    只在有本地玩家的端有效，专用服务器上返回 nullptr。
+ *    只在有本地玩家的端有效，专用服务器上返回 nullptr；
+ *    例外是 GetElementHealthBarController：敌人血条 Controller 不挂在 HUD 上，
+ *    而是每个敌人自己持有，所以它走「血条 Widget 自己 → 它的 WidgetController」；
+ *    只有在别的对象里调用时才退回「0 号 PC → 光标目标敌人 → 敌人身上的实例」。
  */
 
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 
 #include "AuraGameplayEffectContext.h"
+#include "Character/AuraEnemy.h"
 #include "Game/AuraGameModeBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "Player/AuraPlayerController.h"
 #include "Player/AuraPlayerState.h"
 #include "UI/HUD/AuraHUD.h"
+#include "UI/Widget/AuraUserWidget.h"
+#include "UI/WidgetController/EnemyHealthBarWidgetController.h"
 #include "UI/WidgetController/AuraWidgetController.h"
 
 /**
@@ -144,5 +150,14 @@ UAttributesMenuController* UAuraAbilitySystemLibrary::GetAttributesMenuControlle
 		}
 	}
 	// 同 Overlay 版：非本地端或无 Aura HUD 时返回 nullptr
+	return nullptr;
+}
+
+UEnemyHealthBarWidgetController* UAuraAbilitySystemLibrary::GetElementHealthBarController(const UObject* WorldContextObject)
+{
+	if (const UAuraUserWidget* AuraWidget = Cast<UAuraUserWidget>(WorldContextObject))
+	{
+		return Cast<UEnemyHealthBarWidgetController>(AuraWidget->WidgetController);
+	}
 	return nullptr;
 }

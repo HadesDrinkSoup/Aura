@@ -197,13 +197,19 @@ protected:
 	bool bRemoveOnExit = false;
 
 	/**
+	 * 敌人碰撞到Actor后是否应用
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|EffectActor|Applly", meta = (DisplayName = "敌人是否应用"))
+	bool bApplyEffectToEnemy = false;
+	
+	/**
 	 * 效果施加后是否销毁此 Actor（常用于一次性消耗品）
 	 * OnBeginOverlap 与 OnEndOverlap 末尾都会检查它，语义是"本次交互结束后我使命完成"。
 	 * 副作用：进入即销毁的拾取物不会再产生 OnEndOverlap，且它身上登记的
 	 * Infinite 句柄会随 Actor 一起消失（目标身上残留的效果将无法再由本 Actor 移除）。
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|EffectActor", meta = (DisplayName = "效果施加后销毁"))
-	bool bDestroy = false;
+	bool bDestroyOnEffectApplication = false;
 
 	/**
 	 * 移除效果时是否移除所有堆叠层数

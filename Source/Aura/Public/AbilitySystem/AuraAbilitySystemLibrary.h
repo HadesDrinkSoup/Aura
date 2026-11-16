@@ -9,6 +9,7 @@
 
 class UOverlayWidgetController;
 class UAttributesMenuController;
+class UEnemyHealthBarWidgetController;
 class UCharacterClassInfo;
 
 /**
@@ -69,6 +70,37 @@ public:
 	UFUNCTION(BlueprintPure, Category = "AuraAbilitySystemLibrary|Character", meta = (WorldContext = "WorldContextObject"))
 	static UAttributesMenuController* GetAttributesMenuController(const UObject* WorldContextObject);
 
+	/**
+	 * 取敌人血条 WidgetController（UEnemyHealthBarWidgetController）。
+	 *
+	 * 与上面两个函数不同，这个 Controller 不挂在 HUD 上：每个敌人在 InitHealthBar 里
+	 * NewObject 一个独立实例，再把自己头顶血条 Widget 的 WidgetController 指向它。
+	 * 因此「取到谁」取决于调用位置：
+	 *
+	 *  1. 在血条 Widget（WBP_EnemyHealth，父类 UAuraUserWidget）内部调用：
+	 *     蓝图把 self 隐式传成 WorldContextObject，本函数直接返回这个 Widget 自己的
+	 *     WidgetController —— 也就是它头顶那个敌人的 Controller。语义上完全等价于
+	 *     「Get Widget Controller 变量 → Cast To BP_EnemyHealthBarWidgetController」，
+	 *     但不需要蓝图 Cast 节点，也不依赖光标在哪。
+	 *     时机构成：Widget 的 Construct 要等 WidgetComponent::TickComponent 里
+	 *     TakeWidget 时才会触发，而 InitHealthBar 在敌人 BeginPlay 里早已 SetWidgetController
+	 *     完毕，所以这里拿到的就是已赋值的 Controller。
+	 *
+	 *  2. 在其他地方调用（PlayerController、GameMode、其他 Actor 蓝图）：
+	 *     退回「光标所指敌人」——AAuraPlayerController::CursorTrace 每帧维护的 CurrentActor
+	 *     （光标下实现了 IEnemyInterface 的 Actor），转成 AAuraEnemy 后取它的 HealthBarController。
+	 *
+	 * 失败返回 nullptr 的情形：调用方是血条 Widget 但它还没被 SetWidgetController
+	 * （InitHealthBar 未跑到，此时**不会**退回光标目标，避免绑到别的敌人身上）、
+	 * 不在有本地玩家的端（专用服务器）、PC 不是 AAuraPlayerController、
+	 * 光标下没有敌人（CurrentActor 为空）、命中的 Actor 不是 AAuraEnemy、
+	 * 该敌人没有配置 HealthBarControllerClass（InitHealthBar 直接返回）。
+	 *
+	 * @param WorldContextObject 蓝图侧隐式注入；在 Widget 中即 Widget 自己。
+	 */
+	UFUNCTION(BlueprintPure, Category = "AuraAbilitySystemLibrary|Widget", meta = (WorldContext = "WorldContextObject"))
+	static UEnemyHealthBarWidgetController* GetElementHealthBarController(const UObject* WorldContextObject);
+	
 	/**
 	 * 取全局职业配置表（AAuraGameModeBase 上配置的 DA_CharacterClassInfo）。
 	 * 数据源是当前世界的 GameMode，所以**只在服务器上有效**：

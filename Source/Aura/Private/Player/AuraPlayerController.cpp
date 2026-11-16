@@ -158,6 +158,18 @@ void AAuraPlayerController::CursorTrace()
 	}
 }
 
+/**
+ * 把 CursorTrace 维护的接口指针还原成 Actor。
+ * IEnemyInterface 是纯 C++ 接口类（不是 UObject 派生），蓝图/通用代码拿不到它，
+ * 所以这里先用 Cast<UObject> 取回实现者本体，再 Cast 成 AActor。
+ * 不做任何射线检测——结果就是上一帧 CursorTrace 的结论，保证调用方看到的目标
+ * 与高亮状态是同一个敌人（同帧一致）。
+ */
+AActor* AAuraPlayerController::GetCursorTargetActor() const
+{
+	return CurrentActor ? Cast<AActor>(Cast<UObject>(CurrentActor)) : nullptr;
+}
+
 // -----------------------------------------------------------------------------
 // 能力输入回调
 // 由 BindAbilityActions 在 SetupInputComponent 中绑定，分别对应输入动作的

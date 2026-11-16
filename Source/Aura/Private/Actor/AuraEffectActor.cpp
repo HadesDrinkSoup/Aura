@@ -86,12 +86,103 @@ void AAuraEffectActor::ApplyEffectToTarget(AActor* SourceActor, AActor* TargetAc
 	// （本类没有 bRemoveOnEnter：进入时只登记不移除，所以同一目标反复进入会累积句柄）
 	// 判定看 GE 自身的 DurationPolicy，而不是它来自哪个数组：
 	// Instant 不产生 ActiveEffect、Duration 会自行到期，二者都不需要（也无法）由本 Actor 移除。
-	const bool bIsInfinite = EffectSpecHandle.Data->Def->DurationPolicy == EGameplayEffectDurationType::Infinite;
-	if (bIsInfinite)
+	if (EffectSpecHandle.Data->Def->DurationPolicy == EGameplayEffectDurationType::Infinite)
 	{
 		// FindOrAdd：首次对该目标施加时自动建表项。句柄即使无效（被免疫/立即取消）也会登记，
 		// 后续移除时是一次无害的空操作，换来的是"登记逻辑没有分支"。
 		ActiveEffectsMap.FindOrAdd(TargetASC).Handles.Add(ActiveEffectHandle);
+	}
+}
+
+// ----------------------------------------------------------------------------
+// OnBeginOverlap
+// ----------------------------------------------------------------------------
+
+/**
+ * 进入区域的回调（由蓝图在组件的 OnComponentBeginOverlap 中调用，约定只在服务器调用）。
+ *
+ * 施加顺序固定为 Instant → Duration → Infinite，理由：
+ *  1) Instant 先结算，循环里后续 GE 的 OnApplied 若读结果属性（如"先回血再挂回复光环"）能读到最新值；
+ *  2) Infinite 最后挂上，尽量缩短"永久效果已存在但前置属性还没写"的窗口；
+ *  3) bDestroyOnEffectApplication 放在最后，保证一次性消耗品是"先给效果、再销毁自己"，顺序颠倒会导致什么都没给上。
+ * 若 GE 之间有更强的依赖，只能靠蓝图里的数组顺序保证——本函数不做依赖解析。
+ */
+void AAuraEffectActor::OnBeginOverlap(AActor* SourceActor, AActor* TargetActor)
+{
+	if (TargetActor->ActorHasTag("Enemy") && !bApplyEffectToEnemy) return;
+	
+	if (!OnEnterInstantEffects.IsEmpty())
+	{
+		ApplyEffectArrayToTarget(SourceActor, TargetActor, OnEnterInstantEffects);
+	}
+	if (!OnEnterDurationEffects.IsEmpty())
+	{
+		ApplyEffectArrayToTarget(SourceActor, TargetActor, OnEnterDurationEffects);
+	}
+	if (!OnEnterInfiniteEffects.IsEmpty())
+	{
+		ApplyEffectArrayToTarget(SourceActor, TargetActor, OnEnterInfiniteEffects);
+	}
+
+	// 2. 销毁自身（一次性消耗品模式）
+	// 拾取物常用：Destroy 是延迟到帧末处理，本帧后续代码仍可安全执行。
+	// 注意一旦销毁，本次重叠就不会再有 OnEndOverlap，bRemoveOnExit 也就永远不会生效。
+	if (bDestroyOnEffectApplication)
+	{
+		Destroy();
+	}
+}
+
+// ----------------------------------------------------------------------------
+// OnEndOverlap
+// ----------------------------------------------------------------------------
+
+/**
+ * 离开区域的回调（由蓝图在组件的 OnComponentEndOverlap 中调用，约定只在服务器调用）。
+ *
+ * 执行顺序：移除已追踪效果 → OnExit 三组效果 → 可能的自我销毁。
+ * 之所以先移除再施加：若顺序反过来，本次 OnExitInfiniteEffects 刚挂上的新效果
+ * 会被紧随其后的 RemoveStoredEffects 当成"旧效果"一起删掉（它也会登记进同一张表）。
+ *
+ * 未做端过滤的原因与 OnBeginOverlap 相同：只有服务器收到重叠事件时才应走到这里；
+ * 客户端即使因本地移动产生重叠，也只会因为没有权威而静默失败（外加引擎告警）。
+ */
+void AAuraEffectActor::OnEndOverlap(AActor* SourceActor, AActor* TargetActor)
+{
+	if (TargetActor->ActorHasTag("Enemy") && !bApplyEffectToEnemy) return;
+	
+	// 1. 先移除已追踪的旧效果（如永久 MaxHP-10），再施加新效果（如永久 MaxHP-10），
+	//    避免新 Infinite 效果被自己的 bRemoveOnExit 误删
+	if (bRemoveOnExit)
+	{
+		// 这里重新探一次 ASC（而不是复用 ApplyEffectToTarget 里的那次查询）：
+		// 目标可能在重叠期间被销毁（角色死亡），此时 ASC 为 null，移除逻辑应整体跳过而不是崩。
+		if (UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(TargetActor))
+		{
+			RemoveStoredEffects(TargetASC);
+		}
+	}
+
+	// 2. 再施加离开效果（顺序同进入：Instant → Duration → Infinite）
+	if (!OnExitInstantEffects.IsEmpty())
+	{
+		ApplyEffectArrayToTarget(SourceActor, TargetActor, OnExitInstantEffects);
+	}
+	if (!OnExitDurationEffects.IsEmpty())
+	{
+		ApplyEffectArrayToTarget(SourceActor, TargetActor, OnExitDurationEffects);
+	}
+	if (!OnExitInfiniteEffects.IsEmpty())
+	{
+		ApplyEffectArrayToTarget(SourceActor, TargetActor, OnExitInfiniteEffects);
+	}
+
+	// 3. 销毁自身（一次性消耗品模式）
+	// 放在移除/施加之后：销毁后 ActiveEffectsMap 随 Actor 一起消失，
+	// 因此"离开时销毁"的配置不会留下可回收的句柄。
+	if (bDestroyOnEffectApplication)
+	{
+		Destroy();
 	}
 }
 
@@ -142,94 +233,5 @@ void AAuraEffectActor::RemoveStoredEffects(UAbilitySystemComponent* TargetASC)
 			TargetASC->RemoveActiveGameplayEffect(Handle, StacksToRemove);
 		}
 		ActiveEffectsMap.Remove(TargetASC);
-	}
-}
-
-// ----------------------------------------------------------------------------
-// OnBeginOverlap
-// ----------------------------------------------------------------------------
-
-/**
- * 进入区域的回调（由蓝图在组件的 OnComponentBeginOverlap 中调用，约定只在服务器调用）。
- *
- * 施加顺序固定为 Instant → Duration → Infinite，理由：
- *  1) Instant 先结算，循环里后续 GE 的 OnApplied 若读结果属性（如"先回血再挂回复光环"）能读到最新值；
- *  2) Infinite 最后挂上，尽量缩短"永久效果已存在但前置属性还没写"的窗口；
- *  3) bDestroy 放在最后，保证一次性消耗品是"先给效果、再销毁自己"，顺序颠倒会导致什么都没给上。
- * 若 GE 之间有更强的依赖，只能靠蓝图里的数组顺序保证——本函数不做依赖解析。
- */
-void AAuraEffectActor::OnBeginOverlap(AActor* SourceActor, AActor* TargetActor)
-{
-	// 1. 再施加进入效果
-	if (!OnEnterInstantEffects.IsEmpty())
-	{
-		ApplyEffectArrayToTarget(SourceActor, TargetActor, OnEnterInstantEffects);
-	}
-	if (!OnEnterDurationEffects.IsEmpty())
-	{
-		ApplyEffectArrayToTarget(SourceActor, TargetActor, OnEnterDurationEffects);
-	}
-	if (!OnEnterInfiniteEffects.IsEmpty())
-	{
-		ApplyEffectArrayToTarget(SourceActor, TargetActor, OnEnterInfiniteEffects);
-	}
-
-	// 2. 销毁自身（一次性消耗品模式）
-	// 拾取物常用：Destroy 是延迟到帧末处理，本帧后续代码仍可安全执行。
-	// 注意一旦销毁，本次重叠就不会再有 OnEndOverlap，bRemoveOnExit 也就永远不会生效。
-	if (bDestroy)
-	{
-		Destroy();
-	}
-}
-
-// ----------------------------------------------------------------------------
-// OnEndOverlap
-// ----------------------------------------------------------------------------
-
-/**
- * 离开区域的回调（由蓝图在组件的 OnComponentEndOverlap 中调用，约定只在服务器调用）。
- *
- * 执行顺序：移除已追踪效果 → OnExit 三组效果 → 可能的自我销毁。
- * 之所以先移除再施加：若顺序反过来，本次 OnExitInfiniteEffects 刚挂上的新效果
- * 会被紧随其后的 RemoveStoredEffects 当成"旧效果"一起删掉（它也会登记进同一张表）。
- *
- * 未做端过滤的原因与 OnBeginOverlap 相同：只有服务器收到重叠事件时才应走到这里；
- * 客户端即使因本地移动产生重叠，也只会因为没有权威而静默失败（外加引擎告警）。
- */
-void AAuraEffectActor::OnEndOverlap(AActor* SourceActor, AActor* TargetActor)
-{
-	// 1. 先移除已追踪的旧效果（如进入时施加的毒气 DoT），再施加新效果（如永久 MaxHP-10），
-	//    避免新 Infinite 效果被自己的 bRemoveOnExit 误删
-	if (bRemoveOnExit)
-	{
-		// 这里重新探一次 ASC（而不是复用 ApplyEffectToTarget 里的那次查询）：
-		// 目标可能在重叠期间被销毁（角色死亡），此时 ASC 为 null，移除逻辑应整体跳过而不是崩。
-		if (UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(TargetActor))
-		{
-			RemoveStoredEffects(TargetASC);
-		}
-	}
-
-	// 2. 再施加离开效果（顺序同进入：Instant → Duration → Infinite）
-	if (!OnExitInstantEffects.IsEmpty())
-	{
-		ApplyEffectArrayToTarget(SourceActor, TargetActor, OnExitInstantEffects);
-	}
-	if (!OnExitDurationEffects.IsEmpty())
-	{
-		ApplyEffectArrayToTarget(SourceActor, TargetActor, OnExitDurationEffects);
-	}
-	if (!OnExitInfiniteEffects.IsEmpty())
-	{
-		ApplyEffectArrayToTarget(SourceActor, TargetActor, OnExitInfiniteEffects);
-	}
-
-	// 3. 销毁自身（一次性消耗品模式）
-	// 放在移除/施加之后：销毁后 ActiveEffectsMap 随 Actor 一起消失，
-	// 因此"离开时销毁"的配置不会留下可回收的句柄。
-	if (bDestroy)
-	{
-		Destroy();
 	}
 }

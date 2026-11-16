@@ -38,6 +38,12 @@ AAuraEnemy::AAuraEnemy()
 	// 中的 GetHitResultUnderCursor(ECC_Visibility) 能够命中该敌人
 	GetMesh()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 	
+	bUseControllerRotationPitch = false;
+	bUseControllerRotationRoll = false;
+	bUseControllerRotationYaw = false;
+	
+	GetCharacterMovement()->bUseControllerDesiredRotation = true;
+	
 	// 敌人自带 ASC/AttributeSet（玩家侧归 PlayerState 所有），创建后填入基类的缓存指针
 	AbilitySystemComponent = CreateDefaultSubobject<UAuraAbilitySystemComponent>("AbilitySystemComponent");
 	AbilitySystemComponent->SetIsReplicated(true);
@@ -63,8 +69,7 @@ void AAuraEnemy::BeginPlay()
 	InitActorInfo();
 	
 	// 监听是否被攻击命中
-	AbilitySystemComponent->RegisterGameplayTagEvent(FAuraGameplayTags::Get().Effects_HitReact,
-		EGameplayTagEventType::NewOrRemoved).AddUObject(this,&AAuraEnemy::HitReactTagChanged); 
+	AbilitySystemComponent->RegisterGameplayTagEvent(FAuraGameplayTags::Get().Effects_HitReact, EGameplayTagEventType::NewOrRemoved).AddUObject(this,&AAuraEnemy::HitReactTagChanged); 
 }
 
 void AAuraEnemy::PossessedBy(AController* NewController)
@@ -74,6 +79,8 @@ void AAuraEnemy::PossessedBy(AController* NewController)
 	AIController = Cast<AAuraAIController>(NewController);
 	AIController->GetBlackboardComponent()->InitializeBlackboard(*BehaviorTree->GetBlackboardAsset());
 	AIController->RunBehaviorTree(BehaviorTree);
+	AIController->GetBlackboardComponent()->SetValueAsBool(FName("HitReacting"), bHitReacting);
+	AIController->GetBlackboardComponent()->SetValueAsBool(FName("RangedAttacker"), CharacterClass != ECharacterClass::Tank && CharacterClass != ECharacterClass::Warrior);
 }
 
 // -----------------------------------------------------------------------------
@@ -123,8 +130,6 @@ void AAuraEnemy::InitHealthBar()
 	HealthBarController->BroadCastInitialValues();
 
 	// 兜底：无论初始值何时就绪，未战斗时血条必须是隐藏的。
-	// 蓝图 PreConstruct 里已经设过一次 Hidden，但客户端 BeginPlay 与属性复制存在时序竞争，
-	// 这里在初始化结束时再显式隐藏一次，保证启动瞬间不会残留可见血条。
 	AuraUserWidget->SetVisibility(ESlateVisibility::Hidden);
 }
 
@@ -163,6 +168,6 @@ void AAuraEnemy::Death_Implementation()
 
 void AAuraEnemy::HitReactTagChanged(const FGameplayTag CallbackTag, const int32 NewCount)
 {
-	bHitReact = NewCount > 0;
-	GetCharacterMovement()->MaxWalkSpeed = bHitReact ? 0.f : BaseWalkSpeed;
+	bHitReacting = NewCount > 0;
+	GetCharacterMovement()->MaxWalkSpeed = bHitReacting ? 0.f : BaseWalkSpeed;
 }
