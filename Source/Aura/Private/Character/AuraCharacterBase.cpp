@@ -134,6 +134,7 @@ TArray<TSubclassOf<UAuraGameplayAbility>> AAuraCharacterBase::GetCombinedStartup
 	{
 		for (const TSubclassOf<UAuraGameplayAbility>& Ability : ClassDefaults->StartupAbilities)
 		{
+			if (!Ability) continue;
 			Abilities.AddUnique(Ability);
 		}
 	}

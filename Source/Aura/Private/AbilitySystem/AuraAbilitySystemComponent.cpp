@@ -13,6 +13,7 @@
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AuraGamepalyTags.h"
 #include "AbilitySystem/Abilities/AuraGameplayAbility.h"
+#include "Interface/CombatInterface.h"
 
 /**
  * 调用基类完成 Owner/Avatar 绑定，然后把本 ASC 挂到「GE 施加到自身」的引擎委托上。
@@ -40,7 +41,9 @@ void UAuraAbilitySystemComponent::AddCharacterAbilities(const TArray<TSubclassOf
 {
 	for (const TSubclassOf AbilityClass : Abilities)
 	{
-		FGameplayAbilitySpec AbilitySpec = FGameplayAbilitySpec(AbilityClass, 1);
+		if (!AbilityClass) return;
+		const ICombatInterface* CombatInterface = Cast<ICombatInterface>(GetAvatarActor());
+		FGameplayAbilitySpec AbilitySpec = FGameplayAbilitySpec(AbilityClass, CombatInterface->GetCharacterLevel());
 		if (const UAuraGameplayAbility* AuraAbility = CastChecked<UAuraGameplayAbility>(AbilitySpec.Ability))
 		{
 			AbilitySpec.GetDynamicSpecSourceTags().AddTag(AuraAbility->AbilityInputTag);

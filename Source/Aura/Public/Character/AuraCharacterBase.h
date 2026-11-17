@@ -7,6 +7,7 @@
 #include "AbilitySystemInterface.h"
 #include "AbilitySystem/Data/CharacterClassInfo.h"
 #include "GameFramework/Character.h"
+#include "GeometryCollection/GeometryCollectionComponent.h"
 #include "Interface/CombatInterface.h"
 #include "AuraCharacterBase.generated.h"
 
