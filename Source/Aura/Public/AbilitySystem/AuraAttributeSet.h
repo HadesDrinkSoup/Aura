@@ -100,8 +100,14 @@ struct FEffectProperties
  *    主属性变化时 GAS 自动重算，因此不能手动设置。
  *
  * 设计要点 / 注意：
- *  - 本类没有 Meta（如 Damage）属性：伤害 GE 直接改 Health，不存在"Meta 中转再扣血"的流程，
- *    因此 PostGameplayEffectExecute 里只有钳制，没有 Meta → Health 的结算；
+ *  - 伤害有两条路径，死亡判定必须都覆盖：
+ *      ① Meta 属性 IncomingDamage（Instant GE + ExecutionCalculation_Damage，玩家攻击 / 技能伤害走这条）；
+ *      ② GE 的 Modifier 直接改 Health（周期型 Infinite GE，如 GE_FireArea 的灼烧，以及环境伤害）。
+ *    ① 在 PostGameplayEffectExecute 的 IncomingDamage 分支结算（扣血 + 飘字 + 受击反应 + 致命判定）；
+ *    ② 没有 Meta 中转，只能在 Health 分支用 TryTriggerDeathFromHealth 兜底判死，
+ *    漏掉它就会出现"灼烧致死不掉死亡表现、敌人不溶解"；
+ *  - PostGameplayEffectExecute 并非只对 Instant GE 调用：周期型 GE 每个 Period 都会走一遍，
+ *    所以里面的逻辑必须能接受重复调用（死亡靠 Effects.Death 标签去重）；
  *  - Infinite 派生 GE 改写 MaxHealth/MaxMana 时不走 PostGameplayEffectExecute，
  *    Health/Mana 的重新钳制必须在 PostAttributeChange 里补（否则上限变小时血条会超上限）；
  *  - TagsToAttributesMap 在构造函数里一次登记全部静态访问器（GetXxxAttribute 的函数指针），
@@ -160,13 +166,17 @@ public:
 	virtual void PostAttributeChange(const FGameplayAttribute& Attribute, float OldValue, float NewValue) override;
 
 	/**
-	 * GE 执行完毕后的收尾：仅在服务器调用（客户端的属性变化来自复制，不会走这里）。
+	 * GE 执行完毕后的收尾：在服务器调用（客户端的属性变化来自复制，不会走这里）。
 	 * 此时本次 GE 的所有 Modifier 都已结算、聚合器已完成，GetMaxHealth()/GetMaxMana() 是最终值，
 	 * 所以这里是"最终钳制"的正确位置。
 	 *
-	 * 当前实现只做钳制与一次调试日志：Health/Mana 压回 [0, Max]，MaxHealth/MaxMana 变化后把池属性压回新上限。
-	 * 本项目没有 Meta 属性，因此不存在"把 Meta Damage 结算进 Health"的流程。
-	 * 注意：健康日志直接解引用 EffectProperties.TargetAvatarActor，未判空（见任务汇报中的疑似问题）。
+	 * 职责：
+	 *  - 钳制：Health/Mana 压回 [0, Max]，MaxHealth/MaxMana 变化后把池属性压回新上限；
+	 *  - IncomingDamage 分支：结算 Meta 伤害、飘字、受击反应与致命判定（玩家攻击 / 技能走这条）；
+	 *  - Health 分支：调用 TryTriggerDeathFromHealth 兜底判死（周期 GE / 环境伤害直接写 Health 走这条）。
+	 *
+	 * 注意：Instant GE 与周期型 GE 的每个 Period 都会调用它，因此死亡激活必须去重。
+	 * 日志中的 TargetAvatarActor 已改用 GetNameSafe，避免空指针崩溃。
 	 */
 	virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data) override;
 
@@ -185,7 +195,9 @@ public:
 
 	/**
 	 * 池属性 · 当前生命值。
-	 * 服务器上的伤害/治疗 GE 直接改写它（没有 Meta 属性做中转），随后复制给客户端；
+	 * 两条写入路径：① 伤害 GE 先写 Meta 属性 IncomingDamage，再由 PostGameplayEffectExecute 扣到这里；
+	 * ② 周期型 GE / 环境伤害的 Modifier 直接改写它（不经过 Meta），此路径的死亡由 Health 分支兜底判定。
+	 * 随后复制给客户端；
 	 * 取值被钳制在 [0, MaxHealth]：PreAttributeChange 与 PostGameplayEffectExecute 各管一层，
 	 * 上限变小时由 PostAttributeChange 兜底。UI 血条读的就是它。
 	 */
@@ -532,6 +544,33 @@ public:
 	void OnRep_Fire(const FGameplayAttributeData& OldFire) const;
 	
 private:
+	/**
+	 * 按标签激活目标身上的能力（Effects.Death / Effects.HitReact）。
+	 *
+	 * 死亡激活带"已死过"的去重守卫（GE_Death 是 Infinite 并授予 Effects.Death 标签，标签在即代表
+	 * 死亡流程已跑过）：周期型 GE 在目标死后仍会每个 Period 调一次 PostGameplayEffectExecute，
+	 * 没有守卫会反复执行 MulticastHandleDeath → Dissolve()，反复重建材质实例并重开 Timeline。
+	 * 受击反应不去重，连击时需要每次重新触发。
+	 *
+	 * @param EffectProperties 本次 GE 的双方信息快照，TargetASC 为空时直接返回
+	 * @param EffectTag        要激活的能力标签
+	 */
+	void ActivateAbilityTag(const FEffectProperties& EffectProperties, const FGameplayTag& EffectTag);
+
+	/**
+	 * 兜底判死：GE 的 Modifier 直接改写 Health（而非写入 Meta 属性 IncomingDamage）把血打空时，
+	 * 由 Health 分支调用本函数激活 Effects.Death。
+	 *
+	 * 为什么必须有：周期型 GE（GE_FireArea = Infinite + Period，Modifier 直接写 Health）永远不产生
+	 * IncomingDamage，只走 IncomingDamage 分支的死亡判定对它无效，结果是"灼烧致死不掉血表现、
+	 * 不激活 GA_Death、不执行 Dissolve"。
+	 *
+	 * 守卫条件（详见 .cpp 注释）：Magnitude < 0（确实是掉血）、GetMaxHealth() > 0（属性已初始化，
+	 * 防止初始化期 Health 被钳成 0 时误判）、GetHealth() <= 0、以及 ActivateAbilityTag 内的死亡标签去重。
+	 * 这里不做受击反应：周期伤害每 tick 都触发会导致敌人持续抽搐。
+	 */
+	void TryTriggerDeathFromHealth(const FGameplayEffectModCallbackData& Data, const FEffectProperties& EffectProperties);
+
 	/**
 	 * 从 GE 的 ModCallbackData 解析出「施法者 / 受击者」双方快照，填入传入的结构体。
 	 *

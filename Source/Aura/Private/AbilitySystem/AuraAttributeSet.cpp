@@ -17,8 +17,16 @@
  * 要点：
  *  - 属性写入的权威端是服务器：GE 在服务器结算后再复制到客户端，钳制逻辑因此也以服务器结果为准；
  *  - 钳制分三处，缺一不可：PreAttributeChange 管"写入前"，PostAttributeChange 管"Infinite 派生 GE
- *    直接改上限"这条不经过 PostGameplayEffectExecute 的路径，PostGameplayEffectExecute 管"Instant GE 结算后"；
- *  - 本项目没有 Meta（Damage）属性：伤害 GE 直接修改 Health，没有"Meta 中转"这一层；
+ *    直接改上限"这条不经过 PostGameplayEffectExecute 的路径，PostGameplayEffectExecute 管"GE 结算后"；
+ *  - 伤害有两条路径，死亡判定必须都覆盖：
+ *      ① Meta 属性 IncomingDamage（Instant GE + ExecutionCalculation_Damage，玩家攻击走这条）；
+ *      ② GE 的 Modifier 直接写 Health（周期型 Infinite GE，如 GE_FireArea 的灼烧，以及环境伤害）。
+ *    ① 在 PostGameplayEffectExecute 的 IncomingDamage 分支里结算；② 没有 Meta 中转，
+ *    只能在 Health 分支用 TryTriggerDeathFromHealth 兜底判死。漏掉后者就会出现
+ *    "血量归零但不激活 GA_Death、不执行 Dissolve"的现象；
+ *  - PostGameplayEffectExecute 并不是"只对 Instant GE 调用"：周期型 GE 每个 Period 都会走一遍
+ *    （FActiveGameplayEffectsContainer::InternalExecutePeriodicGameplayEffect → ExecuteActiveEffectsFrom），
+ *    所以分支里的逻辑必须能接受"同一目标被重复调用"（死亡必须去重）；
  *  - 每个 OnRep_* 都只有 GAMEPLAYATTRIBUTE_REPNOTIFY 一行，属于"把复制值交给聚合器并广播给 UI"的样板代码。
  */
 
@@ -186,7 +194,11 @@ void UAuraAttributeSet::PostAttributeChange(const FGameplayAttribute& Attribute,
 }
 
 /**
- * GE 执行完毕后的收尾（只在服务器、且只对 Instant GE 调用）
+ * GE 执行完毕后的收尾（在服务器执行；Instant GE 与周期性 GE 的每个 Period 都会调用）
+ *
+ * 两条伤害路径在这里汇合，死亡判定都必须落到 Effects.Death 标签上：
+ *  - IncomingDamage（Meta 中转，玩家攻击）：负责扣血、飘字、受击反应与致命判定；
+ *  - 直接写 Health（周期 GE / 环境伤害，如灼烧）：没有 Meta 中转，只能由 Health 分支兜底判死。
  */
 void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
 {
@@ -202,7 +214,11 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 	if (Data.EvaluatedData.Attribute == GetHealthAttribute())
 	{
 		SetHealth(FMath::Clamp(GetHealth(), 0.f, GetMaxHealth()));
-		UE_LOG(LogTemp, Warning, TEXT("%s 当前生命值：%f"), *EffectProperties.TargetAvatarActor->GetName(), GetHealth());
+		if (GetHealth() <= 0.f)
+		{
+			// 激活统一走 ActivateAbilityTag：死亡带"已死过"的去重守卫，受击反应每次都触发
+			ActivateAbilityTag(EffectProperties, FAuraGameplayTags::Get().Effects_Death);
+		}
 	}
 	if (Data.EvaluatedData.Attribute == GetManaAttribute())
 	{
@@ -225,24 +241,8 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 		SetIncomingDamage(0.f);
 		// 闪避与正常伤害共用同一条飘字路径：区别只在「伤害值取 0」和「不扣血」
 		const bool bIsDodge = UAuraAbilitySystemLibrary::IsDodge(EffectProperties.EffectContextHandle);
-		// 扣血前的血量；闪避时不扣血，保持当前值，供下面的致命判定使用
-		float NewHealth = GetHealth();
-
-		if (!bIsDodge)
-		{
-			// 只处理正伤害；治疗请走独立的 IncomingHealing
-			if (LocalIncomingDamage <= 0.f) return;
-			// 已死则忽略后续伤害，防止重复触发死亡
-			if (GetHealth() <= 0.f)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("%s 已死亡"), *EffectProperties.TargetAvatarActor->GetName());
-				return;
-			}
-
-			NewHealth = GetHealth() - LocalIncomingDamage;
-			SetHealth(FMath::Clamp(NewHealth, 0.f, GetMaxHealth()));
-		}
-
+		
+		// 命中飘字显示
 		// 自己打自己（自伤 / 环境伤害落到自己）不飘字；双方都是玩家时各飘一份，TargetPC == SourcePC 不重复发
 		if (EffectProperties.SourceCharacter != EffectProperties.TargetCharacter)
 		{
@@ -263,18 +263,65 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 				TargetPC->ShowFloatingText(Damage, EffectProperties.TargetCharacter, bIsDodge, bIsCriticalHit);
 			}
 		}
-
 		// 闪避到此为止：本次没有扣血，也不触发受击/死亡表现
 		if (bIsDodge) return;
-
-		UE_LOG(LogTemp, Log, TEXT("%s 受到伤害 %f， 当前生命值%f"), *EffectProperties.TargetAvatarActor->GetName(), LocalIncomingDamage, GetHealth());
+		
+		// 只处理正伤害
+		if (LocalIncomingDamage <= 0.f) return;
+		
+		// 已死则忽略后续伤害，防止重复触发死亡
+		if (GetHealth() <= 0.f)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s 已死亡"), *GetNameSafe(EffectProperties.TargetAvatarActor));
+			return;
+		}
+		
+		const float NewHealth = GetHealth() - LocalIncomingDamage;
+		
+		SetHealth(FMath::Clamp(NewHealth, 0.f, GetMaxHealth()));
+		
+		UE_LOG(LogTemp, Log, TEXT("%s 受到伤害 %f， 当前生命值%f"), *GetNameSafe(EffectProperties.TargetAvatarActor), LocalIncomingDamage, GetHealth());
 		//是否致命
 		const bool bFatal = NewHealth <= 0.f;
-		FGameplayTagContainer TagContainer;
 		const FGameplayTag EffectTag = bFatal ? FAuraGameplayTags::Get().Effects_Death : FAuraGameplayTags::Get().Effects_HitReact;
-		TagContainer.AddTag(EffectTag);
-		EffectProperties.TargetASC->TryActivateAbilitiesByTag(TagContainer);
+		// 激活统一走 ActivateAbilityTag：死亡带"已死过"的去重守卫，受击反应每次都触发
+		ActivateAbilityTag(EffectProperties, EffectTag);
 	}
+}
+
+// ----------------------------------------------------------------------------
+// 能力激活（死亡 / 受击反应）
+// ----------------------------------------------------------------------------
+
+/**
+ * 按标签激活目标身上的能力，并对"死亡"做去重。
+ *
+ * 为什么要去重：GE_Death 是 Infinite 型并授予 Effects.Death 标签，能力激活一次后标签会一直留在
+ * ASC 上，因此它天然就是"已经死过一次"的标记。周期型 GE（GE_FireArea）在敌人死后若仍覆盖着目标，
+ * 每个 Period 都会再进一次 PostGameplayEffectExecute，没有这道守卫就会反复激活 GA_Death，
+ * 进而反复执行 MulticastHandleDeath → Dissolve()：每次都重新 Create 一次 UMaterialInstanceDynamic、
+ * 重新 SetMaterial 并重开两条 Timeline，表现为材质闪烁 / 性能浪费。
+ *
+ * 受击反应（Effects.HitReact）不做去重：它在时间轴上是一段可重入的表现，连击时需要每次重新触发。
+ *
+ * @param EffectProperties 本次 GE 的双方信息快照（TargetASC 为空时直接返回）
+ * @param EffectTag        要激活的能力标签（Effects.Death 或 Effects.HitReact）
+ */
+void UAuraAttributeSet::ActivateAbilityTag(const FEffectProperties& EffectProperties, const FGameplayTag& EffectTag)
+{
+	UAbilitySystemComponent* TargetASC = EffectProperties.TargetASC;
+	if (!TargetASC || !EffectTag.IsValid()) return;
+
+	// 死亡去重：Effects.Death 标签还在，说明死亡能力已经激活过，不要重复跑死亡流程
+	if (EffectTag == FAuraGameplayTags::Get().Effects_Death && TargetASC->HasMatchingGameplayTag(EffectTag))
+	{
+		return;
+	}
+
+	// TryActivateAbilitiesByTag 会挑选所有 AbilityTags 匹配该标签、且当前可激活的能力；GA_Death 就是靠这条被激活的
+	FGameplayTagContainer TagContainer;
+	TagContainer.AddTag(EffectTag);
+	TargetASC->TryActivateAbilitiesByTag(TagContainer);
 }
 
 // ----------------------------------------------------------------------------
