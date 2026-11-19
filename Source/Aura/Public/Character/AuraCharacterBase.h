@@ -54,6 +54,12 @@ public:
 	/** 获取受击动画蒙太奇 */
 	virtual UAnimMontage* GetHitReactMontage_Implementation() override {return HitReactMontage;}
 	
+	/** 获取角色是否死亡 */
+	virtual bool IsDead_Implementation() const override {return bIsDead;}
+	
+	/** 获取角色扮演对Actor */
+	virtual AActor* GetAvatarActor_Implementation() override {return this;}
+	
 	/** 死亡逻辑 */
 	virtual void Death_Implementation() override;
 
@@ -160,6 +166,8 @@ protected:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|Character|Combat", meta = (DisplayName = "武器溶解材质"))
 	TObjectPtr<UMaterialInstance> WeaponDissolveMaterialInstance;
+	
+	bool bIsDead= false;
 	
 private:
 	/** 将死亡复制到所有客户端 */

@@ -45,10 +45,9 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	int32 GetCharacterLevel() const;
+	
 	/**
 	 * 武器尖端的世界坐标，作为近战判定、投射物生成点与特效原点的统一基准。
-	 * 调用方：UAuraProjectileSpell 发射投射物时读取该坐标决定出生位置与朝向。
-	 * 默认返回零向量，表示该对象没有可用的战斗插槽。
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	FVector GetCombatSocketLocation() const;
@@ -64,6 +63,12 @@ public:
 	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	UAnimMontage* GetHitReactMontage();
+	
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	bool IsDead() const;
+	
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	AActor* GetAvatarActor();
 	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void Death();

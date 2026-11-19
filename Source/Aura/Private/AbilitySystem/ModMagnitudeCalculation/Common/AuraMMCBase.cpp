@@ -80,8 +80,11 @@ int32 UAuraMMCBase::GetCharacterLevelFromSpec(const FGameplayEffectSpec& Spec)
 	if (!EffectContext) return 0;
 
 	// 默认从 SourceObject 解析（InitDefaultAttributes 中会把角色自身设为 SourceObject）
-	UObject* SourceObject = EffectContext->GetSourceObject();
-	if (!SourceObject || !Cast<ICombatInterface>(SourceObject)) return 0;
+	// 空指针或没实现 ICombatInterface 都返回 0：Execute_ 内部的两个 check 在 Development 下
+	// 会断言、在 Shipping 下会被编译掉并静默返回 0，这里自己判掉，让 MMC 明确按 0 级算。
+	// 用 Implements<>（和 Execute_ 的 check 同一判定），Cast 到接口会把蓝图实现判成 nullptr。
+	const UObject* SourceObject = EffectContext->GetSourceObject();
+	if (!SourceObject || !SourceObject->Implements<UCombatInterface>()) return 0;
 
 	// 接口函数是 BlueprintNativeEvent，不能直接调用，必须用 Execute_ 转发到 _Implementation
 	return ICombatInterface::Execute_GetCharacterLevel(SourceObject);

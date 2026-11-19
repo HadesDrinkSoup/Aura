@@ -51,6 +51,7 @@ void UAuraProjectileSpell::ActivateAbility(const FGameplayAbilitySpecHandle Hand
  *
  * 失败/降级分支：
  *  - AvatarActor 为空（技能还没 InitActorInfo 或已销毁）→ 静默返回；
+ *  - 施法者没实现 ICombatInterface → 打一条 Warning 后返回（否则 Execute_ 取插槽位置会断言或给出零向量）；
  *  - 客户端 → 直接返回，不生成任何 Actor（客户端生成的东西不会被复制给别人）。
  */
 void UAuraProjectileSpell::SpawnProjectile(const FVector& ProjectileTargetLocation)
@@ -67,10 +68,17 @@ void UAuraProjectileSpell::SpawnProjectile(const FVector& ProjectileTargetLocati
 		UE_LOG(LogTemp, Warning, TEXT("%s: ProjectileClass 未设置，无法生成投射物"), *GetName());
 		return;
 	}
-
-	// 生成位置依赖 ICombatInterface：没有实现该接口的 Avatar 没有"发射点"概念，
-	// 这里直接放弃，而不是退化到 Actor 原点（那会让投射物从脚底/角色中心冒出）。
-	if (!Cast<ICombatInterface>(AvatarActor)) return;
+	
+	// 施法者没实现 ICombatInterface（例如 Avatar 还没换成 Aura 角色）时取不到插槽位置：
+	// Execute_ 内部对「非空」「实现了接口」各有一个 check，Development 下断言杀 PIE，
+	// Shipping 下 check 被编译掉则会静默返回 FVector::ZeroVector，投射物会从原点射出。
+	// Implements<> 和 Execute_ 的 check 用同一个判定（UClass::ImplementsInterface），
+	// 不像 Cast 到接口那样把蓝图里实现的接口判成 nullptr。
+	if (!AvatarActor->Implements<UCombatInterface>())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s: 施法者未实现 ICombatInterface，无法获取技能插槽位置"), *GetName());
+		return;
+	}
 
 	// 接口函数是 BlueprintNativeEvent，直接调 CombatInterface->GetCombatSocketLocation()
 	// 会命中 UHT 生成的断言桩；必须通过 Execute_ 转发到实现类的 _Implementation。

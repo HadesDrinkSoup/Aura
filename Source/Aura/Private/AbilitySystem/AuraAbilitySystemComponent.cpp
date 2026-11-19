@@ -43,13 +43,14 @@ void UAuraAbilitySystemComponent::AddCharacterAbilities(const TArray<TSubclassOf
 	{
 		if (!AbilityClass) return;
 
-		// Avatar 可能尚未就绪，也可能没有实现战斗接口；两种情况下拿不到等级，直接跳过。
-		// 变量名不能叫 AvatarActor：基类里已有同名成员，会触发 C4458（隐藏类成员）编译错误
-		AActor* OwnerAvatarActor = GetAvatarActor();
-		if (!OwnerAvatarActor || !Cast<ICombatInterface>(OwnerAvatarActor)) continue;
-
-		// 接口函数是 BlueprintNativeEvent，直接 CombatInterface->GetCharacterLevel()
-		// 会命中 UHT 生成的断言桩；必须用 Execute_ 转发到实现类的 _Implementation
+		// Avatar 可能尚未就绪，拿不到等级，直接跳过；Avatar 存在但没实现 ICombatInterface
+		// （比如换过 Pawn 类）同样跳过：Execute_ 内部对「非空」「实现了接口」各有一个 check，
+		// Development 下会直接断言杀掉 PIE，Shipping 下 check 被编译掉则会静默返回 0，
+		// 于是所有能力按 0 级授予（实际是 max(0,1)=1）。自己判一次，让它变成可恢复的 continue。
+		// 用 Implements<> 而不是 Cast<>：Cast 到接口只认 C++ 里的实现（bImplementedByK2 == false），
+		// 蓝图里实现的接口 Cast 会给出 nullptr，而 Implements<> 与 Execute_ 里的 check 是同一个判定。
+		const AActor* OwnerAvatarActor = GetAvatarActor();
+		if (!OwnerAvatarActor || !OwnerAvatarActor->Implements<UCombatInterface>()) continue;
 		const int32 CharacterLevel = ICombatInterface::Execute_GetCharacterLevel(OwnerAvatarActor);
 		FGameplayAbilitySpec AbilitySpec = FGameplayAbilitySpec(AbilityClass, CharacterLevel);
 		if (const UAuraGameplayAbility* AuraAbility = CastChecked<UAuraGameplayAbility>(AbilitySpec.Ability))

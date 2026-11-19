@@ -78,6 +78,8 @@ void AAuraCharacterBase::MulticastHandleDeath_Implementation()
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	
 	Dissolve();
+	
+	bIsDead = true;
 }
 
 /**
@@ -205,7 +207,7 @@ void AAuraCharacterBase::InitDefaultAttributes()
 	// GetCharacterLevel 是接口上的 BlueprintNativeEvent，直接写 GetCharacterLevel() 会落到
 	// UHT 生成的 "Do not directly call Event functions in Interfaces" 断言桩上，
 	// 必须走 Execute_ 转发（它会调用实现类的 GetCharacterLevel_Implementation）。
-	const int32 EffectLevel = FMath::Max(ICombatInterface::Execute_GetCharacterLevel(this), 1);
+	const int32 EffectLevel = FMath::Max(Execute_GetCharacterLevel(this), 1);
 
 	// Apply Primary attributes (if present)
 	if (PrimaryAttributeEffect)

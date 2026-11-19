@@ -25,10 +25,12 @@ int32 UAuraGameplayAbility::GetCharacterLevel() const
 	// 这样「技能等级」和「属性成长用的等级」永远指同一件事，不会出现两套等级各长各的。
 	if (const AActor* AvatarActor = GetAvatarActorFromActorInfo())
 	{
-		if (Cast<ICombatInterface>(AvatarActor))
+		// 先确认 Avatar 真的实现了接口：Execute_ 内部虽然也有同样的 check，
+		// 但那个 check 在 Development 下会断言、在 Shipping 下会被编译掉并静默返回 0，
+		// 不如在这里判一次，走下面的兜底分支。用 Implements<>：Cast 到接口只认 C++ 实现，
+		// 蓝图实现的会被 Cast 判成 nullptr（Execute_ 却仍能正常调用）。
+		if (AvatarActor->Implements<UCombatInterface>())
 		{
-			// BlueprintNativeEvent 的接口函数不能直接调用（UHT 会生成断言桩），
-			// 必须用 Execute_ 转发到实现类的 GetCharacterLevel_Implementation。
 			if (const int32 CharacterLevel = ICombatInterface::Execute_GetCharacterLevel(AvatarActor); CharacterLevel > 0)
 			{
 				return CharacterLevel;

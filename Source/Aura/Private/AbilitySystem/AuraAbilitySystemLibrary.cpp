@@ -12,14 +12,18 @@
  *    只在有本地玩家的端有效，专用服务器上返回 nullptr；
  *    例外是 GetElementHealthBarController：敌人血条 Controller 不挂在 HUD 上，
  *    而是每个敌人自己持有，所以它走「血条 Widget 自己 → 它的 WidgetController」；
- *    只有在别的对象里调用时才退回「0 号 PC → 光标目标敌人 → 敌人身上的实例」。
+ *    只有在别的对象里调用时才退回「0 号 PC → 光标目标敌人 → 敌人身上的实例」；
+ *  - 战斗查询类（GetLiveCharactersWithinRadius）是唯一的非 BlueprintPure 函数：
+ *    它做一次球形重叠查询并把结果写进输出数组，不改游戏状态，同样没有服务器限制。
  */
 
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 
 #include "AuraGameplayEffectContext.h"
-#include "Character/AuraEnemy.h"
+#include "Engine/Engine.h"
+#include "Engine/OverlapResult.h"
 #include "Game/AuraGameModeBase.h"
+#include "Interface/CombatInterface.h"
 #include "Kismet/GameplayStatics.h"
 #include "Player/AuraPlayerController.h"
 #include "Player/AuraPlayerState.h"
@@ -27,70 +31,6 @@
 #include "UI/Widget/AuraUserWidget.h"
 #include "UI/WidgetController/EnemyHealthBarWidgetController.h"
 #include "UI/WidgetController/AuraWidgetController.h"
-
-/**
- * 返回职业配置表。
- * 供角色初始化（属性 GE / 默认技能）时调用。
- * WorldContextObject 用来定位当前世界的 GameMode：配置挂在 GameMode 的 BP 默认值上。
- * 失败（GameMode 为空 / 未配置）时返回 nullptr：前者发生在客户端，后者的 Warning 在 GameMode 里打。
- */
-const UCharacterClassInfo* UAuraAbilitySystemLibrary::GetCharacterClassInfo(const UObject* WorldContextObject)
-{
-	// 客户端没有 GameMode，GetGameMode 会返回 nullptr，这里必须判空
-	const AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(WorldContextObject));
-	return AuraGameMode ? AuraGameMode->GetCharacterClassInfo() : nullptr;
-}
-
-bool UAuraAbilitySystemLibrary::IsDodge(const FGameplayEffectContextHandle EffectContextHandle)
-{
-	if (const FAuraGameplayEffectContext* EffectContext = static_cast<const FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
-	{
-		return EffectContext->IsDodge();
-	}
-	return false;
-}
-
-bool UAuraAbilitySystemLibrary::IsCriticalHit(const FGameplayEffectContextHandle EffectContextHandle)
-{
-	if (const FAuraGameplayEffectContext* EffectContext = static_cast<const FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
-	{
-		return EffectContext->IsCriticalHit();
-	}
-	return false;
-}
-
-void UAuraAbilitySystemLibrary::SetIsDodge(FGameplayEffectContextHandle EffectContextHandle, const bool bIsDodge)
-{
-	if (FAuraGameplayEffectContext* EffectContext = static_cast<FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
-	{
-		EffectContext->SetIsDodge(bIsDodge);
-	}
-}
-
-void UAuraAbilitySystemLibrary::SetIsCriticalHit(FGameplayEffectContextHandle EffectContextHandle, const bool bIsCritical)
-{
-	if (FAuraGameplayEffectContext* EffectContext = static_cast<FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
-	{
-		EffectContext->SetIsCriticalHit(bIsCritical);
-	}
-}
-
-FGameplayTag UAuraAbilitySystemLibrary::GetDamageType(const FGameplayEffectContextHandle& EffectContextHandle)
-{
-	if (const FAuraGameplayEffectContext* EffectContext = static_cast<const FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
-	{
-		return EffectContext->GetDamageType();
-	}
-	return FGameplayTag();
-}
-
-void UAuraAbilitySystemLibrary::SetDamageType(FGameplayEffectContextHandle EffectContextHandle, const FGameplayTag& InDamageType)
-{
-	if (FAuraGameplayEffectContext* EffectContext = static_cast<FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
-	{
-		EffectContext->SetDamageType(InDamageType);
-	}
-}
 
 /**
  * 取本地 0 号玩家主 HUD 的 WidgetController（血球/蓝球/技能图标的数据源）。
@@ -160,4 +100,122 @@ UEnemyHealthBarWidgetController* UAuraAbilitySystemLibrary::GetElementHealthBarC
 		return Cast<UEnemyHealthBarWidgetController>(AuraWidget->WidgetController);
 	}
 	return nullptr;
+}
+
+/**
+ * 返回职业配置表。
+ * 供角色初始化（属性 GE / 默认技能）时调用。
+ * WorldContextObject 用来定位当前世界的 GameMode：配置挂在 GameMode 的 BP 默认值上。
+ * 失败（GameMode 为空 / 未配置）时返回 nullptr：前者发生在客户端，后者的 Warning 在 GameMode 里打。
+ */
+const UCharacterClassInfo* UAuraAbilitySystemLibrary::GetCharacterClassInfo(const UObject* WorldContextObject)
+{
+	// 客户端没有 GameMode，GetGameMode 会返回 nullptr，这里必须判空
+	const AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(WorldContextObject));
+	return AuraGameMode ? AuraGameMode->GetCharacterClassInfo() : nullptr;
+}
+
+
+bool UAuraAbilitySystemLibrary::IsDodge(const FGameplayEffectContextHandle EffectContextHandle)
+{
+	if (const FAuraGameplayEffectContext* EffectContext = static_cast<const FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
+	{
+		return EffectContext->IsDodge();
+	}
+	return false;
+}
+
+bool UAuraAbilitySystemLibrary::IsCriticalHit(const FGameplayEffectContextHandle EffectContextHandle)
+{
+	if (const FAuraGameplayEffectContext* EffectContext = static_cast<const FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
+	{
+		return EffectContext->IsCriticalHit();
+	}
+	return false;
+}
+
+void UAuraAbilitySystemLibrary::SetIsDodge(FGameplayEffectContextHandle EffectContextHandle, const bool bIsDodge)
+{
+	if (FAuraGameplayEffectContext* EffectContext = static_cast<FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
+	{
+		EffectContext->SetIsDodge(bIsDodge);
+	}
+}
+
+void UAuraAbilitySystemLibrary::SetIsCriticalHit(FGameplayEffectContextHandle EffectContextHandle, const bool bIsCritical)
+{
+	if (FAuraGameplayEffectContext* EffectContext = static_cast<FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
+	{
+		EffectContext->SetIsCriticalHit(bIsCritical);
+	}
+}
+
+FGameplayTag UAuraAbilitySystemLibrary::GetDamageType(const FGameplayEffectContextHandle& EffectContextHandle)
+{
+	if (const FAuraGameplayEffectContext* EffectContext = static_cast<const FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
+	{
+		return EffectContext->GetDamageType();
+	}
+	return FGameplayTag();
+}
+
+void UAuraAbilitySystemLibrary::SetDamageType(FGameplayEffectContextHandle EffectContextHandle, const FGameplayTag& InDamageType)
+{
+	if (FAuraGameplayEffectContext* EffectContext = static_cast<FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
+	{
+		EffectContext->SetDamageType(InDamageType);
+	}
+}
+
+void UAuraAbilitySystemLibrary::GetLiveCharactersWithinRadius(const UObject* WorldContextObject,
+	TArray<AActor*>& OutOverlappingActors, const AActor* IgnoreActor, FName RequiredTag, float Radius,
+	const FVector& SpherePosition)
+{
+	// 输出参数由本函数重置：C++ 调用方复用同一个数组时不会读到上一次查询的残留
+	OutOverlappingActors.Reset();
+
+	if (Radius <= 0.f) return;
+
+	// 客户端/无世界上下文时 GetWorldFromContextObject 返回 nullptr，必须判空，否则其后的查询会崩溃
+	const UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
+	if (!World) return;
+
+	// 忽略施法者自己（常见用法：AoE 不该打到释放者）；为空时不加，避免无意义条目
+	FCollisionQueryParams SphereParams;
+	if (IsValid(IgnoreActor))
+	{
+		SphereParams.AddIgnoredActor(IgnoreActor);
+	}
+
+	TArray<FOverlapResult> OverlapResults;
+	World->OverlapMultiByObjectType(OverlapResults, SpherePosition, FQuat::Identity,
+		FCollisionObjectQueryParams(FCollisionObjectQueryParams::InitType::AllDynamicObjects),
+		FCollisionShape::MakeSphere(Radius), SphereParams);
+
+	for (const FOverlapResult& OverlapResult : OverlapResults)
+	{
+		AActor* OverlappedActor = OverlapResult.GetActor();
+		// 组件销毁/清理过程中可能拿到空 Actor，先判空再解引用
+		if (!IsValid(OverlappedActor) || !OverlappedActor->Implements<UCombatInterface>())
+		{
+			continue;
+		}
+		if (ICombatInterface::Execute_IsDead(OverlappedActor))
+		{
+			continue;
+		}
+		// RequiredTag 为 None 表示不做 Tag 过滤（否则蓝图不填该引脚会永远查不到东西）
+		if (!RequiredTag.IsNone() && !OverlappedActor->ActorHasTag(RequiredTag))
+		{
+			continue;
+		}
+
+		// 返回的是 AvatarActor：接口实现者不一定是 Actor 本身；为空时跳过，避免把空指针塞进结果
+		AActor* AvatarActor = ICombatInterface::Execute_GetAvatarActor(OverlappedActor);
+		if (IsValid(AvatarActor))
+		{
+			// 同一角色的胶囊/网格/武器会各产生一条重叠结果，AddUnique 负责去重
+			OutOverlappingActors.AddUnique(AvatarActor);
+		}
+	}
 }
