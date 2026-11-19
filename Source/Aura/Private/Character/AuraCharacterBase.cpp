@@ -52,23 +52,6 @@ AAuraCharacterBase::AAuraCharacterBase()
 	GetMesh()->SetCollisionResponseToChannel(ECC_Projectile, ECR_Overlap);
 }
 
-/** 返回 GAS 使用的 ASC；玩家侧来自 PlayerState，敌人侧自建，未初始化时返回 nullptr */
-UAbilitySystemComponent* AAuraCharacterBase::GetAbilitySystemComponent() const
-{
-	return AbilitySystemComponent;
-}
-
-/** 取武器骨骼网格上插槽的世界坐标，作为近战判定/特效生成的原点 */
-FVector AAuraCharacterBase::GetCombatSocketLocation() const
-{
-	return Weapon->GetSocketLocation(WeaponTipSocketName);
-}
-
-UAnimMontage* AAuraCharacterBase::GetHitReactMontage_Implementation()
-{
-	return HitReactMontage;
-}
-
 void AAuraCharacterBase::Death_Implementation()
 {
 	// 死亡只允许由服务器发起：客户端不能自己去调 Death，只能通过 MulticastHandleDeath 收到广播
@@ -218,8 +201,11 @@ void AAuraCharacterBase::InitDefaultAttributes()
 		EffectContextHandle.Get()->AddSourceObject(this);
 	}
 
-	// GE 等级 = 角色等级：主要属性 GE 用 CurveTable 时可以直接按等级取数值
-	const int32 EffectLevel = FMath::Max(GetCharacterLevel(), 1);
+	// GE 等级 = 角色等级：主要属性 GE 用 CurveTable 时可以直接按等级取数值。
+	// GetCharacterLevel 是接口上的 BlueprintNativeEvent，直接写 GetCharacterLevel() 会落到
+	// UHT 生成的 "Do not directly call Event functions in Interfaces" 断言桩上，
+	// 必须走 Execute_ 转发（它会调用实现类的 GetCharacterLevel_Implementation）。
+	const int32 EffectLevel = FMath::Max(ICombatInterface::Execute_GetCharacterLevel(this), 1);
 
 	// Apply Primary attributes (if present)
 	if (PrimaryAttributeEffect)

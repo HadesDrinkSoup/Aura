@@ -80,7 +80,9 @@ int32 UAuraMMCBase::GetCharacterLevelFromSpec(const FGameplayEffectSpec& Spec)
 	if (!EffectContext) return 0;
 
 	// 默认从 SourceObject 解析（InitDefaultAttributes 中会把角色自身设为 SourceObject）
-	const ICombatInterface* CombatInterface = Cast<ICombatInterface>(EffectContext->GetSourceObject());
-	if (!CombatInterface) return 0;
-	return CombatInterface->GetCharacterLevel();
+	UObject* SourceObject = EffectContext->GetSourceObject();
+	if (!SourceObject || !Cast<ICombatInterface>(SourceObject)) return 0;
+
+	// 接口函数是 BlueprintNativeEvent，不能直接调用，必须用 Execute_ 转发到 _Implementation
+	return ICombatInterface::Execute_GetCharacterLevel(SourceObject);
 }

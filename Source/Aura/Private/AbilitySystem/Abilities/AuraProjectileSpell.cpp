@@ -70,10 +70,11 @@ void UAuraProjectileSpell::SpawnProjectile(const FVector& ProjectileTargetLocati
 
 	// 生成位置依赖 ICombatInterface：没有实现该接口的 Avatar 没有"发射点"概念，
 	// 这里直接放弃，而不是退化到 Actor 原点（那会让投射物从脚底/角色中心冒出）。
-	const ICombatInterface* CombatInterface = Cast<ICombatInterface>(AvatarActor);
-	if (!CombatInterface) return;
+	if (!Cast<ICombatInterface>(AvatarActor)) return;
 
-	const FVector SpawnLocation = CombatInterface->GetCombatSocketLocation();
+	// 接口函数是 BlueprintNativeEvent，直接调 CombatInterface->GetCombatSocketLocation()
+	// 会命中 UHT 生成的断言桩；必须通过 Execute_ 转发到实现类的 _Implementation。
+	const FVector SpawnLocation = ICombatInterface::Execute_GetCombatSocketLocation(AvatarActor);
 	const FRotator SpawnRotation = (ProjectileTargetLocation - SpawnLocation).Rotation();
 	
 	FTransform SpawnTransform;

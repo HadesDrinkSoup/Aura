@@ -52,8 +52,12 @@ public:
 	/** 关闭 CustomDepth 渲染，移除描边效果 */
 	virtual void UnHighlightActor() override;
 	
+	virtual void SetCombatTaget_Implementation(AActor* InCombatActor) override {CombatTarget = InCombatActor;}
+	
+	virtual AActor* GetCombatTaget_Implementation() const override {return CombatTarget;}
+	
 	/** 敌人等级直接取编辑器里配置的 Level（不依赖 PlayerState） */
-	virtual int32 GetCharacterLevel() const override {return Level;}
+	virtual int32 GetCharacterLevel_Implementation() const override {return Level;}
 	
 	virtual void Death_Implementation() override;
 	
@@ -96,6 +100,9 @@ protected:
 	/** 本敌人血条的 WidgetController 实例（缓存引用防止被 GC 回收） */
 	UPROPERTY()
 	TObjectPtr<UEnemyHealthBarWidgetController> HealthBarController;
+	
+	UPROPERTY(BlueprintReadWrite, Category = "Aura|Combat", meta=(DisplayName = "战斗目标"))
+	TObjectPtr<AActor> CombatTarget;
 	
 	UPROPERTY()
 	TObjectPtr<AAuraAIController> AIController;

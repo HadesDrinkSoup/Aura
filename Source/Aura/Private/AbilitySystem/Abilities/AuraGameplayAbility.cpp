@@ -25,9 +25,11 @@ int32 UAuraGameplayAbility::GetCharacterLevel() const
 	// 这样「技能等级」和「属性成长用的等级」永远指同一件事，不会出现两套等级各长各的。
 	if (const AActor* AvatarActor = GetAvatarActorFromActorInfo())
 	{
-		if (const ICombatInterface* CombatInterface = Cast<ICombatInterface>(AvatarActor))
+		if (Cast<ICombatInterface>(AvatarActor))
 		{
-			if (const int32 CharacterLevel = CombatInterface->GetCharacterLevel(); CharacterLevel > 0)
+			// BlueprintNativeEvent 的接口函数不能直接调用（UHT 会生成断言桩），
+			// 必须用 Execute_ 转发到实现类的 GetCharacterLevel_Implementation。
+			if (const int32 CharacterLevel = ICombatInterface::Execute_GetCharacterLevel(AvatarActor); CharacterLevel > 0)
 			{
 				return CharacterLevel;
 			}

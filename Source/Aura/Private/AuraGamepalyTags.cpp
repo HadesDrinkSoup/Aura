@@ -298,8 +298,16 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 		FName("InputTag.4"), 
 		FString(TEXT("数字4键输入标签")));
 	
+	
+	GameplayTags.Abilities_Attack = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Abilities.Attack"), 
+		FString(TEXT("攻击")));
+	
 	GameplayTags.Event_Montage_FireBall = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Event.Montage.FireBall"), 
-		FString(
-			TEXT("用于火球术动画通知")));
+		FString(TEXT("用于火球术动画通知")));
+	
+	GameplayTags.Event_Montage_MeleeAttack = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Event.Montage.MeleeAttack"),
+		FString(TEXT("用于近战攻击动画通知")));
 }

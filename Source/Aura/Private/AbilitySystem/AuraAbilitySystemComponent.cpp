@@ -42,8 +42,16 @@ void UAuraAbilitySystemComponent::AddCharacterAbilities(const TArray<TSubclassOf
 	for (const TSubclassOf AbilityClass : Abilities)
 	{
 		if (!AbilityClass) return;
-		const ICombatInterface* CombatInterface = Cast<ICombatInterface>(GetAvatarActor());
-		FGameplayAbilitySpec AbilitySpec = FGameplayAbilitySpec(AbilityClass, CombatInterface->GetCharacterLevel());
+
+		// Avatar 可能尚未就绪，也可能没有实现战斗接口；两种情况下拿不到等级，直接跳过。
+		// 变量名不能叫 AvatarActor：基类里已有同名成员，会触发 C4458（隐藏类成员）编译错误
+		AActor* OwnerAvatarActor = GetAvatarActor();
+		if (!OwnerAvatarActor || !Cast<ICombatInterface>(OwnerAvatarActor)) continue;
+
+		// 接口函数是 BlueprintNativeEvent，直接 CombatInterface->GetCharacterLevel()
+		// 会命中 UHT 生成的断言桩；必须用 Execute_ 转发到实现类的 _Implementation
+		const int32 CharacterLevel = ICombatInterface::Execute_GetCharacterLevel(OwnerAvatarActor);
+		FGameplayAbilitySpec AbilitySpec = FGameplayAbilitySpec(AbilityClass, CharacterLevel);
 		if (const UAuraGameplayAbility* AuraAbility = CastChecked<UAuraGameplayAbility>(AbilitySpec.Ability))
 		{
 			AbilitySpec.GetDynamicSpecSourceTags().AddTag(AuraAbility->AbilityInputTag);

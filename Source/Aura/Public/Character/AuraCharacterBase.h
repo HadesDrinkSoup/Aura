@@ -5,9 +5,9 @@
 #include "CoreMinimal.h"
 #include "Engine/TimerHandle.h"
 #include "AbilitySystemInterface.h"
+#include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/Data/CharacterClassInfo.h"
 #include "GameFramework/Character.h"
-#include "GeometryCollection/GeometryCollectionComponent.h"
 #include "Interface/CombatInterface.h"
 #include "AuraCharacterBase.generated.h"
 
@@ -46,12 +46,13 @@ public:
 	AAuraCharacterBase();
 
 	/** 返回 GAS 使用的 ASC；在 InitActorInfo 完成前可能为 nullptr，调用方需自行判空 */
-	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override {return AbilitySystemComponent;}
 
 	/** 近战判定/特效起点：武器骨骼网格上 WeaponTipSocketName 插槽的世界坐标 */
-	virtual FVector GetCombatSocketLocation() const override;
+	virtual FVector GetCombatSocketLocation_Implementation() const override {return Weapon->GetSocketLocation(WeaponTipSocketName);}
 	
-	virtual UAnimMontage* GetHitReactMontage_Implementation() override;
+	/** 获取受击动画蒙太奇 */
+	virtual UAnimMontage* GetHitReactMontage_Implementation() override {return HitReactMontage;}
 	
 	/** 死亡逻辑 */
 	virtual void Death_Implementation() override;

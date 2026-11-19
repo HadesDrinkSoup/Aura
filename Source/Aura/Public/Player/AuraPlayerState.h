@@ -29,14 +29,14 @@ class AURA_API AAuraPlayerState : public APlayerState, public IAbilitySystemInte
 public:
 	AAuraPlayerState();
 	
-	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
 	// 获取 ASC
 	virtual UAuraAbilitySystemComponent* GetAbilitySystemComponent() const override {return AbilitySystemComponent;}
 	// 获取属性集的便捷访问方法
 	UAuraAttributeSet* GetAttributeSet() const {return AttributeSet;}
 	
-	virtual int32 GetCharacterLevel() const override {return Level;}
+	virtual int32 GetCharacterLevel_Implementation() const override {return Level;}
 	
 protected:
 	// 技能系统组件 —— GAS 核心，管理技能授予、激活与 GameplayEffect

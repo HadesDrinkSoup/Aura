@@ -38,4 +38,10 @@ public:
 	 * 若忘记撤销会出现"高亮残留"。
 	 */
 	virtual void UnHighlightActor() {}
+	
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void SetCombatTaget(AActor* InCombatActor);
+	
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	AActor* GetCombatTaget() const;
 };

@@ -74,11 +74,13 @@ void AAuraCharacter::OnRep_PlayerState()
  * 用 check 而不是判空返回 1：玩家角色一定挂在 AuraPlayerState 下，
  * 取不到说明 DefaultPawn/PlayerStateClass 配错，属于开发期错误，应当立即暴露。
  */
-int32 AAuraCharacter::GetCharacterLevel() const
+int32 AAuraCharacter::GetCharacterLevel_Implementation() const
 {
 	const AAuraPlayerState* AuraPlayerState = GetPlayerState<AAuraPlayerState>();
 	check(AuraPlayerState);
-	return AuraPlayerState->GetCharacterLevel();
+	// PlayerState 也是通过 ICombatInterface 提供等级（它只实现了 _Implementation），
+	// 直接 AuraPlayerState->GetCharacterLevel() 同样会命中 UHT 的断言桩，必须走 Execute_
+	return ICombatInterface::Execute_GetCharacterLevel(AuraPlayerState);
 }
 
 /**
