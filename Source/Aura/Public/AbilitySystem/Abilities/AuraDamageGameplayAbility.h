@@ -1,4 +1,4 @@
-// Study Game Ability System _Hadess
+// Study Game Ability System _Hades
 
 #pragma once
 
@@ -15,13 +15,16 @@ class AURA_API UAuraDamageGameplayAbility : public UAuraGameplayAbility
 	GENERATED_BODY()
 	
 protected:
+	UFUNCTION(BlueprintCallable)
+	void CauseDamage(AActor* TargetActor);
+	
 	//命中时施加的伤害GE类
 	UPROPERTY(EditAnywhere, BluePrintReadOnly, Category = "Aura|Ability|Damage", meta = (DisplayName = "伤害效果类"))
 	TSubclassOf<UGameplayEffect> DamageEffectClass;
 
 	//这一击的类型（如 Damage.Element.Fire）：随效果上下文传给结算之后的所有环节，不参与伤害数值
-	UPROPERTY(EditDefaultsOnly, Category = "Aura|Ability|Damage", meta = (DisplayName = "伤害类型"))
-	FGameplayTag DamageType;
+	UPROPERTY(EditDefaultsOnly, Category = "Aura|Ability|Damage", meta = (DisplayName = "元素类型"))
+	FGameplayTag ElementType;
 
 	//这一击的数值：key 是 SetByCaller 用的标签（Bonus.Physical / Bonus.Magical / Damage.Element.*），
 	//value 是按技能等级取值的曲线。结算端按 key 分流到对应抗性

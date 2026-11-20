@@ -118,10 +118,10 @@ void UAuraProjectileSpell::SpawnProjectile(const FVector& ProjectileTargetLocati
 	EffectContextHandle.AddHitResult(HitResult);
 
 	// 把"这一击是什么伤害"写进效果上下文，随 Spec 一起走：投射物真正命中时能力可能已经结束，
-	// 届时无法再访问能力实例上的 DamageType，只能靠上下文携带（GetDamageType 由 UAuraAbilitySystemLibrary 提供）。
-	if (DamageType.IsValid())
+	// 届时无法再访问能力实例上的 ElementType，只能靠上下文携带（GetElementType 由 UAuraAbilitySystemLibrary 提供）。
+	if (ElementType.IsValid())
 	{
-		UAuraAbilitySystemLibrary::SetDamageType(EffectContextHandle, DamageType);
+		UAuraAbilitySystemLibrary::SetElementType(EffectContextHandle, ElementType);
 	}
 	
 	const int32 AbilityLevel = GetCharacterLevel();
