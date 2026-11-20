@@ -306,29 +306,6 @@ namespace
         return (IsValid(AvatarActor) && AvatarActor != Attacker) ? AvatarActor : nullptr;
     }
 
-    /**
-     * 把「本次攻击已经命中」的列表归一化成集合。
-     * 命中结果会被归一化成 AvatarActor，所以原始 Actor 与它的 AvatarActor 都要收进来，
-     * 后面才能 O(1) 判断「这个目标是不是已经打过了」。无效项、攻击者自己被剔除。
-     */
-    void BuildAlreadyHitSet(const TArray<AActor*>& AlreadyHitActors, const AActor* Attacker, TSet<AActor*>& OutAlreadyHitActors)
-    {
-        OutAlreadyHitActors.Reset();
-        for (AActor* AlreadyHit : AlreadyHitActors)
-        {
-            if (!IsValid(AlreadyHit) || AlreadyHit == Attacker) continue;
-
-            OutAlreadyHitActors.Add(AlreadyHit);
-            if (AlreadyHit->Implements<UCombatInterface>())
-            {
-                if (AActor* AvatarActor = ICombatInterface::Execute_GetAvatarActor(AlreadyHit))
-                {
-                    OutAlreadyHitActors.Add(AvatarActor);
-                }
-            }
-        }
-    }
-
     /** 一条检测段的几何：两端、中心、朝向，以及按 Shape 解释出的碰撞形状 */
     struct FSegmentShape
     {
