@@ -50,7 +50,10 @@ public:
 	 * 武器尖端的世界坐标，作为近战判定、投射物生成点与特效原点的统一基准。
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	FVector GetCombatSocketLocation() const;
+	FVector GetWeaponBeginSocketLocation() const;
+	
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	FVector GetWeaponEndSocketLocation() const;
 	
 	/**
 	 * 让角色转向指定目标点；在蓝图中实现，

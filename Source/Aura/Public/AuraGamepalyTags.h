@@ -123,7 +123,8 @@ struct FAuraGameplayTags
 	 * 注意它和 InputTag_* 是两条独立链路：Input 负责"按键触发技能"，Event 负责"动画播到某帧时通知技能"。
 	 */
 	FGameplayTag Event_Montage_FireBall;
-	FGameplayTag Event_Montage_MeleeAttack;
+	FGameplayTag Event_Montage_MeleeAttackBegin;
+	FGameplayTag Event_MonTage_MeleeAttackEnd;
 
 private:
 	/** 全局唯一实例：进程启动时零初始化（tag 均为空），由 InitializeNativeGameplayTags 填入真实值 */

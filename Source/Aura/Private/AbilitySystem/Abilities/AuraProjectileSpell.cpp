@@ -82,7 +82,7 @@ void UAuraProjectileSpell::SpawnProjectile(const FVector& ProjectileTargetLocati
 
 	// 接口函数是 BlueprintNativeEvent，直接调 CombatInterface->GetCombatSocketLocation()
 	// 会命中 UHT 生成的断言桩；必须通过 Execute_ 转发到实现类的 _Implementation。
-	const FVector SpawnLocation = ICombatInterface::Execute_GetCombatSocketLocation(AvatarActor);
+	const FVector SpawnLocation = ICombatInterface::Execute_GetWeaponBeginSocketLocation(AvatarActor);
 	const FRotator SpawnRotation = (ProjectileTargetLocation - SpawnLocation).Rotation();
 	
 	FTransform SpawnTransform;

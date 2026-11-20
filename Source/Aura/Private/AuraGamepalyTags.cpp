@@ -307,7 +307,10 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 		FName("Event.Montage.FireBall"), 
 		FString(TEXT("用于火球术动画通知")));
 	
-	GameplayTags.Event_Montage_MeleeAttack = UGameplayTagsManager::Get().AddNativeGameplayTag(
-		FName("Event.Montage.MeleeAttack"),
-		FString(TEXT("用于近战攻击动画通知")));
+	GameplayTags.Event_Montage_MeleeAttackBegin = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Event.Montage.MeleeAttackBegin"),
+		FString(TEXT("用于近战攻击开始动画通知")));
+	GameplayTags.Event_MonTage_MeleeAttackEnd = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Event.Montage.MeleeAttackEnd"),
+	FString(TEXT("用于近战攻击结束动画通知")));
 }
