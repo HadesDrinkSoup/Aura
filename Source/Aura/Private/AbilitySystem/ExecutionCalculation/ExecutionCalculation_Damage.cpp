@@ -167,8 +167,8 @@ void UExecutionCalculation_Damage::Execute_Implementation(
 	// 用默认的 true 会让每次结算在日志里刷一堆 "SetByCaller tag not found"。
 	float PhysicalBase = 0.f;
 	float MagicalBase = 0.f;
-	PhysicalBase += Spec.GetSetByCallerMagnitude(FAuraGameplayTags::Get().Bonus_Physical, false);
-	MagicalBase += Spec.GetSetByCallerMagnitude(FAuraGameplayTags::Get().Bonus_Magical, false);
+	PhysicalBase += Spec.GetSetByCallerMagnitude(FAuraGameplayTags::Get().Damage_Bonus_Physical, false);
+	MagicalBase += Spec.GetSetByCallerMagnitude(FAuraGameplayTags::Get().Damage_Bonus_Magical, false);
 
 	const bool bHasPhysical = PhysicalBase > 0.f;
 	const bool bHasMagical = MagicalBase > 0.f;

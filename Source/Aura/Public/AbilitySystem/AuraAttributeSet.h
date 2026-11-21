@@ -558,20 +558,6 @@ private:
 	void ActivateAbilityTag(const FEffectProperties& EffectProperties, const FGameplayTag& EffectTag);
 
 	/**
-	 * 兜底判死：GE 的 Modifier 直接改写 Health（而非写入 Meta 属性 IncomingDamage）把血打空时，
-	 * 由 Health 分支调用本函数激活 Effects.Death。
-	 *
-	 * 为什么必须有：周期型 GE（GE_FireArea = Infinite + Period，Modifier 直接写 Health）永远不产生
-	 * IncomingDamage，只走 IncomingDamage 分支的死亡判定对它无效，结果是"灼烧致死不掉血表现、
-	 * 不激活 GA_Death、不执行 Dissolve"。
-	 *
-	 * 守卫条件（详见 .cpp 注释）：Magnitude < 0（确实是掉血）、GetMaxHealth() > 0（属性已初始化，
-	 * 防止初始化期 Health 被钳成 0 时误判）、GetHealth() <= 0、以及 ActivateAbilityTag 内的死亡标签去重。
-	 * 这里不做受击反应：周期伤害每 tick 都触发会导致敌人持续抽搐。
-	 */
-	void TryTriggerDeathFromHealth(const FGameplayEffectModCallbackData& Data, const FEffectProperties& EffectProperties);
-
-	/**
 	 * 从 GE 的 ModCallbackData 解析出「施法者 / 受击者」双方快照，填入传入的结构体。
 	 *
 	 * 为什么需要它：FGameplayEffectModCallbackData 只给 EffectSpec（含 EffectContext）与目标 ASC，

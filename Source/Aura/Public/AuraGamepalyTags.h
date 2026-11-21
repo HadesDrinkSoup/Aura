@@ -79,8 +79,8 @@ struct FAuraGameplayTags
 	TMap<FGameplayTag, FGameplayTag> ElementAffinityPairs;
 	
 	/** 加成类型 */
-	FGameplayTag Bonus_Physical;	//物理加成
-	FGameplayTag Bonus_Magical;		//魔法加成
+	FGameplayTag Damage_Bonus_Physical;	    //物理加成
+	FGameplayTag Damage_Bonus_Magical;		//魔法加成
 	
 	/** 伤害类型 */
 	FGameplayTag Damage_Element_Wood;
@@ -90,8 +90,8 @@ struct FAuraGameplayTags
 	FGameplayTag Damage_Element_Fire;
 	
 	/** 命中反馈 */
-	FGameplayTag Effects_HitReact;				//攻击命中反馈
-	FGameplayTag Effects_Death;					//角色死亡
+	FGameplayTag Effects_HitReact;		//攻击命中反馈
+	FGameplayTag Effects_Death;			//角色死亡
 	
 	/**
 	 * InputTag 组：技能蓝图的输入标识，不是属性、也不参与 GE。
@@ -112,19 +112,18 @@ struct FAuraGameplayTags
 	FGameplayTag InputTag_3;   // 数字键 3 — 技能槽位 3（当前无技能资产占用）
 	FGameplayTag InputTag_4;   // 数字键 4 — 技能槽位 4（当前无技能资产占用）
 	
-	/** 能力标签 */
-	FGameplayTag Abilities_Attack;
+	/** 能力标签 
+	 *  常用于AI行为树通过标签激活能力
+	 */
+	FGameplayTag Abilities_MeleeAttack;
 
 	/**
-	 * 动画事件 tag
+	 * 动画tag
      * 在关键帧上用 AnimNotify 发出 GameplayEvent，
-	 * 技能蓝图通过 WaitGameplayEvent 节点按这个 tag 接收，用于在"火球脱手"的那一帧生成投射物。
-	 * 属于 Event.Montage.* 命名空间，由动画资产引用，C++ 中没有直接引用。
-	 * 注意它和 InputTag_* 是两条独立链路：Input 负责"按键触发技能"，Event 负责"动画播到某帧时通知技能"。
+	 * 技能蓝图通过 WaitGameplayEvent 节点按这个 tag 接收
 	 */
-	FGameplayTag Event_Montage_FireBall;
-	FGameplayTag Event_Montage_MeleeAttackBegin;
-	FGameplayTag Event_MonTage_MeleeAttackEnd;
+	FGameplayTag Montage_AttackBegin;
+	FGameplayTag MonTage_AttackEnd;
 
 private:
 	/** 全局唯一实例：进程启动时零初始化（tag 均为空），由 InitializeNativeGameplayTags 填入真实值 */

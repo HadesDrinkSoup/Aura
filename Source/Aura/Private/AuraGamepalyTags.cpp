@@ -196,12 +196,12 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 	// =========================================================================
 	
 	// 物理伤害
-	GameplayTags.Bonus_Physical = UGameplayTagsManager::Get().AddNativeGameplayTag(
-		FName("Bonus.Physical"),
+	GameplayTags.Damage_Bonus_Physical = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Damage.Bonus.Physical"),
 		FString(TEXT("物理加成")));
 	// 魔法伤害
-	GameplayTags.Bonus_Magical = UGameplayTagsManager::Get().AddNativeGameplayTag(
-		FName("Bonus.Magical"),
+	GameplayTags.Damage_Bonus_Magical = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Damage.Bonus.Magical"),
 		FString(TEXT("魔法加成")));
 	
 	// =========================================================================
@@ -299,18 +299,15 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 		FString(TEXT("数字4键输入标签")));
 	
 	
-	GameplayTags.Abilities_Attack = UGameplayTagsManager::Get().AddNativeGameplayTag(
-		FName("Abilities.Attack"), 
+	GameplayTags.Abilities_MeleeAttack = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Abilities.MeleeAttack"), 
 		FString(TEXT("攻击")));
 	
-	GameplayTags.Event_Montage_FireBall = UGameplayTagsManager::Get().AddNativeGameplayTag(
-		FName("Event.Montage.FireBall"), 
-		FString(TEXT("用于火球术动画通知")));
 	
-	GameplayTags.Event_Montage_MeleeAttackBegin = UGameplayTagsManager::Get().AddNativeGameplayTag(
-		FName("Event.Montage.MeleeAttackBegin"),
-		FString(TEXT("用于近战攻击开始动画通知")));
-	GameplayTags.Event_MonTage_MeleeAttackEnd = UGameplayTagsManager::Get().AddNativeGameplayTag(
-		FName("Event.Montage.MeleeAttackEnd"),
-	FString(TEXT("用于近战攻击结束动画通知")));
+	GameplayTags.Montage_AttackBegin = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Montage.AttackBegin"),
+		FString(TEXT("用于攻击开始动画通知")));
+	GameplayTags.MonTage_AttackEnd = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Montage.AttackEnd"),
+	FString(TEXT("用于攻击结束动画通知")));
 }
