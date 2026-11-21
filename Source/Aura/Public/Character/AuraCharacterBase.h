@@ -48,11 +48,11 @@ public:
 	/** 返回 GAS 使用的 ASC；在 InitActorInfo 完成前可能为 nullptr，调用方需自行判空 */
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override {return AbilitySystemComponent;}
 
-	/** 攻击检测起点：武器骨骼网格上 WeaponBeginSocketName 插槽的世界坐标 */
-	virtual FVector GetWeaponBeginSocketLocation_Implementation() const override {return Weapon->GetSocketLocation(WeaponBeginSocketName);}
+	/** 攻击起点：武器骨骼网格上 WeaponBeginSocket 插槽的世界坐标 */
+	virtual FVector GetWeaponBeginSocketLocation_Implementation() const override {return Weapon->GetSocketLocation(WeaponBeginSocket);}
 	
-	/** 攻击检测终点：武器骨骼网格上 WeaponEndSocketName 插槽的世界坐标 */
-	virtual FVector GetWeaponEndSocketLocation_Implementation() const override {return Weapon->GetSocketLocation(WeaponEndSocketName);}
+	/** 攻击终点：武器骨骼网格上 WeaponEndSocket 插槽的世界坐标 */
+	virtual FVector GetWeaponEndSocketLocation_Implementation() const override {return Weapon->GetSocketLocation(WeaponEndSocket);}
 	
 	/** 获取受击动画蒙太奇 */
 	virtual UAnimMontage* GetHitReactMontage_Implementation() override {return HitReactMontage;}
@@ -122,12 +122,13 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Aura|Character|Combat", meta = (DisplayName = "武器网格"))
 	TObjectPtr<USkeletalMeshComponent> Weapon;
 	
-	/** 武器上作为攻击检测起点的插槽名，必须与骨骼网格上的插槽一致 */
-	UPROPERTY(EditAnywhere, Category = "Aura|Character|Combat", meta = (DisplayName = "攻击检测起点插槽"))
-	FName WeaponBeginSocketName;
+	/** 武器上作为攻击起点的插槽名（可用于生成发射物等），必须与骨骼网格上的插槽一致 */
+	UPROPERTY(EditAnywhere, Category = "Aura|Character|Combat", meta = (DisplayName = "武器起点插槽"))
+	FName WeaponBeginSocket;
 	
-	UPROPERTY(EditAnywhere, Category = "Aura|Character|Combat", meta = (DisplayName = "攻击检测终点插槽"))
-	FName WeaponEndSocketName;
+	/** 武器上作为攻击终点的插槽名，必须与骨骼网格上的插槽一致 */
+	UPROPERTY(EditAnywhere, Category = "Aura|Character|Combat", meta = (DisplayName = "武器终点插槽"))
+	FName WeaponEndSocket;
 	
 	/**
 	 * 缓存的 GAS 组件指针：玩家侧来自 PlayerState，敌人侧在构造函数中创建；由子类在 InitActorInfo 中赋值。

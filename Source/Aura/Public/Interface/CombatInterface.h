@@ -47,11 +47,14 @@ public:
 	int32 GetCharacterLevel() const;
 	
 	/**
-	 * 武器尖端的世界坐标，作为近战判定、投射物生成点与特效原点的统一基准。
+	 * 武器攻击起点的世界坐标，作为近战判定起点、投射物生成点。
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	FVector GetWeaponBeginSocketLocation() const;
 	
+	/**
+	 * 武器攻击终点的世界坐标，作为近战判定终点。
+	 */
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	FVector GetWeaponEndSocketLocation() const;
 	
