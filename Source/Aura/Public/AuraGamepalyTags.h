@@ -122,8 +122,11 @@ struct FAuraGameplayTags
      * 在关键帧上用 AnimNotify 发出 GameplayEvent，
 	 * 技能蓝图通过 WaitGameplayEvent 节点按这个 tag 接收
 	 */
-	FGameplayTag Montage_AttackBegin;
-	FGameplayTag MonTage_AttackEnd;
+	FGameplayTag Montage_Attack_WeaponTip;
+	FGameplayTag Montage_Attack_WeaponEnd;
+	FGameplayTag Montage_Attack_LeftHand;
+	FGameplayTag Montage_Attack_RightHand;
+	FGameplayTag MonTage_Attack_End;
 
 private:
 	/** 全局唯一实例：进程启动时零初始化（tag 均为空），由 InitializeNativeGameplayTags 填入真实值 */

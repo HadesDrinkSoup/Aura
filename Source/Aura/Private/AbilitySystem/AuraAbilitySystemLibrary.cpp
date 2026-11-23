@@ -435,10 +435,10 @@ namespace
     }
 }
 
-void UAuraAbilitySystemLibrary::WeaponAttackHitDetection(
+void UAuraAbilitySystemLibrary::AttackHitDetection(
     AActor* Attacker,
-    const FName WeaponBeginSocket,
-    const FName WeaponEndSocket,
+    const FName BeginSocket,
+    const FName EndSocket,
     TArray<AActor*>& OutHitActors,
     const TArray<AActor*>& AlreadyHitActors,
     const EWeaponHitShape Shape,
@@ -453,18 +453,18 @@ void UAuraAbilitySystemLibrary::WeaponAttackHitDetection(
     const UWorld* World = Attacker->GetWorld();
     if (!World) return;
 
-    const USkeletalMeshComponent* WeaponMesh = FindWeaponMesh(Attacker, WeaponBeginSocket, WeaponEndSocket);
+    const USkeletalMeshComponent* WeaponMesh = FindWeaponMesh(Attacker, BeginSocket, EndSocket);
     if (!WeaponMesh) return;
 
     // 当前姿态：刀身两端。单插槽/挥拳时两端重合，后面会退化成点检测
-    const FVector CurrentBegin = WeaponMesh->GetSocketLocation(WeaponBeginSocket);
-    const FVector CurrentEnd = WeaponMesh->DoesSocketExist(WeaponEndSocket)
-        ? WeaponMesh->GetSocketLocation(WeaponEndSocket)
+    const FVector CurrentBegin = WeaponMesh->GetSocketLocation(BeginSocket);
+    const FVector CurrentEnd = WeaponMesh->DoesSocketExist(EndSocket)
+        ? WeaponMesh->GetSocketLocation(EndSocket)
         : CurrentBegin;
 
     // 上一帧姿态：第一次调用还没有历史，当帧退化为只检测当前姿态
     const double CurrentTime = World->GetTimeSeconds();
-    FWeaponSweepHistory& History = FindOrAddWeaponSweepHistory(Attacker, WeaponBeginSocket, WeaponEndSocket);
+    FWeaponSweepHistory& History = FindOrAddWeaponSweepHistory(Attacker, BeginSocket, EndSocket);
     const bool bContinueSwing = History.LastSampleTime >= 0.0;
     const FVector PreviousBegin = bContinueSwing ? History.BeginLocation : CurrentBegin;
     const FVector PreviousEnd   = bContinueSwing ? History.EndLocation   : CurrentEnd;

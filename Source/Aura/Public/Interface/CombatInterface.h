@@ -8,16 +8,22 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "UObject/Interface.h"
 #include "CombatInterface.generated.h"
 
-/**
- * ICombatInterface 配套的 UObject 空壳。
- * UINTERFACE 必须与一个 UObject 子类配对（类名去掉 I 前缀），它只承担反射注册，
- * 不包含任何逻辑；真正的函数声明写在下面的 ICombatInterface 中。
- *  - MinimalAPI：反射信息仅在本模块内使用，减少导出符号；
- *  - BlueprintType：允许蓝图把实现了本接口的对象当作接口类型来使用（Cast 到接口）。
- */
+
+USTRUCT(BlueprintType)
+struct FMontageTag
+{
+	GENERATED_BODY()
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<UAnimMontage> Montage = nullptr;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	FGameplayTag MontageTag = FGameplayTag();
+};
+
 UINTERFACE(MinimalAPI, BlueprintType)
 class UCombatInterface : public UInterface
 {
@@ -25,45 +31,25 @@ class UCombatInterface : public UInterface
 };
 
 
-/**
- * 战斗接口本体，由具体角色类重写：
- *  - AAuraCharacterBase 实现 GetCombatSocketLocation（武器插槽位置）；
- *  - AAuraCharacter / AAuraEnemy 分别实现 GetCharacterLevel（等级来源不同）。
- * 注意下面的函数都带有默认实现（返回 0 / 零向量），实现者忘记重写也不会崩溃，
- * 但调用方会拿到无效数值，所以把"默认值"当作"该对象不参与此项战斗计算"来理解。
- */
 class AURA_API ICombatInterface
 {
 	GENERATED_BODY()
 
 public:
-	/**
-	 * 角色等级（供 MMC 与 GameplayEffectSpec 使用）。
-	 * 调用方：UAuraMMCBase::GetCharacterLevelFromSpec 在计算幅值时按等级参与公式；
-	 * 技能层在构建 Spec 时用它设置 EffectLevel。
-	 * 返回 0 表示该对象没有等级概念，调用方应自行兜底（例如 FMath::Max(Level, 1)）。
-	 */
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	int32 GetCharacterLevel() const;
 	
-	/**
-	 * 武器攻击起点的世界坐标，作为近战判定起点、投射物生成点。
-	 */
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	FVector GetWeaponBeginSocketLocation() const;
+	AActor* GetAvatarActor();
 	
-	/**
-	 * 武器攻击终点的世界坐标，作为近战判定终点。
-	 */
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	FVector GetWeaponEndSocketLocation() const;
+	TArray<FMontageTag> GetAttackMontages() const;
 	
-	/**
-	 * 让角色转向指定目标点；在蓝图中实现，
-	 * 用于敌人在攻击前把朝向对准玩家，保证动画与特效的朝向正确。
-	 * C++ 侧暂无调用点，由蓝图逻辑在需要时驱动。
-	 * @param TargetLocation 需要朝向的世界坐标
-	 */
+	/** 通过蒙太奇动画标签获取战斗插槽 */
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	FName GetCombatSocket(const FGameplayTag& MontageTag) const;
+	
+	/** 让角色转向指定目标点；在蓝图中实现， */
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void UpdateFacingTarget(const FVector& TargetLocation);
 	
@@ -72,9 +58,6 @@ public:
 	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	bool IsDead() const;
-	
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	AActor* GetAvatarActor();
 	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void Death();

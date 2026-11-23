@@ -304,10 +304,23 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 		FString(TEXT("攻击")));
 	
 	
-	GameplayTags.Montage_AttackBegin = UGameplayTagsManager::Get().AddNativeGameplayTag(
-		FName("Montage.AttackBegin"),
-		FString(TEXT("用于攻击开始动画通知")));
-	GameplayTags.MonTage_AttackEnd = UGameplayTagsManager::Get().AddNativeGameplayTag(
-		FName("Montage.AttackEnd"),
+	GameplayTags.Montage_Attack_WeaponTip = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Montage.Attack.WeaponTip"),
+		FString(TEXT("用于武器顶端的动画通知")));
+	
+	GameplayTags.Montage_Attack_WeaponEnd = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Montage.Attack.WeaponEnd"),
+		FString(TEXT("用于武器末端的动画通知")));
+	
+	GameplayTags.Montage_Attack_LeftHand = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Montage.Attack.LeftHand"),
+		FString(TEXT("用于左手的动画通知")));
+	
+	GameplayTags.Montage_Attack_RightHand = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Montage.Attack.RightHand"),
+		FString(TEXT("用于右手的动画通知")));
+	
+	GameplayTags.MonTage_Attack_End = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Montage.Attack.End"),
 	FString(TEXT("用于攻击结束动画通知")));
 }

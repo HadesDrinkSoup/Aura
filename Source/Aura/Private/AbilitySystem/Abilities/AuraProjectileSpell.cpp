@@ -21,6 +21,7 @@
 #include "Interface/CombatInterface.h"
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
+#include "AuraGamepalyTags.h"
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "Engine/World.h"
 #include "HAL/IConsoleManager.h"
@@ -82,7 +83,7 @@ void UAuraProjectileSpell::SpawnProjectile(const FVector& ProjectileTargetLocati
 
 	// 接口函数是 BlueprintNativeEvent，直接调 CombatInterface->GetCombatSocketLocation()
 	// 会命中 UHT 生成的断言桩；必须通过 Execute_ 转发到实现类的 _Implementation。
-	const FVector SpawnLocation = ICombatInterface::Execute_GetWeaponBeginSocketLocation(AvatarActor);
+	const FVector SpawnLocation = ICombatInterface::Execute_GetCombatSocketLocation(AvatarActor, FAuraGameplayTags::Get().Montage_Attack_WeaponTip);
 	const FRotator SpawnRotation = (ProjectileTargetLocation - SpawnLocation).Rotation();
 	
 	FTransform SpawnTransform;

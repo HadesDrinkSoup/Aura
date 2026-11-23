@@ -45,17 +45,18 @@ public:
 	/** 构造函数：创建武器组件并挂到角色网格的手部插槽，同时配置胶囊体/网格体的碰撞响应 */
 	AAuraCharacterBase();
 
+	/** CombatInterface Begin */
 	/** 返回 GAS 使用的 ASC；在 InitActorInfo 完成前可能为 nullptr，调用方需自行判空 */
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override {return AbilitySystemComponent;}
-
-	/** 攻击起点：武器骨骼网格上 WeaponBeginSocket 插槽的世界坐标 */
-	virtual FVector GetWeaponBeginSocketLocation_Implementation() const override {return Weapon->GetSocketLocation(WeaponBeginSocket);}
-	
-	/** 攻击终点：武器骨骼网格上 WeaponEndSocket 插槽的世界坐标 */
-	virtual FVector GetWeaponEndSocketLocation_Implementation() const override {return Weapon->GetSocketLocation(WeaponEndSocket);}
 	
 	/** 获取受击动画蒙太奇 */
 	virtual UAnimMontage* GetHitReactMontage_Implementation() override {return HitReactMontage;}
+	
+	/** 获取攻击动画蒙太奇 */
+	virtual TArray<FMontageTag> GetAttackMontages_Implementation() const override {return AttackMontages;}
+	
+	/** 获取攻击检测插槽 */
+	virtual FName GetCombatSocket_Implementation(const FGameplayTag& MontageTag) const override;
 	
 	/** 获取角色是否死亡 */
 	virtual bool IsDead_Implementation() const override {return bIsDead;}
@@ -65,6 +66,7 @@ public:
 	
 	/** 死亡逻辑 */
 	virtual void Death_Implementation() override;
+	/** CombatInterface End */
 
 protected:
 	/**
@@ -117,18 +119,25 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent, Category="Combat")
 	void StartMeshDissolveTimeLine(UMaterialInstanceDynamic* DynamicMaterialInstance);
 	
-	
-	/** 武器网格（手部武器），用于取攻击插槽坐标；不参与碰撞 */
+	/** 武器网格 */
 	UPROPERTY(EditAnywhere, Category = "Aura|Character|Combat", meta = (DisplayName = "武器网格"))
 	TObjectPtr<USkeletalMeshComponent> Weapon;
 	
-	/** 武器上作为攻击起点的插槽名（可用于生成发射物等），必须与骨骼网格上的插槽一致 */
-	UPROPERTY(EditAnywhere, Category = "Aura|Character|Combat", meta = (DisplayName = "武器起点插槽"))
-	FName WeaponBeginSocket;
+	/** 武器顶端插槽 */
+	UPROPERTY(EditAnywhere, Category = "Aura|Character|Combat", meta = (DisplayName = "武器顶端插槽"))
+	FName WeaponTipSocket;
 	
-	/** 武器上作为攻击终点的插槽名，必须与骨骼网格上的插槽一致 */
-	UPROPERTY(EditAnywhere, Category = "Aura|Character|Combat", meta = (DisplayName = "武器终点插槽"))
+	/** 武器末端插槽 */
+	UPROPERTY(EditAnywhere, Category = "Aura|Character|Combat", meta = (DisplayName = "武器末端插槽"))
 	FName WeaponEndSocket;
+	
+	/** 右手插槽 */
+	UPROPERTY(EditAnywhere, Category = "Aura|Character|Combat", meta = (DisplayName = "左手插槽"))
+	FName LeftHandSocket;
+	
+	/** 左手插槽 */
+	UPROPERTY(EditAnywhere, Category = "Aura|Character|Combat", meta = (DisplayName = "右手插槽"))
+	FName RightHandSocket;
 	
 	/**
 	 * 缓存的 GAS 组件指针：玩家侧来自 PlayerState，敌人侧在构造函数中创建；由子类在 InitActorInfo 中赋值。
@@ -173,6 +182,9 @@ protected:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|Character|Combat", meta = (DisplayName = "武器溶解材质"))
 	TObjectPtr<UMaterialInstance> WeaponDissolveMaterialInstance;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|Character|Combat", meta = (DisplayName = "攻击动画蒙太奇"))
+	TArray<FMontageTag> AttackMontages;
 	
 	bool bIsDead= false;
 	

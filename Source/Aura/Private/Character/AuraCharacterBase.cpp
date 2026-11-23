@@ -12,6 +12,8 @@
  */
 
 #include "Character/AuraCharacterBase.h"
+
+#include "AuraGamepalyTags.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "AbilitySystem/Data/CharacterClassInfo.h"
@@ -50,6 +52,28 @@ AAuraCharacterBase::AAuraCharacterBase()
 	GetMesh()->SetGenerateOverlapEvents(true);
 	GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECC_Projectile, ECR_Overlap);
+}
+
+FName AAuraCharacterBase::GetCombatSocket_Implementation(const FGameplayTag& MontageTag) const
+{
+	const FAuraGameplayTags& GameplayTags = FAuraGameplayTags::Get();
+	if (MontageTag.MatchesTagExact(GameplayTags.Montage_Attack_WeaponTip) && IsValid(Weapon))
+	{
+		return WeaponTipSocket;
+	}
+	if (MontageTag.MatchesTagExact(GameplayTags.Montage_Attack_WeaponEnd) && IsValid(Weapon))
+	{
+		return WeaponEndSocket;
+	}
+	if (MontageTag.MatchesTagExact(GameplayTags.Montage_Attack_LeftHand))
+	{
+		return LeftHandSocket;
+	}
+	if (MontageTag.MatchesTagExact(GameplayTags.Montage_Attack_RightHand))
+	{
+		return RightHandSocket;
+	}
+	return FName();
 }
 
 void AAuraCharacterBase::Death_Implementation()
