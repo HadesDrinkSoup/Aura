@@ -123,7 +123,7 @@ protected:
 	void StartMeshDissolveTimeLine(UMaterialInstanceDynamic* DynamicMaterialInstance);
 	
 	/** 武器网格 */
-	UPROPERTY(EditAnywhere, Category = "Aura|Character|Combat", meta = (DisplayName = "武器网格"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|Character|Combat", meta = (DisplayName = "武器网格"))
 	TObjectPtr<USkeletalMeshComponent> Weapon;
 	
 	/** 武器顶端插槽 */
@@ -160,36 +160,8 @@ protected:
 	 * 职业：决定使用哪套属性 GE 与默认技能。
 	 * 属性 GE 本身在 GameMode 上配置的 DA_CharacterClassInfo 里（见 AAuraGameModeBase）。
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|Character|Class", meta = (DisplayName = "角色职业"))
+	UPROPERTY(EditAnywhere, Category = "Aura|Character|Class", meta = (DisplayName = "角色职业"))
 	ECharacterClass CharacterClass = ECharacterClass::Elementalist;
-
-	/**
-	 * 可选：直接在本 BP 上覆盖职业的属性 GE（留空则使用职业配置表）。
-	 * 通常只在「职业表里没有的特殊个体」上使用。
-	 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|Character|Attributes", meta = (DisplayName = "池属性GE"))
-	TSubclassOf<UGameplayEffect> PoolAttributes;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|Character|Attributes", meta = (DisplayName = "主属性GE"))
-	TSubclassOf<UGameplayEffect> PrimaryAttributes;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|Character|Attributes", meta = (DisplayName = "派生属性GE"))
-	TSubclassOf<UGameplayEffect> DerivedAttributes;
-	
-	//个体差异：在职业 GE 之后追加施加的 GE。
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|Character|Attributes", meta = (DisplayName = "个体差异GE"))
-	TSubclassOf<UGameplayEffect> AdditionalEffect;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|Character|Combat", meta = (DisplayName = "角色溶解材质"))
-	TObjectPtr<UMaterialInstance> MeshDissolveMaterialInstance;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|Character|Combat", meta = (DisplayName = "武器溶解材质"))
-	TObjectPtr<UMaterialInstance> WeaponDissolveMaterialInstance;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|Character|Combat", meta = (DisplayName = "攻击动画蒙太奇"))
-	TArray<FMontageTag> AttackMontages;
-	
-	bool bIsDead= false;
 	
 private:
 	/** 将死亡复制到所有客户端 */
@@ -198,12 +170,39 @@ private:
 	
 	/** 武器跟随网格体溶解的重复计时器句柄 */
 	FTimerHandle DissolveSyncTimerHandle;
+	/**
+	 * 可选：直接在本 BP 上覆盖职业的属性 GE（留空则使用职业配置表）。
+	 * 通常只在「职业表里没有的特殊个体」上使用。
+	 */
+	UPROPERTY(EditAnywhere, Category = "Aura|Character|Attributes", meta = (DisplayName = "池属性GE"))
+	TSubclassOf<UGameplayEffect> PoolAttributes;
+	
+	UPROPERTY(EditAnywhere, Category = "Aura|Character|Attributes", meta = (DisplayName = "主属性GE"))
+	TSubclassOf<UGameplayEffect> PrimaryAttributes;
+	
+	UPROPERTY(EditAnywhere, Category = "Aura|Character|Attributes", meta = (DisplayName = "派生属性GE"))
+	TSubclassOf<UGameplayEffect> DerivedAttributes;
+	
+	//个体差异：在职业 GE 之后追加施加的 GE。
+	UPROPERTY(EditAnywhere, Category = "Aura|Character|Attributes", meta = (DisplayName = "个体差异GE"))
+	TSubclassOf<UGameplayEffect> AdditionalEffect;
 	
 	/** 本 BP 额外配置的起始技能（在职业默认技能之前，最终取并集并去重） */
 	UPROPERTY(EditAnywhere, Category = "Aura|Character|Abilities", meta = (DisplayName = "初始技能"))
 	TArray<TSubclassOf<UAuraGameplayAbility>> StartupAbilities;
 	
+	UPROPERTY(EditAnywhere, Category = "Aura|Character|Combat", meta = (DisplayName = "角色溶解材质"))
+	TObjectPtr<UMaterialInstance> MeshDissolveMaterialInstance;
+	
+	UPROPERTY(EditAnywhere, Category = "Aura|Character|Combat", meta = (DisplayName = "武器溶解材质"))
+	TObjectPtr<UMaterialInstance> WeaponDissolveMaterialInstance;
+	
+	UPROPERTY(EditAnywhere, Category = "Aura|Character|Combat", meta = (DisplayName = "攻击动画蒙太奇"))
+	TArray<FMontageTag> AttackMontages;
+	
 	/** 攻击命中动画蒙太奇 */
 	UPROPERTY(EditAnywhere, Category = "Aura|Character|Combat", meta = (DisplayName = "受击动画"))
 	TObjectPtr<UAnimMontage> HitReactMontage;
+	
+	bool bIsDead= false;
 };

@@ -115,7 +115,7 @@ struct FAuraGameplayTags
 	/** 能力标签 
 	 *  常用于AI行为树通过标签激活能力
 	 */
-	FGameplayTag Abilities_MeleeAttack;
+	FGameplayTag Abilities_Attack;
 
 	/**
 	 * 动画tag

@@ -24,6 +24,7 @@
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "NiagaraFunctionLibrary.h"
+#include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "Aura/Aura.h"
 
 /**
@@ -143,7 +144,7 @@ void AAuraProjectile::OnSphereComponentBeginOverlap(UPrimitiveComponent* Overlap
 	// 命中点与法线（部分情况 SweepResult 为空则用 Actor 位置兜底）
 	// 兜底法线取飞行方向的反向，即"迎着投射物来的面"，特效朝向不会突然歪掉
 	FVector ImpactLocation = GetActorLocation();
-	FVector ImpactNormal   = -GetActorForwardVector();
+	FVector ImpactNormal = -GetActorForwardVector();
 
 	// 用"是否接近零"来判断结果有效性：非 Sweep 触发时 FHitResult 是默认构造的全零结构。
 	// 代价是命中点恰好落在世界原点附近时会被误判为无效（实际游戏中几乎不会发生）。
@@ -165,7 +166,7 @@ void AAuraProjectile::OnSphereComponentBeginOverlap(UPrimitiveComponent* Overlap
 	{
 		// 生成方（UAuraProjectileSpell）漏赋值时这里曾经直接解引用 Data 崩溃；
 		// 现在改成显式判空并报出来：法术配置错误不应该表现为一次 Source 崩。
-		if (DamageEffectSpecHandle.IsValid())
+		if (DamageEffectSpecHandle.IsValid() && !UAuraAbilitySystemLibrary::IsFriend(DamageEffectSpecHandle.Data.Get()->GetContext().GetEffectCauser(), OtherActor))
 		{
 			TargetASC->ApplyGameplayEffectSpecToSelf(*DamageEffectSpecHandle.Data.Get());
 		}

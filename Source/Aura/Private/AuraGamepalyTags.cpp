@@ -299,8 +299,8 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 		FString(TEXT("数字4键输入标签")));
 	
 	
-	GameplayTags.Abilities_MeleeAttack = UGameplayTagsManager::Get().AddNativeGameplayTag(
-		FName("Abilities.MeleeAttack"), 
+	GameplayTags.Abilities_Attack = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Abilities.Attack"), 
 		FString(TEXT("攻击")));
 	
 	
