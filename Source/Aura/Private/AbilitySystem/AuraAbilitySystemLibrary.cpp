@@ -225,6 +225,14 @@ void UAuraAbilitySystemLibrary::GetLiveCharactersWithinRadius(const UObject* Wor
 	}
 }
 
+bool UAuraAbilitySystemLibrary::IsFriend(AActor* FirstActor, AActor* SecondActor)
+{
+	const bool bBothArePlayers = FirstActor->ActorHasTag(FName("Player")) && SecondActor->ActorHasTag(FName("Player"));
+	const bool bBothAreEnemies = FirstActor->ActorHasTag(FName("Enemy")) && SecondActor->ActorHasTag(FName("Enemy"));
+	const bool bFriends = bBothArePlayers || bBothAreEnemies;
+	return bFriends;
+}
+
 namespace
 {
     /** 某把武器上一次采样时的刀身姿态；LastSampleTime < 0 表示还没有历史 */

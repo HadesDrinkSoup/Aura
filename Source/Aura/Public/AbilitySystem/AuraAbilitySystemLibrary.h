@@ -94,6 +94,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "AuraAbilitySystemLibrary|GameplayMechanics", meta = (WorldContext = "WorldContextObject"))
 	static void GetLiveCharactersWithinRadius(const UObject* WorldContextObject, TArray<AActor*>& OutOverlappingActors, const AActor* IgnoreActor, FName RequiredTag, float Radius, const FVector& SpherePosition);
 	
+	/** 判断目标是否友好 */
+	UFUNCTION(BlueprintCallable, Category = "AuraAbilitySystemLibrary|GameplayMechanics", meta = (WorldContext = "WorldContextObject"))
+	static bool IsFriend(AActor* FirstActor, AActor* SecondActor);
+	
 	/**
 	 * 按武器挥砍轨迹做近战命中检测，碰撞形状可选（射线 / 球体 / 胶囊体 / 盒体）。
 	 * 采样方式：

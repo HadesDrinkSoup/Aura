@@ -48,6 +48,9 @@ public:
 	/** CombatInterface Begin */
 	/** 返回 GAS 使用的 ASC；在 InitActorInfo 完成前可能为 nullptr，调用方需自行判空 */
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override {return AbilitySystemComponent;}
+
+	/** 通过标签获取不同的战斗插槽 */
+	virtual FVector GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag) const override;
 	
 	/** 获取受击动画蒙太奇 */
 	virtual UAnimMontage* GetHitReactMontage_Implementation() override {return HitReactMontage;}

@@ -45,7 +45,11 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	TArray<FMontageTag> GetAttackMontages() const;
 	
-	/** 通过蒙太奇动画标签获取战斗插槽 */
+	/** 获取战斗插槽位置 */
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	FVector GetCombatSocketLocation(const FGameplayTag& MontageTag) const;
+	
+	/** 获取战斗插槽 */
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	FName GetCombatSocket(const FGameplayTag& MontageTag) const;
 	

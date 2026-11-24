@@ -54,6 +54,28 @@ AAuraCharacterBase::AAuraCharacterBase()
 	GetMesh()->SetCollisionResponseToChannel(ECC_Projectile, ECR_Overlap);
 }
 
+FVector AAuraCharacterBase::GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag) const
+{
+	const FAuraGameplayTags& GameplayTags = FAuraGameplayTags::Get();
+	if (MontageTag.MatchesTagExact(GameplayTags.Montage_Attack_WeaponTip) && IsValid(Weapon))
+	{
+		return Weapon->GetSocketLocation(WeaponTipSocket);
+	}
+	if (MontageTag.MatchesTagExact(GameplayTags.Montage_Attack_WeaponEnd) && IsValid(Weapon))
+	{
+		return Weapon->GetSocketLocation(WeaponEndSocket);
+	}
+	if (MontageTag.MatchesTagExact(GameplayTags.Montage_Attack_LeftHand))
+	{
+		return GetMesh()->GetSocketLocation(LeftHandSocket);
+	}
+	if (MontageTag.MatchesTagExact(GameplayTags.Montage_Attack_RightHand))
+	{
+		return GetMesh()->GetSocketLocation(RightHandSocket);
+	}
+	return FVector::ZeroVector;
+}
+
 FName AAuraCharacterBase::GetCombatSocket_Implementation(const FGameplayTag& MontageTag) const
 {
 	const FAuraGameplayTags& GameplayTags = FAuraGameplayTags::Get();
