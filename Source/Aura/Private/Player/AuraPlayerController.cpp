@@ -43,10 +43,7 @@ void AAuraPlayerController::PlayerTick(const float DeltaTime)
 
 void AAuraPlayerController::ShowFloatingText_Implementation(const float InDamage, ACharacter* TargetCharacter, const bool bIsDodge, const bool bIsCriticalHit)
 {
-	// Client RPC 只会到拥有者客户端；这里再守一道，避免误用或重复创建
 	if (!IsLocalController() || !FloatingTextWidgetClass || !IsValid(TargetCharacter)) return;
-	// Outer 必须是目标角色：若 Outer 是 PlayerController，而 PC 蓝图勾了「隐藏游戏中」，
-	// UWidgetComponent::UpdateWidgetOnScreen 的 !GetOwner()->IsHidden() 不成立，组件永远进不了屏幕层
 	UFloatingTextWidgetComponent* FloatingText = NewObject<UFloatingTextWidgetComponent>(TargetCharacter, FloatingTextWidgetClass);
 	FloatingText->RegisterComponent();
 	FloatingText->AttachToComponent(TargetCharacter->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);

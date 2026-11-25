@@ -248,7 +248,7 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 		{
 			// 闪避时伤害值按 0 飘，正常伤害飘最终值；暴击倍率已由 ExecutionCalculation_Damage 乘进最终伤害
 			const float Damage = bIsDodge ? 0.f : LocalIncomingDamage;
-			const bool bIsCriticalHit = !bIsDodge && UAuraAbilitySystemLibrary::IsCriticalHit(EffectProperties.EffectContextHandle);
+			const bool bIsCriticalHit = UAuraAbilitySystemLibrary::IsCriticalHit(EffectProperties.EffectContextHandle);
 			AAuraPlayerController* SourcePC = Cast<AAuraPlayerController>(EffectProperties.SourceController);
 			AAuraPlayerController* TargetPC = Cast<AAuraPlayerController>(EffectProperties.TargetController);
 
