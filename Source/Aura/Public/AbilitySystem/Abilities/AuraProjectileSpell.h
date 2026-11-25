@@ -30,14 +30,6 @@ class AURA_API UAuraProjectileSpell : public UAuraDamageGameplayAbility
 	GENERATED_BODY()
 protected:
 	/**
-	 * 技能激活入口（重写 UGameplayAbility::ActivateAbility）。
-	 * 本类的实现目前只调用 Super，不在这里取目标数据、也不在这里生成投射物：
-	 * 目标点由蓝图的 Latent 任务 TargetDataUnderMouse 异步采集，再由蓝图调用 SpawnProjectile 下发。
-	 * 因此"激活即发射"这条时序完全写在蓝图图里，C++ 侧不参与。
-	 */
-	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
-	
-	/**
 	 * 蓝图调用：向目标点发射投射物。
 	 *
 	 * - 服务器：立即生成；

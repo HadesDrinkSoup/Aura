@@ -135,4 +135,11 @@ private:
 	/** 循环飞行音效组件（用于命中/销毁时停止） */
 	UPROPERTY(Transient)
 	TObjectPtr<UAudioComponent> LoopingAudioComponent;
+
+	/**
+	 * 单次命中守卫：Destroy() 是帧末才真正销毁，同一帧内若与多个组件/Actor 重叠，
+	 * OnSphereComponentBeginOverlap 会被多次回调。没有这个标志时，一个投射物可能在
+	 * 同一帧里对同一目标结算两次伤害（表现为一次攻击掉两次血、飘出两条互相矛盾的飘字）。
+	 */
+	bool bHasHit = false;
 };

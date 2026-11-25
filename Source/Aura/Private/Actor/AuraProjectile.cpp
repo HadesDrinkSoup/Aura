@@ -134,13 +134,22 @@ void AAuraProjectile::OnSphereComponentBeginOverlap(UPrimitiveComponent* Overlap
 		return;
 	}
 
+	// 已经命中过：Destroy() 要等帧末，同一帧内后续的 Overlap 回调必须直接丢弃，
+	// 否则一次飞行会重复结算伤害、重复播命中特效。
+	if (bHasHit)
+	{
+		return;
+	}
+
 	// 过滤自身与 Owner（不排除施法者角色，允许自伤）
 	// IsValid 兼顾"已标记待销毁"的对象；OtherActor == this 覆盖自身子组件互相重叠的情况
 	if (!IsValid(OtherActor) || OtherActor == this || OtherActor == GetOwner())
 	{
 		return;
 	}
-	
+
+	// 从这里开始算"这一次命中"：先落标志，保证同帧后续回调全部早退
+	bHasHit = true;
 	// 命中点与法线（部分情况 SweepResult 为空则用 Actor 位置兜底）
 	// 兜底法线取飞行方向的反向，即"迎着投射物来的面"，特效朝向不会突然歪掉
 	FVector ImpactLocation = GetActorLocation();
@@ -172,8 +181,7 @@ void AAuraProjectile::OnSphereComponentBeginOverlap(UPrimitiveComponent* Overlap
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("[AuraProjectile] %s 命中 %s，但 DamageEffectSpecHandle 无效（检查技能的 DamageEffectClass 是否为空），本次不结算伤害"),
-				*GetName(), *OtherActor->GetName());
+			UE_LOG(LogTemp, Warning, TEXT("[AuraProjectile] %s 命中 %s，但 DamageEffectSpecHandle 无效（检查技能的 DamageEffectClass 是否为空），本次不结算伤害"), *GetName(), *OtherActor->GetName());
 		}
 	}
 	

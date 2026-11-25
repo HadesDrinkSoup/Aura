@@ -27,19 +27,6 @@
 #include "HAL/IConsoleManager.h"
 
 /**
- * 技能激活入口，由 GAS 在 TryActivateAbility 成功、CommitAbility 之后调用。
- * 本类保持空转（只调 Super）：目标点由蓝图里的 TargetDataUnderMouse 任务异步采集，
- * 采集完成后蓝图再调用 SpawnProjectile——所以 C++ 侧既不取目标数据也不生成投射物，
- * 这里没有"激活即发射"的逻辑。
- */
-void UAuraProjectileSpell::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
-                                           const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
-                                           const FGameplayEventData* TriggerEventData)
-{
-	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
-}
-
-/**
  * 蓝图调用入口：向目标点发射投射物。
  * 本函数只做"端侧分流"：客户端直接返回，真正的生成统一在 SpawnProjectileOnServer。
  *

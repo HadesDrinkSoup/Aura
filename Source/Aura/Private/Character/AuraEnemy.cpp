@@ -163,6 +163,10 @@ void AAuraEnemy::UnHighlightActor()
 void AAuraEnemy::Death_Implementation()
 {
 	SetLifeSpan(LifeSpan);
+	if (AIController)
+	{
+		AIController->GetBlackboardComponent()->SetValueAsBool(FName("IsDead"), true);
+	}
 	Super::Death_Implementation();
 }
 

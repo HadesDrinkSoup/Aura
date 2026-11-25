@@ -199,6 +199,10 @@ void UExecutionCalculation_Damage::Execute_Implementation(
 	UAuraAbilitySystemLibrary::SetIsDodge(EffectContextHandle, bIsDodge);
 	if (bIsDodge)
 	{
+		// 闪避时不会走到下面的暴击骰子：这里显式把暴击位清掉。
+		// 否则同一个 EffectContext 被复用（同一 Spec 命中多个目标）时，
+		// 上一次结算残留的"暴击"会跟着这次闪避一起序列化出去。
+		UAuraAbilitySystemLibrary::SetIsCriticalHit(EffectContextHandle, false);
 		// 闪避照样输出 0 伤害：让 AttributeSet 能正常走受击 / 飘字流程
 		OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(UAuraAttributeSet::GetIncomingDamageAttribute(), EGameplayModOp::Additive, 0.f));
 		return;

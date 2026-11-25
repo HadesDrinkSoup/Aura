@@ -123,7 +123,7 @@ protected:
 	void StartMeshDissolveTimeLine(UMaterialInstanceDynamic* DynamicMaterialInstance);
 	
 	/** 武器网格 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|Character|Combat", meta = (DisplayName = "武器网格"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aura|Character|Combat")
 	TObjectPtr<USkeletalMeshComponent> Weapon;
 	
 	/** 武器顶端插槽 */

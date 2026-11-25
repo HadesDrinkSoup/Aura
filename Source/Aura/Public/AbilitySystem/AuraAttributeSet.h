@@ -555,7 +555,7 @@ private:
 	 * @param EffectProperties 本次 GE 的双方信息快照，TargetASC 为空时直接返回
 	 * @param EffectTag        要激活的能力标签
 	 */
-	void ActivateAbilityTag(const FEffectProperties& EffectProperties, const FGameplayTag& EffectTag);
+	static void ActivateAbilityTag(const FEffectProperties& EffectProperties, const FGameplayTag& EffectTag);
 
 	/**
 	 * 从 GE 的 ModCallbackData 解析出「施法者 / 受击者」双方快照，填入传入的结构体。
