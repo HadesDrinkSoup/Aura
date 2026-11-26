@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Engine/HitResult.h"
 #include "GameplayEffectTypes.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "AuraAbilitySystemLibrary.generated.h"
@@ -109,13 +110,27 @@ public:
 	 *     刀身长度归零，整体退化为单点检测（挥拳、单插槽武器）。
 	 *  4. 上一次采样离当前超过 MaxFrameGapSeconds（追赶、切武器、换技能等长时间停顿）时，
 	 *     旧姿态直接作废，当帧只检测当前姿态，避免连出一条横跨场景的巨型检测段。
+	 *
+	 * 返回结果：
+	 *  - 返回值：本次检测是否新命中了至少一个目标（AlreadyHitActors 里的不算，所以同一次挥砍里反复调用也不会重复返回 true）；
+	 *  - OutHitResult：本次检测中「第一个」命中目标的命中结果（按刀柄 → 刀尖的采样顺序），
+	 *    可直接用于在撞击点/法线方向生成打击特效、按 PhysMaterial 选音效、写进 GE 的 EffectContext 或 GameplayCue 参数。
+	 *    没命中时保持默认值：bBlockingHit == false 且 GetActor() == nullptr。
+	 *    不同形状的结果精度不同，调用方需要知道：
+	 *      - Ray 给的是引擎 LineTraceMultiByObjectType 的真实结果，BoneName / PhysMaterial 都有效；
+	 *      - Sphere / Capsule / Box 底层是 OverlapMultiByObjectType，引擎不提供撞击点，
+	 *        这里用「采样中心 → 目标碰撞体最近点」合成：Location == ImpactPoint == 最近点，
+	 *        ImpactNormal 由目标指向武器采样点，bBlockingHit 置 true、bStartPenetrating 置 true
+	 *        （重叠查询在命中时形状与目标本来就已经相交，没有「接触瞬间」）。
+	 *        因此 IsValidBlockingHit() 对这几种形状恒为 false，判断「打没打中」请直接用返回值。
 	 */
 	UFUNCTION(BlueprintCallable, Category = "AuraAbilitySystemLibrary|GameplayMechanics")
-	static void AttackHitDetection(
+	static bool AttackHitDetection(
 		AActor* Attacker,
 		FName BeginSocket,
 		FName EndSocket,
 		TArray<AActor*>& OutHitActors,
+		FHitResult& OutHitResult,
 		const TArray<AActor*>& AlreadyHitActors,
 		EWeaponHitShape Shape = EWeaponHitShape::Capsule,
 		float Radius = 10.f,

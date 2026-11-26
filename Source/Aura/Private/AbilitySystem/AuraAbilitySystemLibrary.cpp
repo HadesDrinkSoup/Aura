@@ -393,7 +393,59 @@ namespace
         }
     }
 
-    /** 对一条检测段做一次物理查询，命中结果归一化去重后追加到 OutHitActors */
+    /**
+     * 把一条 Overlap 结果合成为 FHitResult。
+     *
+     * OverlapMultiByObjectType 只告诉我们「谁被碰到了」，不提供撞击点/法线，而打击特效（Niagara）
+     * 恰恰需要 Location + Normal。这里的近似取法：以采样点为目标，找到碰撞体上离它最近的点当撞击点，
+     * 法线方向就是「目标表面 → 武器采样点」。
+     *  - 优先用目标自己的碰撞几何（胶囊/盒体/球体是解析解，最准）；
+     *  - 复杂碰撞（静态/骨骼网格）不支持最近点查询时退回组件包围盒，至少方向是对的。
+     */
+    FHitResult MakeOverlapHitResult(const FOverlapResult& OverlapResult, const FVector& SampleCenter,
+        const FVector& SegmentStart, const FVector& SegmentEnd)
+    {
+        UPrimitiveComponent* HitComponent = OverlapResult.GetComponent();
+        AActor* HitActor = OverlapResult.GetActor();
+
+        FVector ImpactPoint = SampleCenter;
+        if (HitComponent)
+        {
+            float DistanceSquared = -1.f;
+            if (!HitComponent->GetSquaredDistanceToCollision(SampleCenter, DistanceSquared, ImpactPoint))
+            {
+                ImpactPoint = HitComponent->Bounds.GetBox().GetClosestPointTo(SampleCenter);
+            }
+        }
+
+        FVector ImpactNormal = (SampleCenter - ImpactPoint).GetSafeNormal();
+        if (ImpactNormal.IsNearlyZero())
+        {
+            // 采样点正好落在碰撞体内/表面：改用「目标中心 → 采样点」，保证法线总有方向
+            const FVector TargetLocation = HitActor ? HitActor->GetActorLocation() : FVector::ZeroVector;
+            ImpactNormal = (SampleCenter - TargetLocation).GetSafeNormal();
+            if (ImpactNormal.IsNearlyZero()) ImpactNormal = FVector::UpVector;
+        }
+
+        // 引擎的「假命中」构造器只填了 Location/ImpactPoint/Normal/ImpactNormal/Actor/Component，其余字段是零
+        FHitResult Hit(HitActor, HitComponent, ImpactPoint, ImpactNormal);
+        Hit.Time = 1.f;
+        Hit.Distance = FVector::Dist(SegmentStart, ImpactPoint);
+        Hit.TraceStart = SegmentStart;
+        Hit.TraceEnd = SegmentEnd;
+        // bBlockingHit 置 true：对调用方来说这就是「命中了」，蓝图上的 Blocking Hit 引脚与返回值保持一致
+        Hit.bBlockingHit = true;
+        // 底层是 Overlap：命中时形状与目标已经相交，不存在「接触瞬间」，引擎的语义就是 StartPenetrating
+        Hit.bStartPenetrating = true;
+        Hit.Item = OverlapResult.ItemIndex;
+        return Hit;
+    }
+
+    /**
+     * 对一条检测段做一次物理查询，命中结果归一化去重后追加到 OutHitActors。
+     * 第一次拿到有效命中时把这份 FHitResult 交给调用方（bInOutHasFirstHit 负责「只取第一个」），
+     * 后面再命中就不覆盖了，免得同一帧里最后一个采样点的结果把第一个挤掉。
+     */
     bool SweepSegment(
         const UWorld* World,
         const FCollisionQueryParams& QueryParams,
@@ -407,33 +459,44 @@ namespace
         const float HalfHeight,
         const bool bDrawDebug,
         const float DebugLifeTime,
-        TArray<AActor*>& OutHitActors)
+        TArray<AActor*>& OutHitActors,
+        bool& bInOutHasFirstHit,
+        FHitResult& OutFirstHit)
     {
         const FSegmentShape Segment = MakeSegmentShape(Shape, SegmentStart, SegmentEnd, Radius, HalfHeight, CapsuleAxis);
         // 射线没有体积：该采样点两帧没动时直接跳过
         if (Shape == EWeaponHitShape::Ray && !Segment.bHasLength) return false;
 
-        // 先用一个容器统一收集原始命中 Actor，射线/重叠只在查询调用上不同
-        TArray<AActor*> RawHitActors;
+        // 统一收集成 FHitResult：射线拿到的是引擎真实结果（含 BoneName / PhysMaterial），
+        // 重叠查询则用「采样中心 → 目标碰撞体最近点」合成一份，两种形状对外都能给出撞击点
+        TArray<FHitResult> RawHits;
         if (Shape == EWeaponHitShape::Ray)
         {
-            TArray<FHitResult> Results;
-            World->LineTraceMultiByObjectType(Results, Segment.Start, Segment.End, ObjectParams, QueryParams);
-            for (const FHitResult& R : Results) RawHitActors.Add(R.GetActor());
+            World->LineTraceMultiByObjectType(RawHits, Segment.Start, Segment.End, ObjectParams, QueryParams);
         }
         else
         {
             TArray<FOverlapResult> Results;
             World->OverlapMultiByObjectType(Results, Segment.Center, Segment.Rotation, ObjectParams, Segment.CollisionShape, QueryParams);
-            for (const FOverlapResult& R : Results) RawHitActors.Add(R.GetActor());
+            for (const FOverlapResult& R : Results)
+            {
+                RawHits.Add(MakeOverlapHitResult(R, Segment.Center, Segment.Start, Segment.End));
+            }
         }
 
         bool bHit = false;
-        for (AActor* Raw : RawHitActors)
+        for (const FHitResult& RawHit : RawHits)
         {
-            if (AActor* Target = ResolveHitTarget(Raw, Attacker))
+            if (AActor* Target = ResolveHitTarget(RawHit.GetActor(), Attacker))
             {
                 bHit = true;
+                // 命中结果的 Actor 统一成 AvatarActor：原始命中目标是接口实现者时，两者可能不是同一个对象
+                if (!bInOutHasFirstHit)
+                {
+                    OutFirstHit = RawHit;
+                    OutFirstHit.HitObjectHandle = Target;
+                    bInOutHasFirstHit = true;
+                }
                 OutHitActors.AddUnique(Target);
             }
         }
@@ -443,11 +506,12 @@ namespace
     }
 }
 
-void UAuraAbilitySystemLibrary::AttackHitDetection(
+bool UAuraAbilitySystemLibrary::AttackHitDetection(
     AActor* Attacker,
     const FName BeginSocket,
     const FName EndSocket,
     TArray<AActor*>& OutHitActors,
+    FHitResult& OutHitResult,
     const TArray<AActor*>& AlreadyHitActors,
     const EWeaponHitShape Shape,
     const float Radius,
@@ -458,13 +522,15 @@ void UAuraAbilitySystemLibrary::AttackHitDetection(
     const bool bResetHistory,
     const float MaxFrameGapSeconds)
 {
+    // 两个输出参数都由本函数重置：调用方复用同一组变量时不会读到上一次的结果
     OutHitActors.Reset();
-    if (!IsValid(Attacker)) return;
+    OutHitResult = FHitResult();
+    if (!IsValid(Attacker)) return false;
     const UWorld* World = Attacker->GetWorld();
-    if (!World) return;
+    if (!World) return false;
 
     const USkeletalMeshComponent* WeaponMesh = FindWeaponMesh(Attacker, BeginSocket, EndSocket);
-    if (!WeaponMesh) return;
+    if (!WeaponMesh) return false;
 
     // 终点插槽缺失（没传 EndSocket，或该武器网格上根本没有这个插槽）时，终点与起点保持一致，
     // 这样刀身长度归零，整把武器的姿态只由 BeginSocket 决定，后面自然退化成点检测
@@ -495,6 +561,8 @@ void UAuraAbilitySystemLibrary::AttackHitDetection(
     FCollisionQueryParams QueryParams;
     QueryParams.AddIgnoredActor(Attacker);
     QueryParams.AddIgnoredActors(AlreadyHitActors);
+    // 命中结果里带上物理材质：打不同表面（肉/石头/木头）时，特效与音效可以直接按它分支
+    QueryParams.bReturnPhysicalMaterial = true;
     const FCollisionObjectQueryParams ObjectParams(FCollisionObjectQueryParams::InitType::AllDynamicObjects);
 
     // 沿刀身均分采样：每个采样点检测「上一帧位置 → 当前帧位置」；单插槽时退化为单点
@@ -505,6 +573,8 @@ void UAuraAbilitySystemLibrary::AttackHitDetection(
     const FVector BladeAxis    = bBladeMode ? BladeVector / BladeLength : FindWeaponAxis(WeaponMesh);
     const float   DebugLifeTime = FMath::Max(DebugDrawLifeTime, 0.f);
 
+    // 本次检测的命中结果：只取第一个真正命中的目标，后面的命中不再覆盖它
+    bool bHasFirstHit = false;
     for (int32 i = 0; i <= SampleCount; ++i)
     {
         const float Alpha = SampleCount > 0 ? static_cast<float>(i) / SampleCount : 0.f;
@@ -512,11 +582,14 @@ void UAuraAbilitySystemLibrary::AttackHitDetection(
             World, QueryParams, ObjectParams, Attacker, Shape,
             FMath::Lerp(PreviousBegin, PreviousEnd, Alpha),
             FMath::Lerp(CurrentBegin,  CurrentEnd,  Alpha),
-            BladeAxis, Radius, HalfHeight, bDrawDebug, DebugLifeTime, OutHitActors);
+            BladeAxis, Radius, HalfHeight, bDrawDebug, DebugLifeTime, OutHitActors, bHasFirstHit, OutHitResult);
     }
 
     // 缓存本帧姿态，作为下一次调用的"上一帧"
     History.LastSampleTime = CurrentTime;
     History.BeginLocation  = CurrentBegin;
     History.EndLocation    = CurrentEnd;
+
+    // 返回值只看「本次是否新命中」：AlreadyHitActors 已在查询参数里被忽略，不会产生假阳性
+    return bHasFirstHit;
 }
