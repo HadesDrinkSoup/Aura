@@ -54,29 +54,19 @@ AAuraCharacterBase::AAuraCharacterBase()
 	GetMesh()->SetCollisionResponseToChannel(ECC_Projectile, ECR_Overlap);
 }
 
-FVector AAuraCharacterBase::GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag) const
+FAttackMontageData AAuraCharacterBase::GetAttackMontageDataByMontageTag_Implementation(const FGameplayTag& MontageTag) const
 {
-	const FAuraGameplayTags& GameplayTags = FAuraGameplayTags::Get();
-	if (MontageTag.MatchesTagExact(GameplayTags.Montage_Attack_WeaponTip) && IsValid(Weapon))
+	for (FAttackMontageData AttackMontageData : AttackMontagesData)
 	{
-		return Weapon->GetSocketLocation(WeaponTipSocket);
+		if (AttackMontageData.MontageTag.MatchesTagExact(MontageTag))
+		{
+			return AttackMontageData;
+		}
 	}
-	if (MontageTag.MatchesTagExact(GameplayTags.Montage_Attack_WeaponEnd) && IsValid(Weapon))
-	{
-		return Weapon->GetSocketLocation(WeaponEndSocket);
-	}
-	if (MontageTag.MatchesTagExact(GameplayTags.Montage_Attack_LeftHand))
-	{
-		return GetMesh()->GetSocketLocation(LeftHandSocket);
-	}
-	if (MontageTag.MatchesTagExact(GameplayTags.Montage_Attack_RightHand))
-	{
-		return GetMesh()->GetSocketLocation(RightHandSocket);
-	}
-	return FVector::ZeroVector;
+	return FAttackMontageData();
 }
 
-FName AAuraCharacterBase::GetCombatSocket_Implementation(const FGameplayTag& MontageTag) const
+FName AAuraCharacterBase::GetCombatSocketByMontageTag_Implementation(const FGameplayTag& MontageTag) const
 {
 	const FAuraGameplayTags& GameplayTags = FAuraGameplayTags::Get();
 	if (MontageTag.MatchesTagExact(GameplayTags.Montage_Attack_WeaponTip) && IsValid(Weapon))
@@ -220,12 +210,9 @@ void AAuraCharacterBase::InitDefaultAttributes()
 
 	// 解析顺序：本 BP 显式配置的 GE（个体覆盖） > 职业配置表中的默认 GE
 	const FCharacterClassDefaultInfo* ClassDefaults = FindClassDefaultInfo();
-	const TSubclassOf<UGameplayEffect> PrimaryAttributeEffect =
-		PrimaryAttributes ? PrimaryAttributes : (ClassDefaults ? ClassDefaults->PrimaryAttributes : nullptr);
-	const TSubclassOf<UGameplayEffect> DerivedAttributeEffect =
-		DerivedAttributes ? DerivedAttributes : (ClassDefaults ? ClassDefaults->DerivedAttributes : nullptr);
-	const TSubclassOf<UGameplayEffect> PoolAttributeEffect =
-		PoolAttributes ? PoolAttributes : (ClassDefaults ? ClassDefaults->PoolAttributes : nullptr);
+	const TSubclassOf<UGameplayEffect> PrimaryAttributeEffect = PrimaryAttributes ? PrimaryAttributes : (ClassDefaults ? ClassDefaults->PrimaryAttributes : nullptr);
+	const TSubclassOf<UGameplayEffect> DerivedAttributeEffect = DerivedAttributes ? DerivedAttributes : (ClassDefaults ? ClassDefaults->DerivedAttributes : nullptr);
+	const TSubclassOf<UGameplayEffect> PoolAttributeEffect = PoolAttributes ? PoolAttributes : (ClassDefaults ? ClassDefaults->PoolAttributes : nullptr);
 
 	// 灵属通用 GE 挂在表本身（所有职业共用），不随职业变化
 	const UCharacterClassInfo* ClassInfo = UAuraAbilitySystemLibrary::GetCharacterClassInfo(this);

@@ -48,18 +48,21 @@ public:
 	/** CombatInterface Begin */
 	/** 返回 GAS 使用的 ASC；在 InitActorInfo 完成前可能为 nullptr，调用方需自行判空 */
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override {return AbilitySystemComponent;}
-
-	/** 通过标签获取不同的战斗插槽 */
-	virtual FVector GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag) const override;
 	
 	/** 获取受击动画蒙太奇 */
 	virtual UAnimMontage* GetHitReactMontage_Implementation() override {return HitReactMontage;}
 	
+	/** 获取受到伤害时的血液效果 */
+	virtual UNiagaraSystem* GetBloodEffect_Implementation() const override {return BloodEffect;}
+	
 	/** 获取攻击动画蒙太奇 */
 	virtual TArray<FAttackMontageData> GetAttackMontagesData_Implementation() const override {return AttackMontagesData;}
 	
+	virtual FAttackMontageData GetAttackMontageDataByMontageTag_Implementation(const FGameplayTag& MontageTag) const override;
+	
 	/** 获取攻击检测插槽 */
-	virtual FName GetCombatSocket_Implementation(const FGameplayTag& MontageTag) const override;
+	virtual FName GetCombatSocketByMontageTag_Implementation(const FGameplayTag& MontageTag) const override;
+	
 	
 	/** 获取角色是否死亡 */
 	virtual bool IsDead_Implementation() const override {return bIsDead;}
@@ -78,25 +81,10 @@ protected:
 	 */
 	virtual void InitActorInfo() {};
 
-	/**
-	 * 施加初始属性（武器/职业 GE）。
-	 * 仅在服务器执行，内部会按"职业配置表 → 本 BP 覆盖"的优先级解析出 Primary/Derived/Pool 三个 GE；
-	 * 灵属（ElementAffinity）走两层：职业表上的通用灵属 GE + 本 BP 的个体差异列表，
-	 * 顺序固定为 Primary → Derived → 通用灵属 → 灵属个体差异 → AdditionalInitialEffects → Pool，
-	 * 原因见实现处注释。
-	 */
+	/** 初始h化属性（武器/职业 GE） */
 	virtual void InitDefaultAttributes();
-
-	// 帮助创建和应用GameplayEffect类中的游戏效果规范
-	/**
-	 * 为自身创建并施加一个 GameplayEffect。
-	 * 同一套样板（MakeOutgoingSpec → 校验句柄 → ApplyGameplayEffectSpecToSelf）
-	 * 被 Primary/Derived/通用灵属/灵属个体/Pool/个体差异六类 GE 复用，因此抽成静态函数。
-	 * @param EffectClass 要施加的 GE 类，为空时直接返回
-	 * @param ASC         目标 ASC，为空时直接返回
-	 * @param EffectContext 由调用方一次性构建、供所有 GE 共享的上下文（含 Instigator/SourceObject）
-	 * @param Level       GE 等级，默认 1；调用方按角色等级传入以便 CurveTable 取值
-	 */
+	
+	/** 为自身创建并施加一个 GameplayEffect */
 	static void ApplyEffectToSelf(TSubclassOf<UGameplayEffect> EffectClass, UAbilitySystemComponent* ASC, const FGameplayEffectContextHandle& EffectContext, float Level = 1.f);
 	
 	/** 授予"职业默认技能 + 本 BP 附加技能"，仅服务器执行；由子类在 Possess/BeginPlay 时调用 */
@@ -193,9 +181,13 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Aura|Character|Combat", meta = (DisplayName = "攻击动画蒙太奇数据"))
 	TArray<FAttackMontageData> AttackMontagesData;
 	
-	/** 攻击命中动画蒙太奇 */
+	/** 受击动画蒙太奇 */
 	UPROPERTY(EditAnywhere, Category = "Aura|Character|Combat", meta = (DisplayName = "受击动画"))
 	TObjectPtr<UAnimMontage> HitReactMontage;
+	
+	/** 受到伤害时的血液效果，主要用于近战攻击 */
+	UPROPERTY(EditAnywhere, Category = "Aura|Character|Combat", meta = (DisplayName = "血液效果"))
+	TObjectPtr<UNiagaraSystem> BloodEffect;
 	
 private:
 	/** 将死亡复制到所有客户端 */

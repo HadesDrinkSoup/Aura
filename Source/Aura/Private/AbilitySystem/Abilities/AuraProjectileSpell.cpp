@@ -21,7 +21,6 @@
 #include "Interface/CombatInterface.h"
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
-#include "AuraGamepalyTags.h"
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "Engine/World.h"
 #include "HAL/IConsoleManager.h"
@@ -36,13 +35,14 @@
  *  - 服务器上同一份技能实例会再执行一次本函数（那一次 HasAuthority 为真），在那里生成。
  *
  * @param ProjectileTargetLocation 目标点的世界坐标，仅用于计算投射物朝向（不做命中判定）。
+ * @param MontageTag 根据蒙太奇标签获取插槽位置
  *
  * 失败/降级分支：
  *  - AvatarActor 为空（技能还没 InitActorInfo 或已销毁）→ 静默返回；
  *  - 施法者没实现 ICombatInterface → 打一条 Warning 后返回（否则 Execute_ 取插槽位置会断言或给出零向量）；
  *  - 客户端 → 直接返回，不生成任何 Actor（客户端生成的东西不会被复制给别人）。
  */
-void UAuraProjectileSpell::SpawnProjectile(const FVector& ProjectileTargetLocation)
+void UAuraProjectileSpell::SpawnProjectile(const FVector& ProjectileTargetLocation, const FGameplayTag& MontageTag)
 {
 	const AActor* AvatarActor = GetAvatarActorFromActorInfo();
 
@@ -67,10 +67,19 @@ void UAuraProjectileSpell::SpawnProjectile(const FVector& ProjectileTargetLocati
 		UE_LOG(LogTemp, Warning, TEXT("%s: 施法者未实现 ICombatInterface，无法获取技能插槽位置"), *GetName());
 		return;
 	}
-
-	// 接口函数是 BlueprintNativeEvent，直接调 CombatInterface->GetCombatSocketLocation()
-	// 会命中 UHT 生成的断言桩；必须通过 Execute_ 转发到实现类的 _Implementation。
-	const FVector SpawnLocation = ICombatInterface::Execute_GetCombatSocketLocation(AvatarActor, FAuraGameplayTags::Get().Montage_Attack_WeaponTip);
+	FVector SpawnLocation = FVector::ZeroVector;
+	const FName CombatSocket = ICombatInterface::Execute_GetCombatSocketByMontageTag(AvatarActor, MontageTag);
+	TArray<USkeletalMeshComponent*> Meshes;
+	AvatarActor->GetComponents<USkeletalMeshComponent>(Meshes);
+	for (const USkeletalMeshComponent* Mesh : Meshes)
+	{
+		if (!IsValid(Mesh) || !Mesh->DoesSocketExist(CombatSocket)) continue;
+		if (Mesh->DoesSocketExist(CombatSocket))
+		{
+			SpawnLocation = Mesh->GetSocketLocation(CombatSocket);
+		}
+	}
+	
 	const FRotator SpawnRotation = (ProjectileTargetLocation - SpawnLocation).Rotation();
 	
 	FTransform SpawnTransform;

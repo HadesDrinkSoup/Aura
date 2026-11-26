@@ -487,8 +487,7 @@ void UAuraAbilitySystemLibrary::AttackHitDetection(
     // 一次就把沿途所有目标全部命中（表现为第一次攻击检测"扫到很远的地方"）。
     const double ElapsedSinceLast = CurrentTime - History.LastSampleTime;
     const bool bGapWithinLimit = MaxFrameGapSeconds <= 0.f || ElapsedSinceLast <= MaxFrameGapSeconds;
-    const bool bContinueSwing =
-        History.LastSampleTime >= 0.0 && ElapsedSinceLast >= 0.0 && bGapWithinLimit;
+    const bool bContinueSwing = History.LastSampleTime >= 0.0 && ElapsedSinceLast >= 0.0 && bGapWithinLimit;
     const FVector PreviousBegin = bContinueSwing ? History.BeginLocation : CurrentBegin;
     const FVector PreviousEnd   = bContinueSwing ? History.EndLocation   : CurrentEnd;
 

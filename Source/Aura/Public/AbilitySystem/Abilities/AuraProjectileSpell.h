@@ -40,7 +40,7 @@ protected:
 	 * 目标点的 Z 不参与朝向计算。若目标点与发射点水平重合，则退化到施法者的水平朝向。
 	 */
 	UFUNCTION(BlueprintCallable, Category="ProjectileSpell")
-	void SpawnProjectile(const FVector& ProjectileTargetLocation);
+	void SpawnProjectile(const FVector& ProjectileTargetLocation, const FGameplayTag& MontageTag);
 	
 	/**
 	 * 要生成的投射物类（AAuraProjectile 的子类，通常是一个蓝图投射物）。

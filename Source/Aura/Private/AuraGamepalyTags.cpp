@@ -258,6 +258,15 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 		FName("Effects.Death"),
 		FString(TEXT("死亡")));
 	
+	GameplayTags.Abilities_Attack = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Abilities.Attack"), 
+		FString(TEXT("攻击")));
+	
+	
+	GameplayTags.GameplayCue_MeleeImpact = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("GameplayCue.MeleeImpact."), 
+		FString(TEXT("近战命中")));
+	
 	
 	// =========================================================================
 	// Input Tags — 输入到技能的映射键（不参与 GE，纯"哪个键对应哪个技能"的标识）
@@ -297,12 +306,6 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 	GameplayTags.InputTag_4 = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("InputTag.4"), 
 		FString(TEXT("数字4键输入标签")));
-	
-	
-	GameplayTags.Abilities_Attack = UGameplayTagsManager::Get().AddNativeGameplayTag(
-		FName("Abilities.Attack"), 
-		FString(TEXT("攻击")));
-	
 	
 	GameplayTags.Montage_Attack_WeaponTip = UGameplayTagsManager::Get().AddNativeGameplayTag(
 		FName("Montage.Attack.WeaponTip"),

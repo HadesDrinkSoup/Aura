@@ -28,10 +28,6 @@ struct FAttackMontageData
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	FGameplayTag MontageTag = FGameplayTag();
 	
-	/** 主要用于近战攻击，远程攻击效果请在生成的发射物类设置 */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TObjectPtr<UNiagaraSystem> ImpactEffect = nullptr;
-	
 	/** 主要用于近战攻击，远程攻击音效请在生成的发射物类设置 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<USoundBase> ImpactSound = nullptr;
@@ -58,13 +54,12 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	TArray<FAttackMontageData> GetAttackMontagesData() const;
 	
-	/** 获取战斗插槽位置 */
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	FVector GetCombatSocketLocation(const FGameplayTag& MontageTag) const;
+	FAttackMontageData GetAttackMontageDataByMontageTag(const FGameplayTag& MontageTag) const;
 	
-	/** 获取战斗插槽 */
+	/** 通过蒙太奇标签获取战斗插槽 */
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	FName GetCombatSocket(const FGameplayTag& MontageTag) const;
+	FName GetCombatSocketByMontageTag(const FGameplayTag& MontageTag) const;
 	
 	/** 让角色转向指定目标点；在蓝图中实现， */
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
@@ -72,6 +67,9 @@ public:
 	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	UAnimMontage* GetHitReactMontage();
+	
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	UNiagaraSystem* GetBloodEffect() const;
 	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	bool IsDead() const;

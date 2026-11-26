@@ -93,6 +93,12 @@ struct FAuraGameplayTags
 	FGameplayTag Effects_HitReact;		//攻击命中反馈
 	FGameplayTag Effects_Death;			//角色死亡
 	
+	/** 能力标签,常用于AI行为树通过标签激活能力 */
+	FGameplayTag Abilities_Attack;
+	
+	/** GameplayCue标签 */
+	FGameplayTag GameplayCue_MeleeImpact;
+	
 	/**
 	 * InputTag 组：技能蓝图的输入标识，不是属性、也不参与 GE。
 	 *
@@ -112,11 +118,6 @@ struct FAuraGameplayTags
 	FGameplayTag InputTag_3;   // 数字键 3 — 技能槽位 3（当前无技能资产占用）
 	FGameplayTag InputTag_4;   // 数字键 4 — 技能槽位 4（当前无技能资产占用）
 	
-	/** 能力标签 
-	 *  常用于AI行为树通过标签激活能力
-	 */
-	FGameplayTag Abilities_Attack;
-
 	/**
 	 * 动画tag
      * 在关键帧上用 AnimNotify 发出 GameplayEvent，
