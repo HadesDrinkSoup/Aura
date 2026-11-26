@@ -154,14 +154,12 @@ void UAuraAttributeSet::GetLifetimeReplicatedProps(TArray<class FLifetimePropert
 void UAuraAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)
 {
 	Super::PreAttributeChange(Attribute, NewValue);
-
-	// 血量不允许为负（死亡下限）也不允许超过上限；上限的"变小"场景由 PostAttributeChange 兜底
+	
 	if (Attribute == GetHealthAttribute())
 	{
 		NewValue = FMath::Clamp(NewValue, 0.f, GetMaxHealth());
 	}
-
-	// 法力同理：技能消耗不能把蓝条压成负数，回复不能超过上限
+	
 	if (Attribute == GetManaAttribute())
 	{
 		NewValue = FMath::Clamp(NewValue, 0.f, GetMaxMana());
@@ -176,20 +174,31 @@ void UAuraAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, 
  * 因此"上限被调低导致当前血量 > 上限"只能在这里修。
  * 这里用 SetHealth/SetMana 写回，会再次进入 PreAttributeChange，形成一次自洽的钳制；
  * 因为 NewValue 已经是新上限，重入不会造成无限递归（第二次 Clamp 结果相同）。
+ *
+ * ⚠ 只在属性权威端（服务器/单机）做这件事：
+ * 客户端上 MaxHealth/MaxMana 是被复制驱动的，FActiveGameplayEffectsContainer::SetBaseAttributeValueFromReplication
+ * 会先用"旧上限"重算一次并调用本函数（首包时旧上限为 0），若客户端也在这里 SetHealth，
+ * 客户端血量会被写成 0 且 BaseValue 一并被改；服务器血量不变 ⇒ 不会再复制纠正 ⇒ 血条永久为空。
+ * 客户端只需跟着复制值走，钳制由服务器做完后复制下来。
  */
 void UAuraAttributeSet::PostAttributeChange(const FGameplayAttribute& Attribute, const float OldValue, const float NewValue)
 {
 	Super::PostAttributeChange(Attribute, OldValue, NewValue);
 
+	if (!GetOwningAbilitySystemComponent() || !GetOwningAbilitySystemComponent()->IsOwnerActorAuthoritative())
+	{
+		return;
+	}
+
 	// 派生属性 GE 是 Infinite：MaxHealth / MaxMana 由聚合器直接改写，
 	// 不会走 PostGameplayEffectExecute，因此在这里补齐 Health / Mana 的钳制。
 	if (Attribute == GetMaxHealthAttribute())
 	{
-		SetHealth(FMath::Clamp(GetHealth(), 0.f, NewValue));
+		SetHealth(NewValue);
 	}
 	if (Attribute == GetMaxManaAttribute())
 	{
-		SetMana(FMath::Clamp(GetMana(), 0.f, NewValue));
+		SetMana(NewValue);
 	}
 }
 
