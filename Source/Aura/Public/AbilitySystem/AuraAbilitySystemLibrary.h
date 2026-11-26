@@ -105,6 +105,10 @@ public:
 	 *     得到 SubSteps+1 个采样点，含刀柄与刀尖；
 	 *  2. 每个采样点把「上一帧的世界坐标 → 当前帧的世界坐标」连成一条"检测段"，
 	 *     再按 Shape 在这条检测段上做一次检测，一组检测段拼起来正好是整把刀这一帧扫过的空间。 
+	 *  3. EndSocket 为空（调用方没传，或武器网格上不存在该插槽）时，终点自动与 BeginSocket 保持一致，
+	 *     刀身长度归零，整体退化为单点检测（挥拳、单插槽武器）。
+	 *  4. 上一次采样离当前超过 MaxFrameGapSeconds（追赶、切武器、换技能等长时间停顿）时，
+	 *     旧姿态直接作废，当帧只检测当前姿态，避免连出一条横跨场景的巨型检测段。
 	 */
 	UFUNCTION(BlueprintCallable, Category = "AuraAbilitySystemLibrary|GameplayMechanics")
 	static void AttackHitDetection(
@@ -118,5 +122,7 @@ public:
 		float HalfHeight = 0.f,
 		int32 SubSteps = 6,
 		bool bDrawDebug = false,
-		float DebugDrawLifeTime = 0.05f);
+		float DebugDrawLifeTime = 0.05f,
+		bool bResetHistory = false,
+		float MaxFrameGapSeconds = 0.25f);
 };

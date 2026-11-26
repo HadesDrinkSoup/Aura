@@ -56,7 +56,7 @@ public:
 	virtual UAnimMontage* GetHitReactMontage_Implementation() override {return HitReactMontage;}
 	
 	/** 获取攻击动画蒙太奇 */
-	virtual TArray<FMontageTag> GetAttackMontages_Implementation() const override {return AttackMontages;}
+	virtual TArray<FAttackMontageData> GetAttackMontagesData_Implementation() const override {return AttackMontagesData;}
 	
 	/** 获取攻击检测插槽 */
 	virtual FName GetCombatSocket_Implementation(const FGameplayTag& MontageTag) const override;
@@ -163,13 +163,6 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Aura|Character|Class", meta = (DisplayName = "角色职业"))
 	ECharacterClass CharacterClass = ECharacterClass::Elementalist;
 	
-private:
-	/** 将死亡复制到所有客户端 */
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastHandleDeath();
-	
-	/** 武器跟随网格体溶解的重复计时器句柄 */
-	FTimerHandle DissolveSyncTimerHandle;
 	/**
 	 * 可选：直接在本 BP 上覆盖职业的属性 GE（留空则使用职业配置表）。
 	 * 通常只在「职业表里没有的特殊个体」上使用。
@@ -197,12 +190,17 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Aura|Character|Combat", meta = (DisplayName = "武器溶解材质"))
 	TObjectPtr<UMaterialInstance> WeaponDissolveMaterialInstance;
 	
-	UPROPERTY(EditAnywhere, Category = "Aura|Character|Combat", meta = (DisplayName = "攻击动画蒙太奇"))
-	TArray<FMontageTag> AttackMontages;
+	UPROPERTY(EditAnywhere, Category = "Aura|Character|Combat", meta = (DisplayName = "攻击动画蒙太奇数据"))
+	TArray<FAttackMontageData> AttackMontagesData;
 	
 	/** 攻击命中动画蒙太奇 */
 	UPROPERTY(EditAnywhere, Category = "Aura|Character|Combat", meta = (DisplayName = "受击动画"))
 	TObjectPtr<UAnimMontage> HitReactMontage;
+	
+private:
+	/** 将死亡复制到所有客户端 */
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastHandleDeath();
 	
 	bool bIsDead= false;
 };

@@ -454,7 +454,9 @@ void UAuraAbilitySystemLibrary::AttackHitDetection(
     const float HalfHeight,
     const int32 SubSteps,
     const bool bDrawDebug,
-    const float DebugDrawLifeTime)
+    const float DebugDrawLifeTime,
+    const bool bResetHistory,
+    const float MaxFrameGapSeconds)
 {
     OutHitActors.Reset();
     if (!IsValid(Attacker)) return;
@@ -464,16 +466,29 @@ void UAuraAbilitySystemLibrary::AttackHitDetection(
     const USkeletalMeshComponent* WeaponMesh = FindWeaponMesh(Attacker, BeginSocket, EndSocket);
     if (!WeaponMesh) return;
 
+    // 终点插槽缺失（没传 EndSocket，或该武器网格上根本没有这个插槽）时，终点与起点保持一致，
+    // 这样刀身长度归零，整把武器的姿态只由 BeginSocket 决定，后面自然退化成点检测
+    const FName ResolvedEndSocket = WeaponMesh->DoesSocketExist(EndSocket) ? EndSocket : BeginSocket;
+
     // 当前姿态：刀身两端。单插槽/挥拳时两端重合，后面会退化成点检测
     const FVector CurrentBegin = WeaponMesh->GetSocketLocation(BeginSocket);
-    const FVector CurrentEnd = WeaponMesh->DoesSocketExist(EndSocket)
-        ? WeaponMesh->GetSocketLocation(EndSocket)
-        : CurrentBegin;
+    const FVector CurrentEnd = WeaponMesh->GetSocketLocation(ResolvedEndSocket);
 
     // 上一帧姿态：第一次调用还没有历史，当帧退化为只检测当前姿态
     const double CurrentTime = World->GetTimeSeconds();
-    FWeaponSweepHistory& History = FindOrAddWeaponSweepHistory(Attacker, BeginSocket, EndSocket);
-    const bool bContinueSwing = History.LastSampleTime >= 0.0;
+    // 缓存键也用解析后的终点插槽：同一把武器无论调用方传空还是传 BeginSocket，都复用同一份上一帧姿态
+    FWeaponSweepHistory& History = FindOrAddWeaponSweepHistory(Attacker, BeginSocket, ResolvedEndSocket);
+
+    // 显式要求重置时直接丢掉旧姿态（技能刚激活、刚切到这把武器时用）
+    if (bResetHistory) History = FWeaponSweepHistory();
+
+    // 只有「上一次采样就发生在刚才这几帧内」才算同一次挥砍。
+    // 追赶、开新技能、长时间停顿后，旧姿态早已失效：拿它当起点会连出一条横跨半个场景的检测段，
+    // 一次就把沿途所有目标全部命中（表现为第一次攻击检测"扫到很远的地方"）。
+    const double ElapsedSinceLast = CurrentTime - History.LastSampleTime;
+    const bool bGapWithinLimit = MaxFrameGapSeconds <= 0.f || ElapsedSinceLast <= MaxFrameGapSeconds;
+    const bool bContinueSwing =
+        History.LastSampleTime >= 0.0 && ElapsedSinceLast >= 0.0 && bGapWithinLimit;
     const FVector PreviousBegin = bContinueSwing ? History.BeginLocation : CurrentBegin;
     const FVector PreviousEnd   = bContinueSwing ? History.EndLocation   : CurrentEnd;
 

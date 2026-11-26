@@ -13,15 +13,28 @@
 #include "CombatInterface.generated.h"
 
 
+class UNiagaraSystem;
+
 USTRUCT(BlueprintType)
-struct FMontageTag
+struct FAttackMontageData
 {
 	GENERATED_BODY()
+	
+	/** 攻击动画蒙太奇 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UAnimMontage> Montage = nullptr;
 	
+	/** 用于触发能力，请保持和蒙太奇事件标签一致 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	FGameplayTag MontageTag = FGameplayTag();
+	
+	/** 主要用于近战攻击，远程攻击效果请在生成的发射物类设置 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<UNiagaraSystem> ImpactEffect = nullptr;
+	
+	/** 主要用于近战攻击，远程攻击音效请在生成的发射物类设置 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<USoundBase> ImpactSound = nullptr;
 };
 
 UINTERFACE(MinimalAPI, BlueprintType)
@@ -43,7 +56,7 @@ public:
 	AActor* GetAvatarActor();
 	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	TArray<FMontageTag> GetAttackMontages() const;
+	TArray<FAttackMontageData> GetAttackMontagesData() const;
 	
 	/** 获取战斗插槽位置 */
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
