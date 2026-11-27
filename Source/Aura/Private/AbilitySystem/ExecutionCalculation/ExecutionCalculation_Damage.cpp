@@ -135,12 +135,6 @@ void UExecutionCalculation_Damage::Execute_Implementation(const FGameplayEffectC
 	const UAbilitySystemComponent* TargetASC = ExecutionParams.GetTargetAbilitySystemComponent();
 	
 	if (!SourceASC || !TargetASC) return;
-	
-	const AActor* SourceActor = SourceASC->GetOwnerActor();
-	const AActor* TargetActor = TargetASC->GetOwnerActor();
-	// 注意存成 FString：GetName() 返回临时对象，直接取 *GetName() 会留下悬垂指针
-	const FString SourceName = SourceActor ? SourceActor->GetName() : FString(TEXT("None"));
-	const FString TargetName = TargetActor ? TargetActor->GetName() : FString(TEXT("None"));
 
 	// 本结构体是在 UExecutionCalculation_Damage 的 CDO 构造期创建的，而 CDO 在 Aura 模块加载时
 	// 由 ProcessNewlyLoadedUObjects 构造，早于 UAuraAssetManager::StartInitialLoading 里的
