@@ -16,8 +16,10 @@
 
 #include "AbilitySystem/Abilities/AuraGameplayAbility.h"
 
+#include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "GameFramework/Actor.h"
 #include "Interface/CombatInterface.h"
+
 
 int32 UAuraGameplayAbility::GetCharacterLevel() const
 {

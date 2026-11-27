@@ -12,8 +12,14 @@
 
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AuraGamepalyTags.h"
+#include "AbilitySystemGlobals.h"
+#include "GameplayCueManager.h"
 #include "AbilitySystem/Abilities/AuraGameplayAbility.h"
 #include "Interface/CombatInterface.h"
+#include "Engine/World.h"
+#include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerController.h"
+
 
 /**
  * 调用基类完成 Owner/Avatar 绑定，然后把本 ASC 挂到「GE 施加到自身」的引擎委托上。
@@ -138,6 +144,26 @@ void UAuraAbilitySystemComponent::AbilityInputTagHeld(const FGameplayTag& InputT
 			}
 		}
 	}
+}
+
+void UAuraAbilitySystemComponent::ExecuteGameplayCueLocal_Implementation(const FGameplayTag GameplayCueTag, const FGameplayCueParameters& GameplayCueParameters, AActor* CueTargetActor) const
+{
+	if (!GameplayCueTag.IsValid()) return;
+
+	// 与基类 ExecuteGameplayCue 保持一致：ASC 被标记为「抑制所有 Cue」时（例如无缝旅行、过场）不播放。
+	if (bSuppressGameplayCues) return;
+
+	// 调用方指定了「数字挂在谁身上」：施法者看的是被打的敌人，受击者看的是自己。
+	// 客户端解析不到这个 Actor（不可见/已销毁）时宁可不弹，也不能退回自己的 Avatar ——
+	// 否则「打不到的敌人」会把数字飘在自己身上，看起来像自己受了伤。
+	AActor* TargetActor = CueTargetActor;
+	if (!IsValid(TargetActor)) return;
+
+	// GetGameplayCueManager 内部有兜底创建，正常不会返回空；这里仍判空，避免早期调用直接崩。
+	UGameplayCueManager* GameplayCueManager = UAbilitySystemGlobals::Get().GetGameplayCueManager();
+	if (!GameplayCueManager) return;
+
+	GameplayCueManager->HandleGameplayCue(TargetActor, GameplayCueTag, EGameplayCueEvent::Executed, GameplayCueParameters);
 }
 
 /**

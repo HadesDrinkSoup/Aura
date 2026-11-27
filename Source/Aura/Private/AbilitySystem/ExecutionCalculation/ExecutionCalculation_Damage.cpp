@@ -20,13 +20,14 @@
  *      受击增伤 = 受击者[被本次元素克制，即生它]有效亲和 × (+ Weakness)
  *      三段都用同一种递减公式，常数分别是 ElementalMasteryConstant / ElementalResistanceConstant / ElementalWeaknessConstant。
  *    元素唯一来源是效果上下文里的 DamageType，没有标就不是元素攻击（不修正）。
- *  - 结果只写入 IncomingDamage（Meta 属性），扣血、飘字、受击、死亡动画全部交给
- *    UAuraAttributeSet::PostGameplayEffectExecute，这里不直接改 Health。
+ *  - 结果只写入 IncomingDamage（Meta 属性），扣血、受击、死亡动画交给
+ *    UAuraAttributeSet::PostGameplayEffectExecute，这里不直接改 Health；
+ *    伤害飘字则在本类结算完成后由 ExecuteDamageCue 投递给「造成/受到伤害的本地玩家」。
  *  - 减伤是纯函数：CalculateFinalDamage / CalculateElementalMasteryRatio / CalculateElementElementResistancesRatio / CalculateElementalWeaknessRatio。
  *
  * 为什么用 Meta 属性中转，而不是直接对 Health 做 Additive：
  *  - 伤害需要先算清楚、再一次性结算：直接改 Health 时想再叠暴击/固伤/护盾就没地方挂了；
- *  - PostGameplayEffectExecute 里能同时拿到「伤害数值」和「施法者/受击者」，天然是飘字与死亡判定的落点；
+ *  - PostGameplayEffectExecute 里能同时拿到「伤害数值」和「施法者/受击者」，是死亡判定的落点；
  *  - Meta 属性每次结算后被清零（在 AttributeSet），不会被误当成持续数值。
  *
  * 调试日志：
@@ -41,11 +42,13 @@
 
 #include "AbilitySystemComponent.h"
 #include "AuraGamepalyTags.h"
+#include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "Engine/Engine.h"
 #include "GameFramework/Actor.h"
+#include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerController.h"
 #include "HAL/IConsoleManager.h"
-
 
 static AuraDamageStatics& DamageStatics()
 {
@@ -126,9 +129,7 @@ UExecutionCalculation_Damage::UExecutionCalculation_Damage()
 	RelevantAttributesToCapture.Add(DamageStatics().SourceFireDef);
 }
 
-void UExecutionCalculation_Damage::Execute_Implementation(
-	const FGameplayEffectCustomExecutionParameters& ExecutionParams,
-	FGameplayEffectCustomExecutionOutput& OutExecutionOutput) const
+void UExecutionCalculation_Damage::Execute_Implementation(const FGameplayEffectCustomExecutionParameters& ExecutionParams, FGameplayEffectCustomExecutionOutput& OutExecutionOutput) const
 {
 	const UAbilitySystemComponent* SourceASC = ExecutionParams.GetSourceAbilitySystemComponent();
 	const UAbilitySystemComponent* TargetASC = ExecutionParams.GetTargetAbilitySystemComponent();
@@ -203,8 +204,8 @@ void UExecutionCalculation_Damage::Execute_Implementation(
 		// 否则同一个 EffectContext 被复用（同一 Spec 命中多个目标）时，
 		// 上一次结算残留的"暴击"会跟着这次闪避一起序列化出去。
 		UAuraAbilitySystemLibrary::SetIsCriticalHit(EffectContextHandle, false);
-		// 闪避照样输出 0 伤害：让 AttributeSet 能正常走受击 / 飘字流程
-		OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(UAuraAttributeSet::GetIncomingDamageAttribute(), EGameplayModOp::Additive, 0.f));
+		// 闪避也要发 cue：伤害为 0，数字区由上下文里的 IsDodge 决定显示 "Dodge"
+		ExecuteDamageCue(SourceASC, TargetASC, Spec, 0.f);
 		return;
 	}
 	
@@ -330,6 +331,65 @@ void UExecutionCalculation_Damage::Execute_Implementation(
 	
 	// 输出 IncomingDamage（Meta 属性）
 	OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(UAuraAttributeSet::GetIncomingDamageAttribute(), EGameplayModOp::Additive, FinalDamage));
+	ExecuteDamageCue(SourceASC, TargetASC, Spec, FinalDamage);
+}
+
+void UExecutionCalculation_Damage::ExecuteDamageCue(const UAbilitySystemComponent* SourceASC, const UAbilitySystemComponent* TargetASC, const FGameplayEffectSpec& Spec, const float FinalDamage)
+{
+	if (!SourceASC || !TargetASC) return;
+
+	// 伤害只在服务器结算：客户端预测端不弹数字，由服务器通过 Client RPC 定向发给「该看的玩家」。
+	if (!TargetASC->IsOwnerActorAuthoritative()) return;
+
+	AActor* SourceAvatarActor = SourceASC->GetAvatarActor();
+	AActor* TargetAvatarActor = TargetASC->GetAvatarActor();
+	if (!SourceAvatarActor || !TargetAvatarActor) return;
+	if (SourceAvatarActor == TargetAvatarActor) return;   // 自伤不弹，要弹就删这行
+	
+	const APawn* SourceAvatarPawn = Cast<APawn>(SourceAvatarActor);
+	const bool bSourceIsPlayer = SourceAvatarPawn && Cast<APlayerController>(SourceAvatarPawn->GetController()) != nullptr;
+
+	const APawn* TargetAvatarPawn = Cast<APawn>(TargetAvatarActor);
+	const bool bTargetIsPlayer = TargetAvatarPawn && Cast<APlayerController>(TargetAvatarPawn->GetController()) != nullptr;
+
+	const UAuraAbilitySystemComponent* AuraSourceASC = bSourceIsPlayer ? Cast<UAuraAbilitySystemComponent>(SourceASC) : nullptr;
+	const UAuraAbilitySystemComponent* AuraTargetASC = bTargetIsPlayer ? Cast<UAuraAbilitySystemComponent>(TargetASC) : nullptr;
+
+	// 没有任何真人玩家参与，就没人需要看到这次伤害
+	if (!AuraSourceASC && !AuraTargetASC) return;
+
+	const FGameplayEffectContextHandle ContextHandle = Spec.GetContext();
+
+	FGameplayCueParameters CueParams;
+	CueParams.EffectContext = ContextHandle;    // 含 IsDodge / IsCriticalHit / DamageType
+	CueParams.RawMagnitude = FinalDamage;
+	CueParams.Instigator = SourceAvatarActor;
+	CueParams.GameplayEffectLevel = Spec.GetLevel();
+
+	if (const FGameplayTagContainer* SourceTags = Spec.CapturedSourceTags.GetAggregatedTags())
+	{
+		CueParams.AggregatedSourceTags = *SourceTags;
+	}
+	if (const FGameplayTagContainer* TargetTags = Spec.CapturedTargetTags.GetAggregatedTags())
+	{
+		CueParams.AggregatedTargetTags = *TargetTags;
+	}
+
+	const FGameplayTag DamageCueTag = FAuraGameplayTags::Get().GameplayCue_Damage;
+
+	// ① 施法者：在「造成伤害的玩家」自己的客户端上，把数字飘在被打的目标身上。
+	//    （同一份 CueParams 里的数字/暴击/闪避都来自服务器结算，客户端只负责画）
+	if (AuraSourceASC)
+	{
+		AuraSourceASC->ExecuteGameplayCueLocal(DamageCueTag, CueParams, TargetAvatarActor);
+	}
+
+	// ② 受击者：在「挨打的玩家」自己的客户端上，把数字飘在自己身上。
+	//    PvP 时施法者与受击者各收到一份，互不重复；自伤在上面已经被排除。
+	if (AuraTargetASC && AuraTargetASC != AuraSourceASC)
+	{
+		AuraTargetASC->ExecuteGameplayCueLocal(DamageCueTag, CueParams, TargetAvatarActor);
+	}
 }
 
 float UExecutionCalculation_Damage::CalculateFinalDamage(const float Damage, const float Defense) const

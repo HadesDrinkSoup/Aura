@@ -98,6 +98,7 @@ struct FAuraGameplayTags
 	
 	/** GameplayCue标签 */
 	FGameplayTag GameplayCue_MeleeImpact;
+	FGameplayTag GameplayCue_Damage;
 	
 	/**
 	 * InputTag 组：技能蓝图的输入标识，不是属性、也不参与 GE。

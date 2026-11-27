@@ -41,35 +41,9 @@ public:
 	/** 每帧驱动 CursorTrace 以更新光标下方目标的高亮状态 */
 	virtual void PlayerTick(float DeltaTime) override;
 
-	/**
-	 * 伤害飘字 —— 只在本机客户端创建，服务器与其它玩家都不显示。
-	 *
-	 * 为什么必须声明成 Client RPC：
-	 *  - 调用点（UAuraAttributeSet::PostGameplayEffectExecute、
-	 *    UExecutionCalculation_Damage::Execute_Implementation）只在服务器执行，
-	 *    服务器只负责"算伤害 / 判定暴击闪避"，不负责"画字"；
-	 *  - 普通 C++ 函数会在服务器进程里 NewObject，组件只存在于服务器世界，
-	 *    远端客户端的屏幕层永远收不到——这就是"listen host 正常、客户端没有"的根因；
-	 *  - 改成 Client RPC 后，网络层只把这次调用发给该 PlayerController 的拥有者客户端，
-	 *    真正的 NewObject 发生在"这次攻击所属的那个客户端"，因此每个玩家只在自己屏幕上
-	 *    看到自己造成的伤害，专用服务器上一个飘字都不会创建。
-	 *
-	 * 注意：listen host 调用 Client RPC 时 Callspace 为 Local，会就地执行 _Implementation，
-	 * 所以 host 作为玩家仍能看到自己的伤害数字；但不会再看到远端玩家的伤害数字。
-	 * 本函数只能由服务器调用：客户端没有权威的伤害数值，也不该主动调它。
-	 *
-	 * @param InDamage        本次伤害的最终数值（暴击倍率已乘好；闪避时为 0）
-	 * @param TargetCharacter 飘字挂载的目标角色（被打的敌人），同时作为组件 Outer
-	 * @param bIsDodge		  攻击是否被闪避
-	 * @param bIsCriticalHit  攻击是否暴击
-	 *
-	 * 注意：这里刻意只传 float + 两个 bool，不再传 FText / 颜色 / 字号 ——
-	 * 文案、颜色、字号、动画都属于纯表现，统一交给蓝图的 SetFloatingText 事件处理；
-	 * 参数全是 POD，RPC 序列化最省，也顺带避开了 UHT 的一个坑：RPC 的 exec thunk
-	 * 形参会被改写成 `const T&`，声明里写 `FText Text`（按值）会生成对不上的 thunk，报 C2511。
-	 */
-	UFUNCTION(Client, Reliable)
-	void ShowFloatingText(float InDamage, ACharacter* TargetCharacter, const bool bIsDodge, const bool bIsCriticalHit);
+	/** 伤害飘字 —— 只在本地客户端执行：由本地客户端上的 GC_Damage 直接调用，在目标角色身上创建浮动数字 */
+	UFUNCTION(BlueprintCallable, Category = "Aura|PlayerController")
+	void ShowFloatingText(float InDamage, AActor* TargetActor, const bool bIsDodge, const bool bIsCriticalHit);
 	
 	/**
 	 * 取当前光标下方的敌人 Actor（CursorTrace 每帧维护的 CurrentActor）。

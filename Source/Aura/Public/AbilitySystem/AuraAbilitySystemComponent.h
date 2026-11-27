@@ -7,6 +7,7 @@
 #include "AuraAbilitySystemComponent.generated.h"
 
 class UAuraGameplayAbility;
+class AActor;
 
 /**
  * 「GE 资产标签（Asset Tags）」广播用的多播委托。
@@ -96,6 +97,27 @@ public:
 	 * @param InputTag 与按下时同一个输入标签
 	 */
 	void AbilityInputTagHeld(const FGameplayTag& InputTag);
+	
+	/**
+	 * 服务器 → 拥有者客户端：在本机执行一次 GameplayCue（不走 GAS 的 Cue 复制规则）。
+	 *
+	 * 为什么需要它（目前唯一用途是伤害飘字）：
+	 *  - 伤害只在服务器结算，服务器没有屏幕；而 ExecuteGameplayCue 的 Cue 复制会发给
+	 *    「看得到该 Actor 的所有客户端」，于是敌人互殴、别的玩家挨打也会在所有人屏幕上弹字；
+	 *  - 这个 RPC 只发给「本 ASC 的拥有者客户端」，调用方可以先筛出真正该看的玩家
+	 *    （见 UExecutionCalculation_Damage::ExecuteDamageCue），所以每个客户端只会看到
+	 *    自己造成的伤害、或自己受到的伤害；
+	 *  - listen server 的 host 也是玩家：调用它的 Client RPC 时 Callspace 为 Local，会就地执行，
+	 *    因此 host 同样能看到自己的伤害数字；专用服务器上没有本地玩家，只发网络包，不会执行。
+	 *
+	 * @param GameplayCueTag        要执行的 Cue 标签（如 GameplayCue.Damage）
+	 * @param GameplayCueParameters 上下文（EffectContext / RawMagnitude / 双方标签等由调用方填好）
+	 * @param CueTargetActor        Cue 的执行目标 Actor：飘字就挂在它身上。
+	 *                              例：施法者看到的是「被打的敌人」，受击者看到的是「自己」。
+	 *                              客户端解析不到该 Actor 时直接不执行，不会退回自己的 Avatar。
+	 */
+	UFUNCTION(Client, Unreliable)
+	void ExecuteGameplayCueLocal(const FGameplayTag GameplayCueTag, const FGameplayCueParameters& GameplayCueParameters, AActor* CueTargetActor) const;
 
 	/**
 	 * GE 资产标签广播口：每次「GE 施加到本 ASC 自身」且到达拥有者客户端时触发一次。

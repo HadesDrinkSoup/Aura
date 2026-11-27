@@ -28,6 +28,8 @@ class AURA_API UAuraGameplayAbility : public UGameplayAbility
 {
 	GENERATED_BODY()
 public:
+	
+	
 	/**
 	 * 技能对应的输入标签：只用于输入分发，不参与技能能否激活的判定
 	 * （阻塞、成本、冷却由 GE / GameplayTag 另管，见 UGameplayAbility 的 ActivationBlockedTags 等）。

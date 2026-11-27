@@ -7,7 +7,6 @@
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "GameFramework/Character.h"
 #include "Net/UnrealNetwork.h"
-#include "Player/AuraPlayerController.h"
 
 /**
  * @file AuraAttributeSet.cpp
@@ -249,31 +248,9 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 		const float LocalIncomingDamage = GetIncomingDamage();
 		SetIncomingDamage(0.f);
 		// 闪避与正常伤害共用同一条飘字路径：区别只在「伤害值取 0」和「不扣血」
-		const bool bIsDodge = UAuraAbilitySystemLibrary::IsDodge(EffectProperties.EffectContextHandle);
-		
-		// 命中飘字显示
-		// 自己打自己（自伤 / 环境伤害落到自己）不飘字；双方都是玩家时各飘一份，TargetPC == SourcePC 不重复发
-		if (EffectProperties.SourceCharacter != EffectProperties.TargetCharacter)
-		{
-			// 闪避时伤害值按 0 飘，正常伤害飘最终值；暴击倍率已由 ExecutionCalculation_Damage 乘进最终伤害
-			const float Damage = bIsDodge ? 0.f : LocalIncomingDamage;
-			const bool bIsCriticalHit = UAuraAbilitySystemLibrary::IsCriticalHit(EffectProperties.EffectContextHandle);
-			AAuraPlayerController* SourcePC = Cast<AAuraPlayerController>(EffectProperties.SourceController);
-			AAuraPlayerController* TargetPC = Cast<AAuraPlayerController>(EffectProperties.TargetController);
 
-			// ① 施法者是玩家 → 在「造成这次伤害的那个人」的客户端上飘字；AI 施法者没有 PlayerController，自然跳过
-			if (SourcePC)
-			{
-				SourcePC->ShowFloatingText(Damage, EffectProperties.TargetCharacter, bIsDodge, bIsCriticalHit);
-			}
-			// ② 受击者也是玩家 → 在「挨打的那个人」的客户端上飘字；没有这一份，单机 / 被 AI 打时就看不到伤害数字
-			if (TargetPC && TargetPC != SourcePC)
-			{
-				TargetPC->ShowFloatingText(Damage, EffectProperties.TargetCharacter, bIsDodge, bIsCriticalHit);
-			}
-		}
 		// 闪避到此为止：本次没有扣血，也不触发受击/死亡表现
-		if (bIsDodge) return;
+		if (UAuraAbilitySystemLibrary::IsDodge(EffectProperties.EffectContextHandle)) return;
 		
 		// 只处理正伤害
 		if (LocalIncomingDamage <= 0.f) return;

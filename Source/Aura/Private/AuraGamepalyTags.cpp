@@ -264,8 +264,12 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 	
 	
 	GameplayTags.GameplayCue_MeleeImpact = UGameplayTagsManager::Get().AddNativeGameplayTag(
-		FName("GameplayCue.MeleeImpact."), 
+		FName("GameplayCue.MeleeImpact"), 
 		FString(TEXT("近战命中")));
+	
+	GameplayTags.GameplayCue_Damage = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("GameplayCue.Damage"), 
+		FString(TEXT("伤害")));
 	
 	
 	// =========================================================================

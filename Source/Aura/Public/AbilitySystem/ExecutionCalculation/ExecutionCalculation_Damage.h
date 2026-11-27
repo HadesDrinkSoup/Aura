@@ -141,6 +141,25 @@ public:
 
 	virtual void Execute_Implementation(const FGameplayEffectCustomExecutionParameters& ExecutionParams, FGameplayEffectCustomExecutionOutput& OutExecutionOutput) const override;
 
+	/**
+	 * 把一次结算结果作为 GameplayCue（GameplayCue.Damage → GC_Damage → 飘字）投递给「该看的玩家」。
+	 *
+	 * 可见性规则（避免所有客户端都弹数字）：
+	 *  - 只在服务器权威端发起，客户端预测端什么都不做；
+	 *  - 只发给两类玩家客户端：造成这次伤害的玩家（数字飘在被打的目标身上）、
+	 *    受到这次伤害的玩家（数字飘在自己身上）；AI 施法者 / AI 受击者不产生任何表现；
+	 *  - 与两者都无关的客户端、以及专用服务器本身，不会执行这个 Cue；
+	 *  - listen server 的 host 也是玩家：它的 Client RPC 在本机就地执行，所以 host 能看到
+	 *    自己造成 / 受到的伤害，但看不到其它玩家的。
+	 * 自伤（SourceAvatar == TargetAvatar）直接忽略；闪避也走这条路径（伤害 0 + 上下文 IsDodge）。
+	 *
+	 * @param SourceASC  本次结算的施法者 ASC
+	 * @param TargetASC  本次结算的受击者 ASC
+	 * @param Spec       正在结算的 GE Spec（Cue 上下文与标签都从这里取）
+	 * @param FinalDamage 最终伤害（已含防御/元素/暴击修正；闪避传 0）
+	 */
+	static void ExecuteDamageCue(const UAbilitySystemComponent* SourceASC, const UAbilitySystemComponent* TargetASC, const FGameplayEffectSpec& Spec, const float FinalDamage);
+	
 	float CalculateFinalDamage(const float Damage, const float Defense) const;
 
 	/** 元素出手增伤比例（0~1）：施法者该元素「高于基准」的亲和越高，打出的该元素伤害越高 */

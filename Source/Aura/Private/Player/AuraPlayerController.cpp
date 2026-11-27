@@ -18,7 +18,6 @@
 #include "InputActionValue.h"
 #include "Engine/HitResult.h"
 #include "Engine/LocalPlayer.h"
-#include "GameFramework/Character.h"
 #include "GameFramework/Pawn.h"
 #include "Input/AuraEnhancedInputComponent.h"
 #include "Interface/EnemyInterface.h"
@@ -41,13 +40,13 @@ void AAuraPlayerController::PlayerTick(const float DeltaTime)
 	CursorTrace();
 }
 
-void AAuraPlayerController::ShowFloatingText_Implementation(const float InDamage, ACharacter* TargetCharacter, const bool bIsDodge, const bool bIsCriticalHit)
+void AAuraPlayerController::ShowFloatingText(const float InDamage, AActor* TargetActor, const bool bIsDodge, const bool bIsCriticalHit)
 {
-	if (!IsLocalController() || !FloatingTextWidgetClass || !IsValid(TargetCharacter)) return;
-	UFloatingTextWidgetComponent* FloatingText = NewObject<UFloatingTextWidgetComponent>(TargetCharacter, FloatingTextWidgetClass);
+	// 只在本机执行：调用方是本地客户端上的 GC_Damage，服务器/其它客户端不会走到这里。
+	if (!IsLocalController() || !FloatingTextWidgetClass || !IsValid(TargetActor)) return;
+	UFloatingTextWidgetComponent* FloatingText = NewObject<UFloatingTextWidgetComponent>(TargetActor, FloatingTextWidgetClass);
 	FloatingText->RegisterComponent();
-	FloatingText->AttachToComponent(TargetCharacter->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
-	
+	FloatingText->AttachToComponent(TargetActor->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
 	FloatingText->SetFloatingText(InDamage, bIsDodge, bIsCriticalHit);
 }
 
